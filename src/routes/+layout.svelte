@@ -1,18 +1,27 @@
 <script lang="ts">
   import { type Snippet } from "svelte";
-  import { Header, Nav } from "$com/layout";
+  import { Header, Nav, Themer } from "$com/layout";
   import favicon from "$lib/assets/harrsoft_border.svg";
+  import "$styles/reset.css";
+  import { Theme } from "$types";
+  import type { LayoutData } from "./$types";
 
   let {
-    children
+    children,
+    data,
   }: {
     children?: Snippet;
+    data: LayoutData;
   } = $props();
+
+  const theme: Theme = $derived(data.session?.theme || "auto");
 </script>
 
 <svelte:head>
   <link rel="icon" href={favicon} />
 </svelte:head>
+
+<Themer {theme} />
 
 <div class={[
   "flex flex-col w-full h-full",
@@ -36,6 +45,3 @@
     </div>
   </div>
 </div>
-
-<style>
-</style>

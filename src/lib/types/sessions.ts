@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PlatformRole, SessionId, UserHandle, UserId } from "./ids";
+import { Theme } from "./themes";
 import type { Branded } from "./util";
 
 export const Session = z.object({
@@ -8,6 +9,8 @@ export const Session = z.object({
   userHandle: UserHandle,
   platformRole: PlatformRole,
   sessionExpiresAt: z.date(),
+  tokenExpiresAt: z.date(),
+  theme: Theme,
 });
 export type Session = z.infer<typeof Session>;
 
