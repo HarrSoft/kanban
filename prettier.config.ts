@@ -4,7 +4,7 @@ const config: Config = {
   experimentalTernaries: true,
   bracketSameLine: true,
   arrowParens: "avoid",
-  plugins: ["prettier-plugin-svelte"],
+  plugins: ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
   overrides: [
     {
       files: "*.svelte",
@@ -13,6 +13,7 @@ const config: Config = {
       },
     },
   ],
+  tailwindStylesheet: "./src/app.css",
 };
 
 export default config;
