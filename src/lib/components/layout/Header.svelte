@@ -11,9 +11,9 @@
 
 <header
   class={[
-    "flex p-4 gap-4",
+    "flex items-center gap-2 border-shadow p-2 lg:border-b-2",
     className,
   ]}>
-  <Logo border />
-  <h1>Harrsoft Kanban</h1>
+  <Logo />
+  <h1 class="text-3xl font-bold">Harrsoft Kanban</h1>
 </header>

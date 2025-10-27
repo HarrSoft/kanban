@@ -8,4 +8,11 @@
   --color-alt: var(--alt);
   --color-hilight: var(--hilight);
   --color-print: var(--print);
+  --color-invert: var(--invert);
+}
+
+body {
+  background-color: var(--main);
+  color: var(--print);
+  height: 100vh;
 }

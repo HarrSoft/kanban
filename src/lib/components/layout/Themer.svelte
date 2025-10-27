@@ -12,6 +12,7 @@
       --alt: #9b7874;
       --hilight: #d33e43;
       --print: #ff220c;
+      --invert: #00ddf3;
     }
   </style>
 {:else if theme === "oceanside"}
@@ -22,6 +23,7 @@
       --alt: #58a4b0;
       --hilight: #daa49a;
       --print: #373f51;
+      --invert: #c8c0ae;
     }
   </style>
 {:else if theme === "ribbit-dark"}
@@ -32,6 +34,7 @@
       --alt: #138a36;
       --hilight: #04e824;
       --print: #18ff6d;
+      --invert: #e70092;
     }
   </style>
 {:else if theme === "ribbit-light"}
@@ -42,6 +45,7 @@
       --alt: #138a36;
       --hilight: #285238;
       --print: #34403a;
+      --invert: #cbbfc5;
     }
   </style>
 {:else if theme === "auto"}
@@ -53,6 +57,7 @@
       --alt: #58a4b0;
       --hilight: #daa49a;
       --print: #373f51;
+      --invert: #c8c0ae;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -63,15 +68,8 @@
         --alt: #9b7874;
         --hilight: #d33e43;
         --print: #ff220c;
-        --invert: #550003;
+        --invert: #00ddf3;
       }
     }
   </style>
 {/if}
-
-<style>
-  :root {
-    background-color: var(--main);
-    color: var(--print);
-  }
-</style>

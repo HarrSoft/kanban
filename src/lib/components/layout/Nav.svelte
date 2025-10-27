@@ -5,11 +5,11 @@
   const {
     className,
   }: {
-    className? :ClassValue;
+    className?: ClassValue;
   } = $props();
 
-  const tabs = ["projects", "time", "kanban"] as const;
-  type Tab = typeof tabs[number];
+  const tabs = ["projects", "time", "kanban", "settings"] as const;
+  type Tab = (typeof tabs)[number];
   const tab: Tab | null = $derived.by(() => {
     const [_root, tab] = page.url.pathname.split("/");
     if (tabs.includes(tab as any)) {
@@ -22,38 +22,26 @@
 
 <nav
   class={[
-    "flex flex-col md:flex-row p-4 gap-4",
-    "border-r-2 md:border-r-0 md:border-b-2",
+    "flex border-shadow",
+    "h-auto w-full flex-row border-b-2",
+    "lg:h-full lg:w-auto lg:flex-col lg:border-r-2 lg:border-b-0",
+    "[&>a]:px-4 [&>a]:py-2 [&>a]:hover:bg-alt [&>a]:hover:text-invert",
     className,
   ]}>
-  <a
-    href="/"
-    class={[
-      "border-2 rounded-lg p-2",
-      tab === "projects" ?
-        "border-4 font-bold"
-      : "",
-    ]}>
-    Projects
-  </a>
-  <a
-    href="/time"
-    class={[
-      "border-2 rounded-lg p-2",
-      tab === "time" ?
-        "border-4 font-bold"
-      : "",
-    ]}>
-    Time Clock
-  </a>
-  <a
-    href="/kanban"
-    class={[
-      "border-2 rounded-lg p-2",
-      tab === "kanban" ?
-        "border-4 font-bold"
-      : "",
-    ]}>
-    Kanban
-  </a>
+  <a href="/" class:selected={tab === "projects"}> Projects </a>
+  <a href="/time" class:selected={tab === "time"}> Time&nbsp;Clock </a>
+  <a href="/kanban" class:selected={tab === "kanban"}> Kanban </a>
+  <a href="/settings" class:selected={tab === "settings"}> Settings </a>
 </nav>
+
+<style>
+  .selected {
+    background-color: var(--shadow);
+    font-weight: bold;
+  }
+
+  .selected:hover {
+    background-color: var(--alt);
+    color: var(--invert);
+  }
+</style>

@@ -2,45 +2,33 @@
   import { type Snippet } from "svelte";
   import { Header, Nav, Themer } from "$com/layout";
   import favicon from "$lib/assets/harrsoft_border.svg";
-  import "$styles/reset.css";
-  import { Theme } from "$types";
+  //import { Theme } from "$types";
   import type { LayoutData } from "./$types";
+  import "../app.css";
 
   let {
     children,
-    data,
+    //data,
   }: {
     children?: Snippet;
     data: LayoutData;
   } = $props();
 
-  const theme: Theme = $derived(data.session?.theme || "auto");
+  //const theme: Theme = $derived(data.session?.theme || "auto");
+  const theme = "oceanside";
 </script>
 
 <svelte:head>
   <link rel="icon" href={favicon} />
+  <Themer {theme} />
 </svelte:head>
 
-<Themer {theme} />
-
-<div class={[
-  "flex flex-col w-full h-full",
-  "bg-white text-black",
-  "dark:bg-blue-50 dark:text-white",
-]}>
+<div class="flex h-full w-full flex-col">
   <Header />
 
-  <div class={[
-    "flex flex-col w-full h-full",
-    "lg:flex-row",
-  ]}>
-    <Nav className={[
-      "w-full overflow-x-auto",
-      "lg:w-auto lg:h-full",
-      "bg-slate-900",
-      "dark:bg-slate-100"
-    ]} />
-    <div class="w-full h-full overflow-y-auto">
+  <div class={["flex h-full w-full flex-col", "lg:flex-row"]}>
+    <Nav />
+    <div class="h-full w-full overflow-y-auto p-4">
       {@render children?.()}
     </div>
   </div>
