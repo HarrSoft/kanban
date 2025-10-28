@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { Branded } from "$types/util";
 
 export const PlatformRole = z.enum(["user", "admin"]);
 export type PlatformRole = z.infer<typeof PlatformRole>;
@@ -8,14 +7,11 @@ export type PlatformRole = z.infer<typeof PlatformRole>;
 // Projects //
 //////////////
 
-export const ProjectId = z.cuid2();
-export type ProjectId = Branded<z.infer<typeof ProjectId>, "ProjectId">;
+export const ProjectId = z.cuid2().brand<"ProjectId">();
+export type ProjectId = z.infer<typeof ProjectId>;
 
-export const ProjectHandle = z.string().min(3);
-export type ProjectHandle = Branded<
-  z.infer<typeof ProjectHandle>,
-  "ProjectHandle"
->;
+export const ProjectHandle = z.string().min(3).brand<"ProjectHandle">();
+export type ProjectHandle = z.infer<typeof ProjectHandle>;
 
 export const ProjectIdentity = z
   .object({
@@ -29,32 +25,32 @@ export type ProjectIdentity = z.infer<typeof ProjectIdentity>;
 // Sessions //
 //////////////
 
-export const SessionId = z.cuid2();
-export type SessionId = Branded<z.infer<typeof SessionId>, "SessionId">;
+export const SessionId = z.cuid2().brand<"SessionId">();
+export type SessionId = z.infer<typeof SessionId>;
 
 /////////////
 // Tickets //
 /////////////
 
-export const TicketId = z.cuid2();
-export type TicketId = Branded<z.infer<typeof TicketId>, "TicketId">;
+export const TicketId = z.cuid2().brand<"TicketId">();
+export type TicketId = z.infer<typeof TicketId>;
 
 ////////////////
 // Timeclocks //
 ////////////////
 
-export const TimeclockId = z.cuid2();
-export type TimeclockId = Branded<z.infer<typeof TimeclockId>, "TimeclockId">;
+export const TimeclockId = z.cuid2().brand<"TimeclockId">();
+export type TimeclockId = z.infer<typeof TimeclockId>;
 
 ///////////
 // Users //
 ///////////
 
-export const UserId = z.cuid2();
-export type UserId = Branded<z.infer<typeof UserId>, "UserId">;
+export const UserId = z.cuid2().brand<"UserId">();
+export type UserId = z.infer<typeof UserId>;
 
-export const UserHandle = z.string().min(3);
-export type UserHandle = Branded<z.infer<typeof UserHandle>, "UserHandle">;
+export const UserHandle = z.string().min(3).brand<"UserHandle">();
+export type UserHandle = z.infer<typeof UserHandle>;
 
 export const UserIdentity = z
   .object({

@@ -1,18 +1,18 @@
 import { z } from "zod";
 import { PlatformRole, SessionId, UserHandle, UserId } from "./ids";
 import { Theme } from "./themes";
-import type { Branded } from "./util";
 
-export const Session = z.object({
+export const DBSession = z.object({
   sessionId: SessionId,
   userId: UserId,
   userHandle: UserHandle,
   platformRole: PlatformRole,
   sessionExpiresAt: z.date(),
-  tokenExpiresAt: z.date(),
   theme: Theme,
 });
-export type Session = z.infer<typeof Session>;
+export type DBSession = z.infer<typeof DBSession>;
 
-export const JWT = z.jwt();
-export type JWT = Branded<z.infer<typeof JWT>, "JWT">;
+export const Session = DBSession.extend({
+  tokenExpiresAt: z.date(),
+});
+export type Session = z.infer<typeof Session>;
