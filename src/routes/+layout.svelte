@@ -2,20 +2,19 @@
   import { type Snippet } from "svelte";
   import { Header, Nav, Themer } from "$com/layout";
   import favicon from "$lib/assets/harrsoft_border.svg";
-  //import { Theme } from "$types";
+  import { Theme } from "$types";
   import type { LayoutData } from "./$types";
   import "../app.css";
 
   let {
     children,
-    //data,
+    data,
   }: {
     children?: Snippet;
     data: LayoutData;
   } = $props();
 
-  //const theme: Theme = $derived(data.session?.theme || "auto");
-  const theme = "oceanside";
+  const theme: Theme = $derived(data.session?.theme || "auto");
 </script>
 
 <svelte:head>

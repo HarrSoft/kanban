@@ -1,12 +1,11 @@
 import { getRequestEvent } from "$app/server";
-import { JWT } from "$types";
 
 export const getSessionTokenCookie = () => {
   const event = getRequestEvent();
   return event.cookies.get("session");
 };
 
-export const setSessionTokenCookie = (token: JWT) => {
+export const setSessionTokenCookie = (token: string) => {
   const event = getRequestEvent();
   event.cookies.set("session", token, {
     httpOnly: true,

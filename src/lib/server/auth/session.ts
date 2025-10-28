@@ -8,15 +8,19 @@ export const createSession = async (tx: Tx, userId: UserId) => {
   const [dbSession] = await tx.insert(sessions).values({ userId }).returning();
 
   const [dbUser] = await tx
-    .select({ handle: users.handle })
+    .select({
+      userId: users.id,
+      userHandle: users.handle,
+      platformRole: users.platformRole,
+      theme: users.theme,
+    })
     .from(users)
     .where(eq(users.id, userId));
 
   return Session.parse({
     sessionId: dbSession.id,
-    userId: dbSession.userId,
-    userHandle: dbUser.handle,
-    sessionExpiresAt: dbSession.expiresAt,
+    expiresAt: dbSession.expiresAt,
+    ...dbUser,
   } satisfies Session);
 };
 
@@ -26,7 +30,9 @@ export const getSession = async (tx: Tx, sessionId: SessionId) => {
       sessionId: sessions.id,
       userId: sessions.userId,
       userHandle: users.handle,
-      sessionExpiresAt: sessions.expiresAt,
+      platformRole: users.platformRole,
+      expiresAt: sessions.expiresAt,
+      theme: users.theme,
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
