@@ -12,4 +12,6 @@ export default db;
 
 export * from "./schema";
 
-export type Tx = Parameters<Parameters<(typeof db)["transaction"]>[0]>[0];
+export type Tx =
+  | typeof db
+  | Parameters<Parameters<(typeof db)["transaction"]>[0]>[0];
