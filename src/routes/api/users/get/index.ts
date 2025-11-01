@@ -12,7 +12,7 @@ export const Result = z.discriminatedUnion("ok", [
   }),
   z.object({
     ok: z.literal(false),
-    reason: z.enum(["not found", "unknown"]),
+    reason: z.enum(["unauthorized", "not found", "unknown"]),
   }),
 ]);
 export type Result = z.output<typeof Result>;
@@ -29,10 +29,12 @@ export default async (input: Input): Promise<Result> => {
       user: await res.json(),
     });
   } else {
-    if (res.status === 404) {
-      return { ok: false, reason: "not found" };
-    } else {
-      return { ok: false, reason: "unknown" };
-    }
+    return {
+      ok: false,
+      reason:
+        res.status === 401 ? "unauthorized"
+        : res.status === 404 ? "not found"
+        : "unknown",
+    };
   }
 };
