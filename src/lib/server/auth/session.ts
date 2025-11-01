@@ -11,6 +11,7 @@ export const createSession = async (tx: Tx, userId: UserId) => {
     .select({
       userId: users.id,
       userHandle: users.handle,
+      userEmail: users.email,
       platformRole: users.platformRole,
       theme: users.theme,
     })
@@ -30,6 +31,7 @@ export const getSession = async (tx: Tx, sessionId: SessionId) => {
       sessionId: sessions.id,
       userId: sessions.userId,
       userHandle: users.handle,
+      userEmail: users.email,
       platformRole: users.platformRole,
       expiresAt: sessions.expiresAt,
       theme: users.theme,

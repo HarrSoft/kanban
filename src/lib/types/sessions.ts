@@ -6,6 +6,7 @@ export const Session = z.object({
   sessionId: SessionId,
   userId: UserId,
   userHandle: UserHandle,
+  userEmail: z.email(),
   platformRole: PlatformRole,
   expiresAt: z.date(),
   theme: Theme,
