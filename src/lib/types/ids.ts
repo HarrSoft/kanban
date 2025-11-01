@@ -18,7 +18,8 @@ export const ProjectIdentity = z
     id: ProjectId,
     handle: ProjectHandle,
   })
-  .partial();
+  .partial()
+  .refine(val => val.id || val.handle);
 export type ProjectIdentity = z.infer<typeof ProjectIdentity>;
 
 //////////////
@@ -58,5 +59,6 @@ export const UserIdentity = z
     handle: UserHandle,
     email: z.email(),
   })
-  .partial();
+  .partial()
+  .refine(val => val.id || val.handle || val.email);
 export type UserIdentity = z.infer<typeof UserIdentity>;
