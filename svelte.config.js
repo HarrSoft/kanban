@@ -17,7 +17,6 @@ const config = {
       "$com/*": "./src/lib/components/*",
       $db: "./src/lib/server/db",
       "$db/*": "./src/lib/server/db/*",
-      $rules: "./src/lib/server/rules",
       $server: "./src/lib/server",
       "$server/*": "./src/lib/server/*",
       $types: "./src/lib/types",
