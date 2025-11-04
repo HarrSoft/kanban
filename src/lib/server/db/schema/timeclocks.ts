@@ -9,12 +9,15 @@ export const timeclocks = t.pgTable("timeclocks", {
   userId: t
     .text("user_id")
     .references(() => users.id)
+    .notNull()
     .$type<UserId>(),
   projectId: t
     .text("project_id")
     .references(() => projects.id)
+    .notNull()
     .$type<ProjectId>(),
-  start: t.date().notNull().defaultNow(),
-  duration: t.integer(), // seconds
+  start: t.timestamp().notNull().defaultNow(),
+  duration: t.integer().notNull().default(0), // seconds
+  active: t.boolean().notNull().default(false),
   ...timestamps,
 });
