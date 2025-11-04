@@ -8,6 +8,10 @@ const config = {
   kit: {
     adapter: adapter(),
 
+    experimental: {
+      remoteFunctions: true,
+    },
+
     alias: {
       $: "./src",
       "$/*": "./src/*",
@@ -21,6 +25,12 @@ const config = {
       "$server/*": "./src/lib/server/*",
       $types: "./src/lib/types",
       "$types/*": "./src/lib/types/*",
+    },
+  },
+
+  compilerOptions: {
+    experimental: {
+      async: true,
     },
   },
 };
