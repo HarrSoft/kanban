@@ -62,3 +62,16 @@ export const UserIdentity = z
   .partial()
   .refine(val => val.id || val.handle || val.email);
 export type UserIdentity = z.infer<typeof UserIdentity>;
+
+////////////
+// Kanban //
+////////////
+
+export const BoardId = z.cuid2().brand<"BoardId">();
+export type BoardId = z.infer<typeof BoardId>;
+
+export const ColumnId = z.cuid2().brand<"ColumnId">();
+export type ColumnId = z.infer<typeof ColumnId>;
+
+export const CardId = z.cuid2().brand<"CardId">();
+export type CardId = z.infer<typeof CardId>;

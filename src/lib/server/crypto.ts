@@ -1,19 +1,13 @@
 import { init as cuid2Init } from "@paralleldrive/cuid2";
 
-export const webCrypto = new Crypto();
+export const webCrypto = globalThis.crypto;
 
 // cryptographically secure version of Math.random
 export const secureRandom = () => {
-  const floatBox = new Float64Array(1);
-  crypto.getRandomValues(floatBox);
-  const float = floatBox[0];
-  if (float === 1) {
-    return 0.0;
-  } else if (float > 1) {
-    return 1 / float;
-  } else {
-    return float;
-  }
+  const buffer = new Uint32Array(1);
+  crypto.getRandomValues(buffer);
+  // Convert to float between 0 and 1
+  return buffer[0] / (0xffffffff + 1);
 };
 
 export const cuid2 = cuid2Init({
