@@ -1,5 +1,5 @@
 import { text, timestamp } from "drizzle-orm/pg-core";
-import { cuid2 } from "$server/crypto";
+import { cuid2 } from "../../crypto";
 
 export const id = (name?: string) =>
   (name ? text(name) : text()).$default(cuid2);
