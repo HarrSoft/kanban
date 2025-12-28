@@ -7,6 +7,7 @@ export const projects = t.pgTable("projects", {
   id: id().primaryKey().$type<ProjectId>(),
   handle: t.text().unique().$type<ProjectHandle>(),
   name: t.text().notNull(),
+  imageUrl: t.text(),
   ...timestamps,
 });
 

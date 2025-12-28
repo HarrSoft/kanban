@@ -6,7 +6,7 @@ export const UserInfo = z.object({
   id: UserId,
   handle: UserHandle,
   platformRole: PlatformRole,
-  image: z.url().nullable(),
+  imageUrl: z.url().nullable(),
 });
 export type UserInfo = z.infer<typeof UserInfo>;
 
