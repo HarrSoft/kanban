@@ -18,6 +18,6 @@ export const timeclocks = t.pgTable("timeclocks", {
     .$type<ProjectId>(),
   start: t.timestamp().notNull().defaultNow(),
   duration: t.integer().notNull().default(0), // seconds
-  active: t.boolean().notNull().default(false),
+  locked: t.boolean().notNull().default(false),
   ...timestamps,
 });
