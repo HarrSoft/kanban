@@ -5,50 +5,45 @@ import { getRequestEvent, command, query } from "$app/server";
 import db, { projects, projectMembers, users } from "$db";
 import { ProjectHandle, ProjectId, ProjectInfo, ProjectFull } from "$types";
 
-export const getProjects = query(
-  async () => {
-    const session = getRequestEvent().locals.session;
-    if (!session) {
-      throw error(401, "Must be logged in");
-    }
+export const getProjects = query(async () => {
+  const session = getRequestEvent().locals.session;
+  if (!session) {
+    throw error(401, "Must be logged in");
+  }
 
-    const projectsRes = await db
-      .select({
-        project: projects,
-        member: projectMembers,
-        user: users,
-      })
-      .from(projects)
-      .innerJoin(projectMembers, eq(projects.id, projectMembers.projectId))
-      .where(eq(projectMembers.userId, session.userId));
+  const projectsRes = await db
+    .select({
+      project: projects,
+      member: projectMembers,
+      user: users,
+    })
+    .from(projects)
+    .innerJoin(projectMembers, eq(projects.id, projectMembers.projectId))
+    .where(eq(projectMembers.userId, session.userId));
 
-    const mapped = projectsRes.map(pr => pr.project);
+  const mapped = projectsRes.map(pr => pr.project);
 
-    const projectList = ProjectInfo.array()
-      .parse(mapped satisfies ProjectInfo[]);
+  const projectList = ProjectInfo.array().parse(mapped satisfies ProjectInfo[]);
 
-    return projectList;
-  },
-);
+  return projectList;
+});
 
-export const getProject = query.batch(
-  ProjectId,
-  async () => {
-    const session = getRequestEvent().locals.session;
-    if (!session) {
-      throw error(401, "Must be logged in");
-    }
+export const getProject = query.batch(ProjectId, async () => {
+  const session = getRequestEvent().locals.session;
+  if (!session) {
+    throw error(401, "Must be logged in");
+  }
 
-    const [projectList, membersByProject] = await db.transaction(async tx => {
-      const projectList = await tx
+  const [projectList, membersByProject] = await db.transaction(async tx => {
+    const projectList = await tx
       .select({ project: projects })
       .from(projects)
       .innerJoin(projectMembers, eq(projects.id, projectMembers.projectId))
       .where(eq(projectMembers.userId, session.userId));
 
-      const projectIds = projectList.map(row => row.project.id);
+    const projectIds = projectList.map(row => row.project.id);
 
-      const membersByProject = await tx
+    const membersByProject = await tx
       .select({
         projectId: projects.id,
         user: users,
@@ -59,58 +54,63 @@ export const getProject = query.batch(
       .innerJoin(users, eq(users.id, projectMembers.userId))
       .where(inArray(projects.id, [...projectIds]));
 
-      return [projectList, membersByProject];
-    });
+    return [projectList, membersByProject];
+  });
 
-    const projectsMap: Map<ProjectId, ProjectFull> =
-      new Map(projectList.map(row => ([row.project.id, {
+  const projectsMap: Map<ProjectId, ProjectFull> = new Map(
+    projectList.map(row => [
+      row.project.id,
+      {
         ...row.project,
         admins: [],
         contributors: [],
         viewers: [],
-      }])));
+      },
+    ]),
+  );
 
-    // Assemble members list data
-    for (const row of membersByProject) {
-      const projectRef = projectsMap.get(row.projectId);
+  // Assemble members list data
+  for (const row of membersByProject) {
+    const projectRef = projectsMap.get(row.projectId);
 
-      if (!projectRef) {
-        // this shouldn't happen
-        console.warn([
+    if (!projectRef) {
+      // this shouldn't happen
+      console.warn(
+        [
           "A sql query appears to be wrong",
           "in getProject remote function",
-        ].join(" "));
-        continue;
-      }
-
-      if (row.member.role === "admin") {
-        projectRef.admins.push({
-          ...row.member,
-          ...row.user,
-        });
-      } else if (row.member.role === "contributor") {
-        projectRef.contributors.push({
-          ...row.member,
-          ...row.user,
-        });
-      } else if (row.member.role === "viewer") {
-        projectRef.viewers.push({
-          ...row.member,
-          ...row.user,
-        });
-      }
+        ].join(" "),
+      );
+      continue;
     }
 
-    return (projectId: ProjectId) => {
-      const dirty = projectsMap.get(projectId);
-      if (!dirty) {
-        throw error(404);
-      }
-      const clean = ProjectFull.parse(dirty satisfies ProjectFull);
-      return clean;
-    };
-  },
-);
+    if (row.member.role === "admin") {
+      projectRef.admins.push({
+        ...row.member,
+        ...row.user,
+      });
+    } else if (row.member.role === "contributor") {
+      projectRef.contributors.push({
+        ...row.member,
+        ...row.user,
+      });
+    } else if (row.member.role === "viewer") {
+      projectRef.viewers.push({
+        ...row.member,
+        ...row.user,
+      });
+    }
+  }
+
+  return (projectId: ProjectId) => {
+    const dirty = projectsMap.get(projectId);
+    if (!dirty) {
+      throw error(404);
+    }
+    const clean = ProjectFull.parse(dirty satisfies ProjectFull);
+    return clean;
+  };
+});
 
 export const setActiveProject = command(
   ProjectId.nullable(),
@@ -130,13 +130,12 @@ export const setActiveProject = command(
 
     // check membership
     const [membership] = await db
-    .select({ id: projects.id, userId: projectMembers.userId })
-    .from(projects)
-    .innerJoin(projectMembers, eq(projects.id, projectMembers.projectId))
-    .where(and(
-      eq(projectMembers.userId, userId),
-      eq(projects.id, projectId),
-    ));
+      .select({ id: projects.id, userId: projectMembers.userId })
+      .from(projects)
+      .innerJoin(projectMembers, eq(projects.id, projectMembers.projectId))
+      .where(
+        and(eq(projectMembers.userId, userId), eq(projects.id, projectId)),
+      );
 
     if (membership) {
       event.cookies.set("activeProject", projectId, { path: "/" });
@@ -163,20 +162,18 @@ export const createProject = command(
       let projectId: ProjectId;
       try {
         const res = await tx
-        .insert(projects)
-        .values({
-          handle,
-          name: name || '~' + handle,
-        })
-        .returning();
+          .insert(projects)
+          .values({
+            handle,
+            name: name || "~" + handle,
+          })
+          .returning();
         projectId = res[0].id;
       } catch (_) {
         throw error(400, "Handle is already in use");
       }
 
-      await tx
-      .insert(projectMembers)
-      .values({
+      await tx.insert(projectMembers).values({
         userId: session.userId,
         projectId,
         role: "admin",

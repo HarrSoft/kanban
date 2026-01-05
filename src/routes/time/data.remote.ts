@@ -56,7 +56,7 @@ export const getTimeclocks = query(
             eq(timeclocks.projectId, projectId),
             gte(timeclocks.start, from),
             lte(timeclocks.start, to),
-          )
+          ),
         );
 
       return times;
@@ -75,7 +75,7 @@ export const createTimeclock = command(
   async ({ projectId, start, duration }) => {
     const event = getRequestEvent();
 
-    const startDate = new Date(start)
+    const startDate = new Date(start);
 
     if (duration && duration < 0) {
       throw error(400, "End date occurs before start date");
@@ -104,9 +104,11 @@ export const updateTimeclock = command(
     timeclockId: TimeclockId,
     start: z.iso.date().optional(),
     duration: z.number().optional(),
-    admin: z.object({
-      locked: z.boolean().optional(),
-    }).optional(),
+    admin: z
+      .object({
+        locked: z.boolean().optional(),
+      })
+      .optional(),
   }),
   async ({ timeclockId, start, duration, admin }) => {
     // authenticate
