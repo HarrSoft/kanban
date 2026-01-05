@@ -12,4 +12,4 @@ negotiate an exception.
 
 This package was developed primarily with bun as its runtime and package
 manager. If you run into issues executing these scripts, try using the command
-`$ bun run -b <script>`, which will correctly resolve aliases.
+`$ bun -b run <script>`, which will correctly resolve aliases.
