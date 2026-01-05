@@ -6,10 +6,7 @@
   <span class="px-4 py-2">
     {page.data.session?.userEmail}
   </span>
-  <a
-    class="px-4 py-2 text-white font-bold bg-red-500"
-    href="/logout"
-  >
+  <a class="bg-red-500 px-4 py-2 font-bold text-white" href="/logout">
     Logout
   </a>
 </div>

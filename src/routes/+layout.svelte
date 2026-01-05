@@ -26,10 +26,9 @@
 <div class="flex h-full w-full flex-col">
   <header
     class={[
-      "w-full border-shadow border-b-2",
+      "w-full border-b-2 border-shadow",
       "flex items-center justify-between p-2",
-    ]}
-  >
+    ]}>
     <div class="flex items-center gap-2">
       <Logo />
       <h1 class="text-3xl font-bold">Harrsoft Kanban</h1>
