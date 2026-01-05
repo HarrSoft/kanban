@@ -8,6 +8,13 @@
       "when": 1766951515674,
       "tag": "0000_bizarre_chimera",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1767648097383,
+      "tag": "0001_light_boom_boom",
+      "breakpoints": true
     }
   ]
 }

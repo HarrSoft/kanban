@@ -1,7 +1,14 @@
 import * as dates from "date-fns";
 import * as t from "drizzle-orm/pg-core";
+import {
+  Base64Url,
+  PlatformRole,
+  SessionId,
+  Theme,
+  UserHandle,
+  UserId,
+} from "$types";
 import { id, timestamps } from "./util";
-import { PlatformRole, SessionId, Theme, UserHandle, UserId } from "$types";
 
 export const platformRole = t.pgEnum("platform_role", PlatformRole.enum);
 
@@ -29,5 +36,17 @@ export const users = t.pgTable("users", {
   imageUrl: t.text(),
   bio: t.text(),
   theme: theme().notNull().default("auto").$type<Theme>(),
+  ...timestamps,
+});
+
+export const passwords = t.pgTable("passwords", {
+  userId: t
+    .text("user_id")
+    .primaryKey()
+    .references(() => users.id)
+    .notNull()
+    .$type<UserId>(),
+  hash: t.text("hash").notNull().$type<Base64Url>(),
+  salt: t.text("salt").notNull().$type<Base64Url>(),
   ...timestamps,
 });
