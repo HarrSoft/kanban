@@ -3,7 +3,7 @@ import { z } from "zod";
 import { error } from "@sveltejs/kit";
 import { getRequestEvent, command, query } from "$app/server";
 import db, { projects, projectMembers, users } from "$db";
-import { ProjectHandle, ProjectId, ProjectInfo, ProjectFull } from "$types";
+import { ProjectId, ProjectInfo, ProjectFull } from "$types";
 
 export const getProjects = query(async () => {
   const session = getRequestEvent().locals.session;
@@ -147,10 +147,9 @@ export const setActiveProject = command(
 
 export const createProject = command(
   z.object({
-    handle: ProjectHandle,
-    name: z.string().optional(),
+    name: z.string(),
   }),
-  async ({ handle, name }) => {
+  async ({ name }) => {
     // authenticate
     const event = getRequestEvent();
     const session = event.locals.session;
@@ -159,19 +158,13 @@ export const createProject = command(
     }
 
     const newProjectId = await db.transaction(async tx => {
-      let projectId: ProjectId;
-      try {
-        const res = await tx
-          .insert(projects)
-          .values({
-            handle,
-            name: name || "~" + handle,
-          })
-          .returning();
-        projectId = res[0].id;
-      } catch (_) {
-        throw error(400, "Handle is already in use");
-      }
+      const res = await tx
+        .insert(projects)
+        .values({
+          name: name,
+        })
+        .returning();
+      const projectId = res[0].id;
 
       await tx.insert(projectMembers).values({
         userId: session.userId,

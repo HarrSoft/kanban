@@ -1,11 +1,10 @@
 import * as t from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { id, timestamps } from "./util";
-import { ProjectId, ProjectHandle, ProjectMemberRole, UserId } from "$types";
+import { ProjectId, ProjectMemberRole, UserId } from "$types";
 
 export const projects = t.pgTable("projects", {
   id: id().primaryKey().$type<ProjectId>(),
-  handle: t.text().unique().$type<ProjectHandle>(),
   name: t.text().notNull(),
   imageUrl: t.text(),
   ...timestamps,

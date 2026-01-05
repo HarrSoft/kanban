@@ -1,10 +1,9 @@
 import { z } from "zod";
-import { PlatformRole, UserId, UserHandle } from "./ids";
+import { PlatformRole, UserId } from "./ids";
 
 // small stuff, for aggregating a lot of i.e. search results
 export const UserInfo = z.object({
   id: UserId,
-  handle: UserHandle,
   platformRole: PlatformRole,
   imageUrl: z.url().nullable(),
 });

@@ -15,6 +15,13 @@
       "when": 1767648097383,
       "tag": "0001_light_boom_boom",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1767648640170,
+      "tag": "0002_omniscient_deadpool",
+      "breakpoints": true
     }
   ]
 }

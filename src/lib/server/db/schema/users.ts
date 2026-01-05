@@ -1,13 +1,6 @@
 import * as dates from "date-fns";
 import * as t from "drizzle-orm/pg-core";
-import {
-  Base64Url,
-  PlatformRole,
-  SessionId,
-  Theme,
-  UserHandle,
-  UserId,
-} from "$types";
+import { Base64Url, PlatformRole, SessionId, Theme, UserId } from "$types";
 import { id, timestamps } from "./util";
 
 export const platformRole = t.pgEnum("platform_role", PlatformRole.enum);
@@ -29,7 +22,6 @@ export const sessions = t.pgTable("sessions", {
 
 export const users = t.pgTable("users", {
   id: id().primaryKey().$type<UserId>(),
-  handle: t.text().unique().notNull().$type<UserHandle>(),
   platformRole: platformRole().notNull().default("user").$type<PlatformRole>(),
   email: t.text().unique().notNull(),
   emailVerified: t.timestamp("email_verified"),
