@@ -4,20 +4,11 @@
 
   const {
     className,
+    tabs,
   }: {
     className?: ClassValue;
+    tabs: Array<{ path: string; name: string }>;
   } = $props();
-
-  const tabs = ["projects", "time", "kanban", "settings"] as const;
-  type Tab = (typeof tabs)[number];
-  const tab: Tab | null = $derived.by(() => {
-    const [_root, tab] = page.url.pathname.split("/");
-    if (tabs.includes(tab as any)) {
-      return tab as Tab;
-    } else {
-      return "projects";
-    }
-  });
 </script>
 
 <nav
@@ -28,10 +19,11 @@
     "[&>a]:px-4 [&>a]:py-2 [&>a]:hover:bg-alt [&>a]:hover:text-invert",
     className,
   ]}>
-  <a href="/" class:selected={tab === "projects"}> Projects </a>
-  <a href="/time" class:selected={tab === "time"}> Time&nbsp;Clock </a>
-  <a href="/kanban" class:selected={tab === "kanban"}> Kanban </a>
-  <a href="/settings" class:selected={tab === "settings"}> Settings </a>
+  {#each tabs as tab}
+    <a href={tab.path} class:selected={page.url.pathname === tab.path}>
+      {@html tab.name}
+    </a>
+  {/each}
 </nav>
 
 <style>
