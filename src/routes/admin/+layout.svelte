@@ -15,8 +15,8 @@
 <div class={["flex h-full w-full flex-col", "lg:flex-row"]}>
   <Nav
     tabs={[
-      { path: "/projects", name: "Projects" },
-      { path: "/users", name: "Users" },
+      { path: "/admin/projects", name: "Projects" },
+      { path: "/admin/users", name: "Users" },
     ]} />
   <div class="h-full w-full overflow-y-auto p-4">
     {@render children?.()}
