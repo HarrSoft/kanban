@@ -31,7 +31,7 @@
     ]}>
     <div class="flex items-center gap-2">
       <Logo />
-      <h1 class="text-3xl font-bold">Harrsoft Kanban</h1>
+      <span class="text-3xl font-bold">Harrsoft Kanban</span>
     </div>
     {#if data.session}
       <Logout />
