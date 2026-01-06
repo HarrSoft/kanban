@@ -42,3 +42,9 @@ export const passwords = t.pgTable("passwords", {
   salt: t.text("salt").notNull().$type<Base64Url>(),
   ...timestamps,
 });
+
+export const invites = t.pgTable("invites", {
+  email: t.text().unique().notNull(),
+  code: t.text().unique().notNull(),
+  admin: t.boolean().notNull().default(false),
+});
