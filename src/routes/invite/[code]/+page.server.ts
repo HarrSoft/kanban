@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ params }) => {
     .where(eq(invites.code, params.code));
 
   if (!invite) {
-    throw error(404, "Invalid invite code");
+    throw error(404, "Invalid code");
   }
 
   return {

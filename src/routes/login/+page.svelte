@@ -26,9 +26,7 @@
   };
 </script>
 
-<div class="m-4 grid grid-cols-[5rem_15rem] items-center gap-2">
-  <h1 class="col-span-2 font-bold">Login</h1>
-
+<div class="m-auto grid grid-cols-[5rem_15rem] items-center gap-2">
   {#if error}
     <span class="col-span-2 text-red-500">
       Error: {error}
@@ -64,6 +62,6 @@
       "col-span-2 font-bold",
     ]}
     disabled={!email || !password}>
-    Submit
+    Login
   </button>
 </div>
