@@ -1,7 +1,7 @@
 <script lang="ts">
   import { type Snippet } from "svelte";
   import { Logo } from "$com";
-  import { Logout, Themer } from "$com/layout";
+  import { AuthWidget, ProjectPicker, Themer } from "$com/layout";
   import favicon from "$lib/assets/harrsoft_border.svg";
   import { Theme } from "$types";
   import type { LayoutData } from "./$types";
@@ -29,13 +29,19 @@
       "w-full border-b-2 border-shadow",
       "flex items-center justify-between p-2",
     ]}>
+    <!-- Left side -->
     <div class="flex items-center gap-2">
       <Logo />
       <span class="text-3xl font-bold">Harrsoft Kanban</span>
     </div>
-    {#if data.session}
-      <Logout />
-    {/if}
+
+    <!-- Right side -->
+    <div class="flex items-center gap-2">
+      {#if data.session}
+        <ProjectPicker />
+      {/if}
+      <AuthWidget />
+    </div>
   </header>
 
   {@render children?.()}

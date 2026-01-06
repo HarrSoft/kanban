@@ -4,6 +4,7 @@ import type { LayoutServerLoad } from "./$types";
 
 export const load: LayoutServerLoad = async ({ cookies, locals }) => {
   const projects = locals.session ? await getProjects() : [];
+
   let activeProject = (cookies.get("activeProject") ||
     null) as ProjectId | null;
 
