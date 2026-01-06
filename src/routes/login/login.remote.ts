@@ -16,24 +16,20 @@ export const login = command(
   async ({ email, password }) => {
     const session = await db.transaction(async tx => {
       const [pwRecord] = await tx
-      .select({
-        userId: users.id,
-        hash: passwords.hash,
-        salt: passwords.salt,
-      })
-      .from(passwords)
-      .innerJoin(users, eq(users.id, passwords.userId))
-      .where(eq(users.email, email));
+        .select({
+          userId: users.id,
+          hash: passwords.hash,
+          salt: passwords.salt,
+        })
+        .from(passwords)
+        .innerJoin(users, eq(users.id, passwords.userId))
+        .where(eq(users.email, email));
 
       if (!pwRecord) {
         throw error(400);
       }
 
-      const authed = checkPassword(
-        password,
-        pwRecord.hash,
-        pwRecord.salt,
-      );
+      const authed = checkPassword(password, pwRecord.hash, pwRecord.salt);
 
       if (!authed) {
         throw error(300);

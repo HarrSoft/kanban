@@ -30,7 +30,7 @@
   <h1 class="col-span-2 font-bold">Login</h1>
 
   {#if error}
-    <span class="text-red-500 col-span-2">
+    <span class="col-span-2 text-red-500">
       Error: {error}
     </span>
   {/if}
@@ -43,8 +43,7 @@
     class="rounded-md bg-transparent"
     oninput={() => {
       error = "";
-    }}
-  />
+    }} />
 
   <label for="password">Password</label>
   <input
@@ -54,8 +53,7 @@
     class="rounded-md bg-transparent"
     oninput={() => {
       error = "";
-    }}
-  />
+    }} />
 
   <button
     type="submit"
@@ -65,8 +63,7 @@
       "hover:bg-[var(--shadow)]",
       "col-span-2 font-bold",
     ]}
-    disabled={!email || !password}
-  >
+    disabled={!email || !password}>
     Submit
   </button>
 </div>
