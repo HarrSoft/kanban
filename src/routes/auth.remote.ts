@@ -2,7 +2,7 @@ import { error } from "@sveltejs/kit";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getRequestEvent, command } from "$app/server";
-import db, { userPasswords } from "$db";
+import db, { passwords } from "$db";
 import { checkPassword, hashNewPassword } from "$server/crypto";
 
 export const updatePassword = command(
@@ -16,12 +16,13 @@ export const updatePassword = command(
       throw error(401);
     }
     const session = event.locals.session;
+    const newHash = hashNewPassword(input.new);
 
     await db.transaction(async tx => {
       const [pwRecord] = await tx
         .select()
-        .from(userPasswords)
-        .where(eq(userPasswords.userId, session.userId));
+        .from(passwords)
+        .where(eq(passwords.userId, session.userId));
 
       if (!pwRecord) {
         console.error(`${session.userEmail} has no password.`);
@@ -32,8 +33,7 @@ export const updatePassword = command(
         throw error(400, "Incorrect password");
       }
 
-      const newHash = hashNewPassword(input.new);
-      await tx.update(userPasswords).set({
+      await tx.update(passwords).set({
         hash: newHash.hash,
         salt: newHash.salt,
       });
