@@ -42,7 +42,7 @@
   };
 </script>
 
-<div class="grid-cols-[10rem_20rem] p-4">
+<div class="grid-cols-[10rem_auto] p-4">
   <h1 class="col-span-2 font-bold">Create your account</h1>
 
   {#if error}
@@ -52,11 +52,11 @@
   {/if}
 
   <label for="email">Email</label>
-  <input name="email" value={data.email} disabled />
+  <input id="email" type="email" value={data.email} disabled />
 
   <label for="password">Password</label>
   <input
-    name="password"
+    id="password"
     type="password"
     bind:value={password}
     oninput={() => {
