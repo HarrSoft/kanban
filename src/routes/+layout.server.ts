@@ -15,7 +15,6 @@ export const load: LayoutServerLoad = async ({ cookies, locals }) => {
 
   return {
     session: locals?.session || null,
-    user: locals?.user || null,
     projects,
     activeProject,
   };
