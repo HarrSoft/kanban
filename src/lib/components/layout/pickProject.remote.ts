@@ -3,7 +3,7 @@ import { z } from "zod";
 import { command, getRequestEvent } from "$app/server";
 import { ProjectId } from "$types";
 
-export default command(
+export const pickProject = command(
   z.object({
     projectId: ProjectId.nullable(),
   }),

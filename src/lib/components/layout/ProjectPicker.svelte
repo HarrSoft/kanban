@@ -1,12 +1,12 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import pickProject from "./pickProject.remote";
+  import { pickProject } from "./pickProject.remote";
 
   let projectId = $state(page.data.activeProject);
 </script>
 
 <div class="flex items-center">
-  <label for="project-picker"> Project: </label>
+  <label for="project-picker">Project:</label>
 
   <select
     id="project-picker"
