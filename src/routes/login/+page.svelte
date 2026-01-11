@@ -26,7 +26,7 @@
   };
 </script>
 
-<div class="m-auto grid grid-cols-[5rem_15rem] items-center gap-2">
+<form class="m-auto grid grid-cols-[5rem_15rem] items-center gap-2">
   {#if error}
     <span class="col-span-2 text-red-500">
       Error: {error}
@@ -56,12 +56,8 @@
   <button
     type="submit"
     onclick={doLogin}
-    class={[
-      "rounded-md border-2 px-4 py-2",
-      "hover:bg-[var(--shadow)]",
-      "col-span-2 font-bold",
-    ]}
+    class="col-span-2"
     disabled={!email || !password}>
     Login
   </button>
-</div>
+</form>

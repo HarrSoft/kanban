@@ -6,17 +6,19 @@
 
 <div class="flex">
   {#if session}
-    <span class="rounded-l-lg bg-[var(--shadow)] px-4 py-2">
-      {session.userEmail}
-    </span>
+    <input
+      type="email"
+      disabled
+      class="rounded-l-lg !rounded-r-none"
+      value={session.userEmail} />
     <a
-      class="rounded-r-lg bg-red-500 px-4 py-2 font-bold text-white"
+      class="rounded-r-lg bg-hilight px-4 py-2 font-bold text-invert hover:bg-alt"
       href="/logout">
       Logout
     </a>
   {:else}
     <a
-      class="rounded-lg bg-green-500 px-4 py-2 font-bold text-white"
+      class="rounded-lg bg-hilight px-4 py-2 font-bold text-invert hover:bg-alt"
       href="/login">
       Login
     </a>

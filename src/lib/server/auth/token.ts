@@ -1,7 +1,7 @@
 import * as date from "date-fns";
 import { z } from "zod";
 import { hmac } from "@oslojs/crypto/hmac";
-import { SHA256 } from "@oslojs/crypto/sha2";
+import { SHA3_256 } from "@oslojs/crypto/sha3";
 import { constantTimeEqual } from "@oslojs/crypto/subtle";
 import { PlatformRole, Session, SessionId, Theme, UserId } from "$types";
 import { env } from "$env/dynamic/private";
@@ -61,7 +61,7 @@ export const validateToken = (jwt: string): ValidateResult => {
   // verify signature
   const key = Buffer.from(env.AUTH_SECRET, "utf-8");
   const message = Buffer.from(encHeader + "." + encPayload, "utf-8");
-  const computedMac = hmac(SHA256, key, message);
+  const computedMac = hmac(SHA3_256, key, message);
   const decodedMac = Buffer.from(encSig, "base64url");
   const validSig = constantTimeEqual(computedMac, decodedMac);
   if (!validSig) {
@@ -117,7 +117,7 @@ export const createToken = (session: Session): string => {
   // generate signature
   const key = Buffer.from(env.AUTH_SECRET, "utf-8");
   const message = Buffer.from(encHeader + "." + encPayload, "utf-8");
-  const mac = hmac(SHA256, key, message);
+  const mac = hmac(SHA3_256, key, message);
   const sig = Buffer.from(mac).toString("base64url");
 
   const token = message + "." + sig;

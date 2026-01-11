@@ -42,7 +42,7 @@
   };
 </script>
 
-<div class="grid-cols-[10rem_auto] p-4">
+<form class="m-auto grid grid-cols-[5rem_15rem] items-center gap-2">
   <h1 class="col-span-2 font-bold">Create your account</h1>
 
   {#if error}
@@ -65,12 +65,12 @@
 
   <label for="confirm">Confirm Password</label>
   <input
-    name="confirm"
+    id="confirm"
     type="password"
     bind:value={confirm}
     oninput={() => {
       error = "";
     }} />
 
-  <button type="submit" onclick={doSignup} class="col-span-2"> Submit </button>
-</div>
+  <button type="submit" onclick={doSignup} class="col-span-2">Submit</button>
+</form>

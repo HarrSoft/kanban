@@ -19,6 +19,7 @@ export const getProjects = query(async () => {
     })
     .from(projects)
     .innerJoin(projectMembers, eq(projects.id, projectMembers.projectId))
+    .innerJoin(users, eq(projectMembers.userId, users.id))
     .where(eq(projectMembers.userId, session.userId));
 
   const mapped = projectsRes.map(pr => pr.project);
