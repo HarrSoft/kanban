@@ -25,6 +25,7 @@ export const users = t.pgTable("users", {
   platformRole: platformRole().notNull().default("user").$type<PlatformRole>(),
   email: t.text().unique().notNull(),
   emailVerified: t.timestamp("email_verified"),
+  name: t.text(),
   imageUrl: t.text(),
   bio: t.text(),
   theme: theme().notNull().default("auto").$type<Theme>(),

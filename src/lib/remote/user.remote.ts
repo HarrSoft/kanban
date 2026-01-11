@@ -12,9 +12,10 @@ import { hashNewPassword } from "$server/crypto";
 export const createUser = command(
   z.object({
     inviteCode: z.string(),
+    name: z.string(),
     password: z.string(),
   }),
-  async ({ inviteCode, password }) => {
+  async ({ inviteCode, name, password }) => {
     const passwordHash = hashNewPassword(password);
 
     await db.transaction(async tx => {
@@ -31,6 +32,7 @@ export const createUser = command(
         .insert(users)
         .values({
           email: invite.email,
+          name: name.trim(),
           platformRole: invite.admin ? "admin" : "user",
         })
         .returning({

@@ -10,6 +10,7 @@
     data: PageData;
   } = $props();
 
+  let name = $state("");
   let password = $state("");
   let confirm = $state("");
   let error = $state("");
@@ -19,17 +20,23 @@
     if (doingSignup) {
       return;
     }
-    doingSignup = true;
+
+    if (!name.trim()) {
+      error = "Please give a name";
+      return;
+    }
 
     if (password !== confirm) {
       error = "Passwords must match";
-      doingSignup = false;
       return;
     }
+
+    doingSignup = true;
 
     try {
       await createUser({
         inviteCode: page.params.code!,
+        name: name.trim(),
         password,
       });
     } catch (e) {
@@ -40,6 +47,8 @@
 
     goto("/login");
   };
+
+  const clearError = () => (error = "");
 </script>
 
 <form class="m-auto grid grid-cols-[5rem_15rem] items-center gap-2">
@@ -54,23 +63,22 @@
   <label for="email">Email</label>
   <input id="email" type="email" value={data.email} disabled />
 
+  <label for="name">Name</label>
+  <input id="name" type="text" bind:value={name} oninput={clearError} />
+
   <label for="password">Password</label>
   <input
     id="password"
     type="password"
     bind:value={password}
-    oninput={() => {
-      error = "";
-    }} />
+    oninput={clearError} />
 
   <label for="confirm">Confirm Password</label>
   <input
     id="confirm"
     type="password"
     bind:value={confirm}
-    oninput={() => {
-      error = "";
-    }} />
+    oninput={clearError} />
 
   <button type="submit" onclick={doSignup} class="col-span-2">Submit</button>
 </form>
