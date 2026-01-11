@@ -22,9 +22,10 @@
 
 <nav
   class={[
-    "grid grid-cols-1 items-center overflow-y-hidden lg:overflow-y-scroll",
+    "w-full lg:w-auto",
     open ? "h-auto" : "h-0",
-    "lg:h-auto lg:w-auto",
+    "lg:h-full",
+    "flex flex-col overflow-y-auto",
     "border-b-2 border-shadow lg:border-r-2 lg:border-b-0",
     className,
   ]}
@@ -32,7 +33,7 @@
   {#each tabs as tab}
     <a
       href={tab.path}
-      class="px-4 py-2 text-center hover:bg-alt hover:text-invert"
+      class="w-full px-4 py-2 text-center hover:bg-alt hover:text-invert"
       class:selected={page.url.pathname === tab.path}
     >
       {@html tab.name}

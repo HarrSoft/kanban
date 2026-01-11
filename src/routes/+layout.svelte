@@ -24,13 +24,16 @@
     navOpen = false;
   });
 
+  const adminPage = $derived(page.url.pathname.startsWith("/admin"));
+
   const theme: Theme = $derived(data.session?.theme || "auto");
+
   const tabs: NavTab[] = $derived.by(() => {
     const isAdmin = data.session?.platformRole === "admin";
     if (!data.session) {
       // Anonymous tabs
       return [{ path: "/login", name: "Login" }];
-    } else if (page.url.pathname.startsWith("/admin")) {
+    } else if (adminPage) {
       // Admin tabs
       return [
         { path: "/admin", name: "Admin Dashboard" },
@@ -58,7 +61,7 @@
   <Themer {theme} />
 </svelte:head>
 
-<div class="flex h-full w-full flex-col">
+<div class="flex h-full flex-col">
   <header
     class={[
       "w-full border-b-2 border-shadow",
@@ -73,7 +76,7 @@
 
     <!-- Right side -->
     <div class="flex items-center gap-2">
-      {#if data.session}
+      {#if data.session && !adminPage}
         <ProjectPicker />
       {/if}
 
@@ -88,7 +91,7 @@
   </header>
 
   <!-- Nav and content -->
-  <div class="grid h-full w-full grid-cols-1 gap-2 lg:grid-cols-[15rem_auto]">
+  <div class="flex h-full w-full flex-col lg:flex-row">
     <Nav bind:open={navOpen} {tabs} />
 
     {@render children?.()}

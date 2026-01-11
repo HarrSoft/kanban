@@ -1,0 +1,1 @@
+<div>Admin dashboard</div>
