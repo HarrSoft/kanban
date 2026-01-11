@@ -36,6 +36,13 @@
       "when": 1768158294534,
       "tag": "0004_thankful_black_bird",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1768158765523,
+      "tag": "0005_gifted_tyger_tiger",
+      "breakpoints": true
     }
   ]
 }

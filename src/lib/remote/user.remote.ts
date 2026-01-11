@@ -33,7 +33,7 @@ export const createUser = command(
         .values({
           email: invite.email,
           name: name.trim(),
-          platformRole: invite.admin ? "admin" : "user",
+          platformRole: invite.platformRole,
         })
         .returning({
           id: users.id,

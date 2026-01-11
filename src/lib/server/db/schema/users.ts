@@ -22,7 +22,10 @@ export const sessions = t.pgTable("sessions", {
 
 export const users = t.pgTable("users", {
   id: id().primaryKey().$type<UserId>(),
-  platformRole: platformRole().notNull().default("user").$type<PlatformRole>(),
+  platformRole: platformRole("platform_role")
+    .notNull()
+    .default("viewer")
+    .$type<PlatformRole>(),
   email: t.text().unique().notNull(),
   emailVerified: t.timestamp("email_verified"),
   name: t.text(),
@@ -47,5 +50,9 @@ export const passwords = t.pgTable("passwords", {
 export const invites = t.pgTable("invites", {
   email: t.text().unique().notNull(),
   code: t.text().unique().notNull(),
+  platformRole: platformRole("platform_role")
+    .notNull()
+    .default("viewer")
+    .$type<PlatformRole>(),
   admin: t.boolean().notNull().default(false),
 });

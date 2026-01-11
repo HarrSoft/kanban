@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const PlatformRole = z.enum(["user", "admin"]);
+export const PlatformRole = z.enum(["user", "admin", "viewer"]);
 export type PlatformRole = z.infer<typeof PlatformRole>;
 
 //////////////
