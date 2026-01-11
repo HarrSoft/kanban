@@ -27,12 +27,14 @@
     "lg:h-auto lg:w-auto",
     "border-b-2 border-shadow lg:border-r-2 lg:border-b-0",
     className,
-  ]}>
+  ]}
+>
   {#each tabs as tab}
     <a
       href={tab.path}
       class="px-4 py-2 text-center hover:bg-alt hover:text-invert"
-      class:selected={page.url.pathname === tab.path}>
+      class:selected={page.url.pathname === tab.path}
+    >
       {@html tab.name}
     </a>
   {/each}

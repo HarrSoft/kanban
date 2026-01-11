@@ -41,7 +41,8 @@
     class="rounded-md bg-transparent"
     oninput={() => {
       error = "";
-    }} />
+    }}
+  />
 
   <label for="password">Password</label>
   <input
@@ -51,13 +52,15 @@
     class="rounded-md bg-transparent"
     oninput={() => {
       error = "";
-    }} />
+    }}
+  />
 
   <button
     type="submit"
     onclick={doLogin}
     class="col-span-2"
-    disabled={!email || !password}>
+    disabled={!email || !password}
+  >
     Login
   </button>
 </form>

@@ -63,7 +63,8 @@
     class={[
       "w-full border-b-2 border-shadow",
       "flex items-center justify-between p-2",
-    ]}>
+    ]}
+  >
     <!-- Left side -->
     <div class="flex items-center gap-2">
       <Logo />
@@ -79,7 +80,8 @@
       <button
         onclick={() => (navOpen = !navOpen)}
         title="Hamburger Menu"
-        class="!m-0 !rounded-none !bg-transparent !p-0 lg:hidden">
+        class="!m-0 !rounded-none !bg-transparent !p-0 lg:hidden"
+      >
         <img src={burger} alt="burger" class="h-15 w-15" />
       </button>
     </div>

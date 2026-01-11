@@ -71,14 +71,16 @@
     id="password"
     type="password"
     bind:value={password}
-    oninput={clearError} />
+    oninput={clearError}
+  />
 
   <label for="confirm">Confirm Password</label>
   <input
     id="confirm"
     type="password"
     bind:value={confirm}
-    oninput={clearError} />
+    oninput={clearError}
+  />
 
   <button type="submit" onclick={doSignup} class="col-span-2">Submit</button>
 </form>

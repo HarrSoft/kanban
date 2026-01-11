@@ -28,6 +28,7 @@
     <div class="grid grid-cols-4"></div>
   {:else}
     <span class="m-2 text-lg"
-      >Create a project or ask to join one to continue</span>
+      >Create a project or ask to join one to continue</span
+    >
   {/if}
 </div>

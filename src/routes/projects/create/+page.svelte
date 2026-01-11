@@ -43,7 +43,8 @@
     bind:value={name}
     onchange={() => {
       error = "";
-    }} />
+    }}
+  />
 
   <button type="submit" onclick={doCreate}> Create Project </button>
 </div>
