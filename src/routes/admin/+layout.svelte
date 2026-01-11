@@ -17,6 +17,7 @@
     tabs={[
       { path: "/admin/projects", name: "Projects" },
       { path: "/admin/users", name: "Users" },
+      { path: "/project", name: "User Dashboard" },
     ]} />
   <div class="h-full w-full overflow-y-auto p-4">
     {@render children?.()}

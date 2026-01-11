@@ -29,11 +29,11 @@
 <style>
   .selected {
     background-color: var(--shadow);
+    color: var(--invert);
     font-weight: bold;
   }
 
   .selected:hover {
     background-color: var(--alt);
-    color: var(--invert);
   }
 </style>
