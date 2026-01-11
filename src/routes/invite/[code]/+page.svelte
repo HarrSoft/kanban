@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import { createUser } from "./createUser.remote";
+  import { createUser } from "$lib/remote";
   import type { PageData } from "./$types";
 
   const {

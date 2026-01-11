@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { login } from "./login.remote";
+  import { login } from "$lib/remote";
 
   let email = $state("");
   let password = $state("");

@@ -1,33 +1,13 @@
-import { eq, and, inArray } from "drizzle-orm";
-import { z } from "zod";
+import { eq, inArray } from "drizzle-orm";
 import { error } from "@sveltejs/kit";
-import { getRequestEvent, command, query } from "$app/server";
+import { z } from "zod";
+import { command, getRequestEvent, query } from "$app/server";
 import db, { projects, projectMembers, users } from "$db";
 import { ProjectId, ProjectInfo, ProjectFull } from "$types";
 
-export const getProjects = query(async () => {
-  const session = getRequestEvent().locals.session;
-  if (!session) {
-    throw error(401, "Must be logged in");
-  }
-
-  const projectsRes = await db
-    .select({
-      project: projects,
-      member: projectMembers,
-      user: users,
-    })
-    .from(projects)
-    .innerJoin(projectMembers, eq(projects.id, projectMembers.projectId))
-    .innerJoin(users, eq(projectMembers.userId, users.id))
-    .where(eq(projectMembers.userId, session.userId));
-
-  const mapped = projectsRes.map(pr => pr.project);
-
-  const projectList = ProjectInfo.array().parse(mapped satisfies ProjectInfo[]);
-
-  return projectList;
-});
+//////////////////////
+// getProject query //
+//////////////////////
 
 export const getProject = query.batch(ProjectId, async () => {
   const session = getRequestEvent().locals.session;
@@ -113,45 +93,65 @@ export const getProject = query.batch(ProjectId, async () => {
   };
 });
 
-export const setActiveProject = command(
-  ProjectId.nullable(),
-  async projectId => {
-    // authenticate
+///////////////////////
+// getProjects query //
+///////////////////////
+
+export const getProjects = query(async () => {
+  const session = getRequestEvent().locals.session;
+  if (!session) {
+    throw error(401, "Must be logged in");
+  }
+
+  const projectsRes = await db
+    .select({
+      project: projects,
+      member: projectMembers,
+      user: users,
+    })
+    .from(projects)
+    .innerJoin(projectMembers, eq(projects.id, projectMembers.projectId))
+    .innerJoin(users, eq(projectMembers.userId, users.id))
+    .where(eq(projectMembers.userId, session.userId));
+
+  const mapped = projectsRes.map(pr => pr.project);
+
+  const projectList = ProjectInfo.array().parse(mapped satisfies ProjectInfo[]);
+
+  return projectList;
+});
+
+/////////////////////////
+// pickProject command //
+/////////////////////////
+
+export const pickProject = command(
+  z.object({
+    projectId: ProjectId.nullable(),
+  }),
+  async ({ projectId }) => {
     const event = getRequestEvent();
     if (!event.locals.session) {
       throw error(401);
     }
-    const userId = event.locals.session.userId;
 
-    // unset if null
-    if (!projectId) {
-      event.cookies.delete("activeProject", { path: "/" });
-      return;
-    }
-
-    // check membership
-    const [membership] = await db
-      .select({ id: projects.id, userId: projectMembers.userId })
-      .from(projects)
-      .innerJoin(projectMembers, eq(projects.id, projectMembers.projectId))
-      .where(
-        and(eq(projectMembers.userId, userId), eq(projects.id, projectId)),
-      );
-
-    if (membership) {
+    if (projectId) {
       event.cookies.set("activeProject", projectId, { path: "/" });
     } else {
-      throw error(404);
+      event.cookies.delete("activeProject", { path: "/" });
     }
   },
 );
+
+///////////////////////////
+// createProject command //
+///////////////////////////
 
 export const createProject = command(
   z.object({
     name: z.string(),
   }),
   async ({ name }) => {
-    // authenticate
     const event = getRequestEvent();
     const session = event.locals.session;
     if (!session) {
@@ -159,25 +159,26 @@ export const createProject = command(
     }
 
     const newProjectId = await db.transaction(async tx => {
-      const res = await tx
+      const [newProject] = await tx
         .insert(projects)
-        .values({
-          name: name,
-        })
-        .returning();
-      const projectId = res[0].id;
+        .values({ name })
+        .returning({
+          id: projects.id,
+        });
 
       await tx.insert(projectMembers).values({
+        projectId: newProject.id,
         userId: session.userId,
-        projectId,
         role: "admin",
       });
 
-      return projectId;
+      return newProject.id;
     });
 
     event.cookies.set("activeProject", newProjectId, { path: "/" });
 
     getProjects().refresh();
+
+    return newProjectId;
   },
 );

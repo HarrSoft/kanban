@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { createProject } from "./createProject.remote";
+  import { createProject } from "$lib/remote";
 
   let name = $state("");
 

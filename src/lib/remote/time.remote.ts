@@ -5,6 +5,10 @@ import { getRequestEvent, command, query } from "$app/server";
 import db, { projectMembers, projects, timeclocks } from "$db";
 import { ProjectId, Timeclock, TimeclockId } from "$types";
 
+/////////////////////////
+// getTimeclocks query //
+/////////////////////////
+
 export const getTimeclocks = query(
   z.object({
     projectId: ProjectId,
@@ -66,6 +70,10 @@ export const getTimeclocks = query(
   },
 );
 
+/////////////////////////////
+// createTimeclock command //
+/////////////////////////////
+
 export const createTimeclock = command(
   z.object({
     projectId: ProjectId,
@@ -98,6 +106,10 @@ export const createTimeclock = command(
     return Timeclock.parse(timeclock satisfies Timeclock);
   },
 );
+
+/////////////////////////////
+// updateTimeclock command //
+/////////////////////////////
 
 export const updateTimeclock = command(
   z.object({

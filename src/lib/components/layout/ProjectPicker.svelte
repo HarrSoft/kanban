@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { pickProject } from "./pickProject.remote";
+  import { pickProject } from "$lib/remote";
 
   let projectId = $state(page.data.activeProject);
 </script>

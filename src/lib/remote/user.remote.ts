@@ -5,6 +5,10 @@ import { command } from "$app/server";
 import db, { invites, passwords, users } from "$db";
 import { hashNewPassword } from "$server/crypto";
 
+////////////////////////
+// createUser command //
+////////////////////////
+
 export const createUser = command(
   z.object({
     inviteCode: z.string(),
