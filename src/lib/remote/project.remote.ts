@@ -158,6 +158,10 @@ export const createProject = command(
       throw error(401);
     }
 
+    if (session.platformRole === "viewer") {
+      throw error(403, "Viewer accounts cannot create projects");
+    }
+
     const newProjectId = await db.transaction(async tx => {
       const [newProject] = await tx
         .insert(projects)

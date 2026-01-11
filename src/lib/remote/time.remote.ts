@@ -82,6 +82,12 @@ export const createTimeclock = command(
   }),
   async ({ projectId, start, duration }) => {
     const event = getRequestEvent();
+    const session = event.locals.session;
+    if (!session) {
+      throw error(401);
+    } else if (session.platformRole === "viewer") {
+      throw error(403, "Viewer accounts may not create timeclocks");
+    }
 
     const startDate = new Date(start);
 
@@ -94,7 +100,7 @@ export const createTimeclock = command(
         .insert(timeclocks)
         .values({
           projectId,
-          userId: event.locals.session!.userId,
+          userId: session.userId,
           start: startDate,
           duration: duration ?? undefined,
         })
@@ -125,23 +131,31 @@ export const updateTimeclock = command(
   async ({ timeclockId, start, duration, admin }) => {
     // authenticate
     const event = getRequestEvent();
-    if (!event.locals.session) {
+    const session = event.locals.session;
+    if (!session) {
       throw error(401, "Must be logged in");
-    } else if (admin && event.locals.session.platformRole !== "admin") {
+    } else if (session.platformRole === "viewer") {
+      throw error(403, "Viewer accounts may not edit timeclocks");
+    } else if (admin && session.platformRole !== "admin") {
       throw error(403, "Non-admins cannot set admin fields");
     }
 
     const startDate = start ? new Date(start) : null;
 
     const updatedTimeclock = await db.transaction(async tx => {
-      const [project] = await tx
-        .select({ id: projects.id })
+      const [rec] = await tx
+        .select({
+          projectId: projects.id,
+          locked: timeclocks.locked,
+        })
         .from(projects)
         .innerJoin(timeclocks, eq(projects.id, timeclocks.projectId))
         .where(eq(timeclocks.id, timeclockId));
 
-      if (!project) {
+      if (!rec) {
         throw error(404, "No such timeclock");
+      } else if (rec.locked && session.platformRole !== "admin") {
+        throw error(403, "Timeclock has been locked");
       }
 
       const [updatedTc] = await tx

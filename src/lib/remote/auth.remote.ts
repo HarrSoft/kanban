@@ -59,10 +59,11 @@ export const updatePassword = command(
   }),
   async input => {
     const event = getRequestEvent();
-    if (!event.locals.session) {
+    const session = event.locals.session;
+    if (!session) {
       throw error(401);
     }
-    const session = event.locals.session;
+
     const newHash = hashNewPassword(input.new);
 
     await db.transaction(async tx => {
@@ -72,8 +73,13 @@ export const updatePassword = command(
         .where(eq(passwords.userId, session.userId));
 
       if (!pwRecord) {
-        console.error(`${session.userEmail} has no password.`);
-        throw error(500);
+        console.warn(`User ${session.userEmail} had no password.`);
+        await tx.insert(passwords).values({
+          userId: session.userId,
+          hash: newHash.hash,
+          salt: newHash.salt,
+        });
+        return;
       }
 
       if (!checkPassword(input.old, pwRecord.hash, pwRecord.salt)) {
