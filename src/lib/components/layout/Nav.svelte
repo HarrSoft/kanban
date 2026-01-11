@@ -1,26 +1,38 @@
+<script module>
+  export interface NavTab {
+    path: string;
+    name: string;
+  }
+</script>
+
 <script lang="ts">
   import type { ClassValue } from "svelte/elements";
   import { page } from "$app/state";
 
   const {
     className,
+    open = $bindable(false),
     tabs,
   }: {
     className?: ClassValue;
-    tabs: Array<{ path: string; name: string }>;
+    open?: boolean;
+    tabs: NavTab[];
   } = $props();
 </script>
 
 <nav
   class={[
-    "flex border-shadow",
-    "h-auto w-full flex-row border-b-2",
-    "lg:h-full lg:w-auto lg:flex-col lg:border-r-2 lg:border-b-0",
-    "[&>a]:px-4 [&>a]:py-2 [&>a]:hover:bg-alt [&>a]:hover:text-invert",
+    "grid grid-cols-1 items-center overflow-y-hidden lg:overflow-y-scroll",
+    open ? "h-auto" : "h-0",
+    "lg:h-auto lg:w-auto",
+    "border-b-2 border-shadow lg:border-r-2 lg:border-b-0",
     className,
   ]}>
   {#each tabs as tab}
-    <a href={tab.path} class:selected={page.url.pathname === tab.path}>
+    <a
+      href={tab.path}
+      class="px-4 py-2 text-center hover:bg-alt hover:text-invert"
+      class:selected={page.url.pathname === tab.path}>
       {@html tab.name}
     </a>
   {/each}

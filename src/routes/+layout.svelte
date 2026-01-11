@@ -1,8 +1,11 @@
 <script lang="ts">
   import { type Snippet } from "svelte";
+  import { onNavigate } from "$app/navigation";
+  import { page } from "$app/state";
   import { Logo } from "$com";
-  import { AuthWidget, ProjectPicker, Themer } from "$com/layout";
+  import { ProjectPicker, Nav, Themer, type NavTab } from "$com/layout";
   import favicon from "$lib/assets/harrsoft_border.svg";
+  import burger from "$lib/assets/burger.png";
   import { Theme } from "$types";
   import type { LayoutData } from "./$types";
   import "../app.css";
@@ -15,7 +18,39 @@
     data: LayoutData;
   } = $props();
 
+  let navOpen = $state(false);
+
+  onNavigate(() => {
+    navOpen = false;
+  });
+
   const theme: Theme = $derived(data.session?.theme || "auto");
+  const tabs: NavTab[] = $derived.by(() => {
+    const isAdmin = data.session?.platformRole === "admin";
+    if (!data.session) {
+      // Anonymous tabs
+      return [{ path: "/login", name: "Login" }];
+    } else if (page.url.pathname.startsWith("/admin")) {
+      // Admin tabs
+      return [
+        { path: "/admin", name: "Admin Dashboard" },
+        { path: "/admin/projects", name: "Projects" },
+        { path: "/admin/users", name: "Users" },
+        { path: "/", name: "User Dashboard" },
+        { path: "/logout", name: "Logout" },
+      ];
+    } else {
+      // User tabs
+      return [
+        { path: "/", name: "Dashboard" },
+        { path: "/projects", name: "Projects" },
+        { path: "/time", name: "Time&nbsp;Clock" },
+        { path: "/settings", name: "Settings" },
+        isAdmin ? { path: "/admin", name: "Admin Dashboard" } : [],
+        { path: "/logout", name: "Logout" },
+      ].flat();
+    }
+  });
 </script>
 
 <svelte:head>
@@ -40,9 +75,20 @@
       {#if data.session}
         <ProjectPicker />
       {/if}
-      <AuthWidget />
+
+      <button
+        onclick={() => (navOpen = !navOpen)}
+        title="Hamburger Menu"
+        class="!m-0 !rounded-none !bg-transparent !p-0 lg:hidden">
+        <img src={burger} alt="burger" class="h-15 w-15" />
+      </button>
     </div>
   </header>
 
-  {@render children?.()}
+  <!-- Nav and content -->
+  <div class="grid h-full w-full grid-cols-1 gap-2 lg:grid-cols-[15rem_auto]">
+    <Nav bind:open={navOpen} {tabs} />
+
+    {@render children?.()}
+  </div>
 </div>
