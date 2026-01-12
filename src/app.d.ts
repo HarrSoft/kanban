@@ -1,4 +1,4 @@
-import type { ProjectId, ProjectInfo, Session, UserFull } from "$types";
+import type { ProjectId, ProjectInfo, ProjectFull, Session } from "$types";
 
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
@@ -9,8 +9,6 @@ declare global {
     // backend-available data
     interface Locals {
       session: Session | null;
-      projects: ProjectInfo[];
-      activeProject: ProjectId | null;
     }
 
     // frontend-available data
@@ -18,7 +16,7 @@ declare global {
     interface PageData {
       session: Session | null;
       projects: ProjectInfo[];
-      activeProject: ProjectId | null;
+      activeProject: ProjectFull | null;
     }
 
     interface Error {}
