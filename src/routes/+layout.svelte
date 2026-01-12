@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Snippet } from "svelte";
+  import type { Snippet } from "svelte";
   import { onNavigate } from "$app/navigation";
   import { page } from "$app/state";
   import { Logo } from "$com";
@@ -24,7 +24,7 @@
     navOpen = false;
   });
 
-  const adminPage = $derived(page.url.pathname.startsWith("/admin"));
+  const onAdminPage = $derived(page.url.pathname.startsWith("/admin"));
 
   const theme: Theme = $derived(data.session?.theme || "auto");
 
@@ -33,7 +33,7 @@
     if (!data.session) {
       // Anonymous tabs
       return [{ path: "/login", name: "Login" }];
-    } else if (adminPage) {
+    } else if (onAdminPage) {
       // Admin tabs
       return [
         { path: "/admin", name: "Admin Dashboard" },
@@ -46,7 +46,6 @@
       // User tabs
       return [
         { path: "/", name: "Dashboard" },
-        { path: "/projects", name: "Projects" },
         { path: "/time", name: "Time&nbsp;Clock" },
         { path: "/settings", name: "Settings" },
         isAdmin ? { path: "/admin", name: "Admin Dashboard" } : [],
@@ -76,7 +75,7 @@
 
     <!-- Right side -->
     <div class="flex items-center gap-2">
-      {#if data.session && !adminPage}
+      {#if data.session && !onAdminPage}
         <ProjectPicker />
       {/if}
 
@@ -94,6 +93,8 @@
   <div class="flex h-full w-full flex-col lg:flex-row">
     <Nav bind:open={navOpen} {tabs} />
 
-    {@render children?.()}
+    <div class="h-full w-full p-4">
+      {@render children?.()}
+    </div>
   </div>
 </div>

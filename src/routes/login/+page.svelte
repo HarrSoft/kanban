@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
   import { login } from "$lib/remote";
 
   let email = $state("");
@@ -22,7 +22,8 @@
     }
 
     doingLogin = false;
-    goto("/project");
+    await goto("/");
+    await invalidateAll();
   };
 </script>
 
