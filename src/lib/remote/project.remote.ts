@@ -121,6 +121,30 @@ export const getProjects = query(async () => {
   return projectList;
 });
 
+//////////////////////////
+// getAllProjects query //
+//////////////////////////
+
+export const getAllProjects = query(async () => {
+  const event = getRequestEvent();
+  const session = event.locals.session;
+  if (!session) {
+    throw error(401);
+  } else if (session.platformRole !== "admin") {
+    throw error(403);
+  }
+
+  const allProjects = await db
+    .select({
+      id: projects.id,
+      name: projects.name,
+      imageUrl: projects.imageUrl,
+    })
+    .from(projects);
+
+  return ProjectInfo.array().parse(allProjects satisfies ProjectInfo[]);
+});
+
 /////////////////////////
 // pickProject command //
 /////////////////////////
@@ -158,8 +182,8 @@ export const createProject = command(
       throw error(401);
     }
 
-    if (session.platformRole === "viewer") {
-      throw error(403, "Viewer accounts cannot create projects");
+    if (session.platformRole !== "admin") {
+      throw error(403, "Non-admin accounts cannot create projects");
     }
 
     const newProjectId = await db.transaction(async tx => {
