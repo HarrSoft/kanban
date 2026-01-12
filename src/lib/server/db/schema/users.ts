@@ -24,7 +24,7 @@ export const users = t.pgTable("users", {
   id: id().primaryKey().$type<UserId>(),
   platformRole: platformRole("platform_role")
     .notNull()
-    .default("viewer")
+    .default("user")
     .$type<PlatformRole>(),
   email: t.text().unique().notNull(),
   emailVerified: t.timestamp("email_verified"),
@@ -52,7 +52,7 @@ export const invites = t.pgTable("invites", {
   code: t.text().unique().notNull(),
   platformRole: platformRole("platform_role")
     .notNull()
-    .default("viewer")
+    .default("user")
     .$type<PlatformRole>(),
   admin: t.boolean().notNull().default(false),
 });
