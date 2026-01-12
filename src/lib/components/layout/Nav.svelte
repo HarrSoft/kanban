@@ -22,10 +22,10 @@
 
 <nav
   class={[
-    "w-full lg:w-auto",
-    open ? "h-auto" : "h-0",
-    "lg:h-full",
-    "flex flex-col overflow-y-auto",
+    "w-full lg:w-50",
+    open ? "h-auto" : "h-0 overflow-y-hidden",
+    "lg:h-full lg:overflow-y-auto",
+    "flex flex-col",
     "border-b-2 border-shadow lg:border-r-2 lg:border-b-0",
     className,
   ]}
