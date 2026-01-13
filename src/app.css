@@ -21,8 +21,3 @@ input,
 select {
   @apply rounded-lg border-shadow bg-shadow/20;
 }
-
-button {
-  @apply rounded-lg bg-hilight px-4 py-2 font-bold text-invert;
-  @apply hover:bg-shadow;
-}

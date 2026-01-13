@@ -1,12 +1,13 @@
 <script lang="ts">
   import { goto, invalidateAll } from "$app/navigation";
+  import { Button } from "$com/widgets";
   import { login } from "$lib/remote";
 
   let email = $state("");
   let password = $state("");
   let error = $state("");
 
-  let doingLogin = false;
+  let doingLogin = $state(false);
   const doLogin = async () => {
     if (doingLogin) {
       return;
@@ -22,8 +23,8 @@
     }
 
     doingLogin = false;
-    await goto("/");
     await invalidateAll();
+    await goto("/");
   };
 </script>
 
@@ -56,12 +57,13 @@
     }}
   />
 
-  <button
+  <Button
     type="submit"
     onclick={doLogin}
     class="col-span-2"
     disabled={!email || !password}
+    spin={doingLogin}
   >
     Login
-  </button>
+  </Button>
 </form>

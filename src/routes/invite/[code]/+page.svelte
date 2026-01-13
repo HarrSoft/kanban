@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
+  import { Button } from "$com/widgets";
   import { createUser } from "$lib/remote";
   import type { PageData } from "./$types";
 
@@ -15,7 +16,7 @@
   let confirm = $state("");
   let error = $state("");
 
-  let doingSignup = false;
+  let doingSignup = $state(false);
   const doSignup = async () => {
     if (doingSignup) {
       return;
@@ -82,5 +83,13 @@
     oninput={clearError}
   />
 
-  <button type="submit" onclick={doSignup} class="col-span-2">Submit</button>
+  <Button
+    type="submit"
+    onclick={doSignup}
+    disabled={password !== confirm}
+    spin={doingSignup}
+    class="col-span-2"
+  >
+    Submit
+  </Button>
 </form>

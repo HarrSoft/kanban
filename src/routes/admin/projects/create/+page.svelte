@@ -1,12 +1,13 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { Button } from "$com/widgets";
   import { createProject } from "$lib/remote";
 
   let name = $state("");
 
   let error = $state("");
 
-  let doingCreate = false;
+  let doingCreate = $state(false);
   const doCreate = async () => {
     if (doingCreate) {
       return;
@@ -25,6 +26,8 @@
     doingCreate = false;
     goto(`/project/${newProjectId}`);
   };
+
+  const formComplete = $derived(!!name);
 </script>
 
 <div class="grid grid-cols-[10rem_auto]">
@@ -46,5 +49,12 @@
     }}
   />
 
-  <button type="submit" onclick={doCreate}> Create Project </button>
+  <Button
+    type="submit"
+    onclick={doCreate}
+    disabled={!formComplete}
+    spin={doingCreate}
+  >
+    Create Project
+  </Button>
 </div>
