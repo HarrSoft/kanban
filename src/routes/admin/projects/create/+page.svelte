@@ -24,7 +24,7 @@
     }
 
     doingCreate = false;
-    goto(`/project/${newProjectId}`);
+    goto(`/projects/${newProjectId}`);
   };
 
   const formComplete = $derived(!!name);

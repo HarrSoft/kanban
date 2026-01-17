@@ -3,7 +3,7 @@
 
   const {
     project,
-    name = false,
+    name = true,
     link = false,
   }: {
     project: ProjectInfo;
@@ -26,10 +26,12 @@
   {#if project.imageUrl}
     <img src={project.imageUrl} alt="Project Icon" class="h-15 w-15" />
   {:else}
-    <span class="p-auto text-2x h-15 w-15">🎁</span>
+    <span class="flex h-15 w-15 items-center justify-center text-[2rem]">
+      🎁
+    </span>
   {/if}
 
   {#if name}
-    <h1 class="text-xl font-bold">{project.name}</h1>
+    <h1 class="text-2xl font-bold">{project.name}</h1>
   {/if}
 {/snippet}

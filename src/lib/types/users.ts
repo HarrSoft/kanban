@@ -4,6 +4,8 @@ import { PlatformRole, UserId } from "./ids";
 // small stuff, for aggregating a lot of i.e. search results
 export const UserInfo = z.object({
   id: UserId,
+  name: z.string().nullable(),
+  email: z.string(),
   platformRole: PlatformRole,
   imageUrl: z.url().nullable(),
 });
