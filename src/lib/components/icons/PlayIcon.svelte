@@ -1,0 +1,18 @@
+<script lang="ts">
+  import type { ClassValue } from "svelte/elements";
+
+  const {
+    className,
+  }: {
+    className?: ClassValue;
+  } = $props();
+</script>
+
+<svg
+  fill="currentColor"
+  viewBox="0 0 24 24"
+  xmlns="http://www.w3.org/2000/svg"
+  class={className}
+>
+  <path d="M15 12.3301L9 16.6603L9 8L15 12.3301Z" />
+</svg>

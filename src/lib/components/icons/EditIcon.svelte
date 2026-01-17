@@ -4,7 +4,7 @@
   const {
     className,
   }: {
-    className: ClassValue;
+    className?: ClassValue;
   } = $props();
 </script>
 
