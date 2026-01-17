@@ -9,6 +9,7 @@ declare global {
     // backend-available data
     interface Locals {
       session: Session | null;
+      activeProjectId: ProjectId | null;
     }
 
     // frontend-available data
