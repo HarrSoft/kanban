@@ -16,8 +16,7 @@ declare global {
     // (use optional values for data only on specific pages)
     interface PageData {
       session: Session | null;
-      projects: ProjectInfo[];
-      activeProject: ProjectFull | null;
+      activeProjectId: ProjectId | null;
     }
 
     interface Error {}

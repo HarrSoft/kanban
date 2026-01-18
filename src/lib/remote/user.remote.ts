@@ -1,9 +1,26 @@
 import { error } from "@sveltejs/kit";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { command } from "$app/server";
+import { command, query } from "$app/server";
 import db, { invites, passwords, users } from "$db";
 import { hashNewPassword } from "$server/crypto";
+
+////////////////////////////
+// fetchInviteEmail query //
+////////////////////////////
+
+export const fetchInviteEmail = query(z.string(), async code => {
+  const [invite] = await db
+    .select({ email: invites.email })
+    .from(invites)
+    .where(eq(invites.code, code));
+
+  if (!invite) {
+    throw error(404, "Invalid code");
+  }
+
+  return invite.email;
+});
 
 ////////////////////////
 // createUser command //

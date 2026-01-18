@@ -2,15 +2,9 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import { Button } from "$com/widgets";
-  import { createUser } from "$lib/remote";
-  import type { PageData } from "./$types";
+  import { createUser, fetchInviteEmail } from "$lib/remote";
 
-  const {
-    data,
-  }: {
-    data: PageData;
-  } = $props();
-
+  const email = $derived(fetchInviteEmail(page.params.code!));
   let name = $state("");
   let password = $state("");
   let confirm = $state("");
@@ -62,7 +56,7 @@
   {/if}
 
   <label for="email">Email</label>
-  <input id="email" type="email" value={data.email} disabled />
+  <input id="email" type="email" value={email} disabled />
 
   <label for="name">Name</label>
   <input id="name" type="text" bind:value={name} oninput={clearError} />

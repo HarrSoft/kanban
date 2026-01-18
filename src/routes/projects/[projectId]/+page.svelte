@@ -1,15 +1,10 @@
 <script lang="ts">
   import { Project } from "$com";
+  import { page } from "$app/state";
+  import { getProject } from "$lib/remote";
   import { UserInfo } from "$types";
-  import type { PageData } from "./$types";
 
-  const {
-    data,
-  }: {
-    data: PageData;
-  } = $props();
-
-  const project = $derived(data.project);
+  const project = $derived(await getProject(page.params.projectId!));
 </script>
 
 <div class="flex flex-col gap-2">

@@ -1,14 +1,10 @@
 <script lang="ts">
-  import { ProjectInfo } from "$com/projects";
+  import { Project } from "$com";
   import { EditIcon, TrashIcon } from "$com/icons";
   import { Button } from "$com/widgets";
-  import type { PageData } from "./$types";
+  import { getAllProjects } from "$lib/remote";
 
-  const {
-    data,
-  }: {
-    data: PageData;
-  } = $props();
+  const allProjects = await getAllProjects();
 </script>
 
 <div class="flex flex-col gap-2">
@@ -18,10 +14,10 @@
   </div>
 
   <div class="grid grid-cols-4 items-center">
-    {#each data.allProjects as project}
+    {#each allProjects as project}
       <span>[ ]</span>
 
-      <ProjectInfo {project} name link />
+      <Project {project} name link />
 
       <Button>
         <EditIcon className="text-invert" />

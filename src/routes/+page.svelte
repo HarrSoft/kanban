@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { ProjectOverview } from "$com/projects";
+  import { Project } from "$com";
+  import { getProject } from "$lib/remote";
   import type { PageData } from "./$types";
 
   const {
@@ -7,9 +8,14 @@
   }: {
     data: PageData;
   } = $props();
+
+  const session = $derived(data.session);
+  const activeProject = $derived(
+    data.activeProjectId ? await getProject(data.activeProjectId) : null,
+  );
 </script>
 
-{#if !data.session}
+{#if !session}
   <!-- User isn't logged in -->
   <div class="flex h-full w-full flex-col items-center justify-center gap-2">
     <h1 class="text-xl font-bold">Welcome to Harrsoft Kanban</h1>
@@ -17,9 +23,9 @@
   </div>
 {:else}
   <div class="flex h-full w-full flex-col gap-2">
-    {#if data.activeProject}
+    {#if activeProject}
       <h1 class="text-xl font-bold">Active Project</h1>
-      <ProjectOverview project={data.activeProject} />
+      <Project project={activeProject} />
     {:else}
       <h1 class="text-xl font-bold">No Active Project</h1>
     {/if}

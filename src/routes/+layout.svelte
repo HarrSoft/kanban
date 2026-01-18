@@ -18,28 +18,28 @@
     data: LayoutData;
   } = $props();
 
-  let navOpen = $state(false);
+  const session = $derived(data.session);
+  const theme: Theme = $derived(session?.theme || "auto");
 
+  let navOpen = $state(false);
   onNavigate(() => {
     navOpen = false;
   });
 
   const onAdminPage = $derived(page.url.pathname.startsWith("/admin"));
 
-  const theme: Theme = $derived(data.session?.theme || "auto");
-
   const tabs: NavTab[] = $derived.by(() => {
-    const isAdmin = data.session?.platformRole === "admin";
-    if (!data.session) {
+    const isAdmin = session?.platformRole === "admin";
+    if (!session) {
       // Anonymous tabs
       return [{ path: "/login", name: "Login" }];
     } else if (onAdminPage) {
       // Admin tabs
       return [
-        { path: "/admin", name: "Admin Dashboard" },
+        { path: "/admin", name: "Admin&nbsp;Dashboard" },
         { path: "/admin/projects", name: "Projects" },
         { path: "/admin/users", name: "Users" },
-        { path: "/", name: "User Dashboard" },
+        { path: "/", name: "User&nbsp;Dashboard" },
         { path: "/logout", name: "Logout" },
       ];
     } else {
@@ -48,7 +48,7 @@
         { path: "/", name: "Dashboard" },
         { path: "/time", name: "Time&nbsp;Clock" },
         { path: "/settings", name: "Settings" },
-        isAdmin ? { path: "/admin", name: "Admin Dashboard" } : [],
+        isAdmin ? { path: "/admin", name: "Admin&nbsp;Dashboard" } : [],
         { path: "/logout", name: "Logout" },
       ].flat();
     }
@@ -75,7 +75,7 @@
 
     <!-- Right side -->
     <div class="flex items-center gap-2">
-      {#if data.session && !onAdminPage}
+      {#if session && !onAdminPage}
         <ProjectPicker />
       {/if}
 
