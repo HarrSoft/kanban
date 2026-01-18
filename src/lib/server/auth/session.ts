@@ -12,7 +12,6 @@ export const createSession = async (tx: Tx, userId: UserId) => {
       userId: users.id,
       userEmail: users.email,
       platformRole: users.platformRole,
-      theme: users.theme,
     })
     .from(users)
     .where(eq(users.id, userId));
@@ -32,7 +31,6 @@ export const getSession = async (tx: Tx, sessionId: SessionId) => {
       userEmail: users.email,
       platformRole: users.platformRole,
       expiresAt: sessions.expiresAt,
-      theme: users.theme,
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))

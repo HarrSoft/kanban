@@ -3,10 +3,9 @@
   import { onNavigate } from "$app/navigation";
   import { page } from "$app/state";
   import { Logo } from "$com";
-  import { ProjectPicker, Nav, Themer, type NavTab } from "$com/layout";
+  import { ProjectPicker, Nav, type NavTab } from "$com/layout";
   import favicon from "$lib/assets/harrsoft_border.svg";
   import burger from "$lib/assets/burger.png";
-  import { Theme } from "$types";
   import type { LayoutData } from "./$types";
   import "../app.css";
 
@@ -19,7 +18,6 @@
   } = $props();
 
   const session = $derived(data.session);
-  const theme: Theme = $derived(session?.theme || "auto");
 
   let navOpen = $state(false);
   onNavigate(() => {
@@ -57,13 +55,12 @@
 
 <svelte:head>
   <link rel="icon" href={favicon} />
-  <Themer {theme} />
 </svelte:head>
 
 <div class="flex h-full flex-col">
   <header
     class={[
-      "w-full border-b-2 border-shadow",
+      "border-shadow w-full border-b-2",
       "flex items-center justify-between p-2",
     ]}
   >

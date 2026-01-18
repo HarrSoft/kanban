@@ -3,21 +3,22 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
-  --color-main: var(--main);
-  --color-shadow: var(--shadow);
-  --color-alt: var(--alt);
-  --color-hilight: var(--hilight);
-  --color-print: var(--print);
-  --color-invert: var(--invert);
+  --color-l-base: #d7d7d7;
+  --color-l-content: #ebebeb;
+  --color-l-shadow: #adadad;
+  --color-l-print: #121212;
+  --color-l-invert: #f5f5f5;
+  --color-l-accent: #990000;
+
+  --color-d-base: #1b1b1b;
+  --color-d-content: #272727;
+  --color-d-shadow: #333333;
+  --color-d-print: #e7e7e7;
+  --color-d-invert: #1b1b1b;
+  --color-d-accent: #ff2222;
 }
 
 body {
-  background-color: var(--main);
-  color: var(--print);
+  @apply bg-l-base text-l-print dark:bg-d-base dark:text-d-print;
   height: 100vh;
-}
-
-input,
-select {
-  @apply rounded-lg border-shadow bg-shadow/20;
 }

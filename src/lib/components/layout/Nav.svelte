@@ -26,14 +26,14 @@
     open ? "h-auto" : "h-0 overflow-y-hidden",
     "lg:h-full lg:overflow-y-auto",
     "flex flex-col",
-    "border-b-2 border-shadow lg:border-r-2 lg:border-b-0",
+    "border-shadow border-b-2 lg:border-r-2 lg:border-b-0",
     className,
   ]}
 >
   {#each tabs as tab}
     <a
       href={tab.path}
-      class="w-full px-4 py-2 text-center hover:bg-alt hover:text-invert"
+      class="hover:bg-alt hover:text-invert w-full px-4 py-2 text-center"
       class:selected={page.url.pathname === tab.path}
     >
       {@html tab.name}

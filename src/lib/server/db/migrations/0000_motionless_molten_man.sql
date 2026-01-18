@@ -1,6 +1,5 @@
 CREATE TYPE "public"."platform_role" AS ENUM('user', 'admin');--> statement-breakpoint
 CREATE TYPE "public"."project_member_role" AS ENUM('admin', 'contributor', 'viewer');--> statement-breakpoint
-CREATE TYPE "public"."theme" AS ENUM('auto', 'burning-love', 'oceanside', 'ribbit-dark', 'ribbit-light');--> statement-breakpoint
 CREATE TABLE "invites" (
 	"email" text NOT NULL,
 	"code" text NOT NULL,
@@ -64,7 +63,6 @@ CREATE TABLE "users" (
 	"name" text,
 	"imageUrl" text,
 	"bio" text,
-	"theme" "theme" DEFAULT 'auto' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp NOT NULL,
 	"deleted_at" timestamp,

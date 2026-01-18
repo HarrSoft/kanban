@@ -1,5 +1,5 @@
 {
-  "id": "8d353b6e-2e00-4083-a235-a72842b780f8",
+  "id": "0447c443-010a-43ee-bdf9-30c265194611",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -447,13 +447,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "theme": {
-          "name": "theme",
-          "type": "theme",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'auto'"
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -507,17 +500,6 @@
         "admin",
         "contributor",
         "viewer"
-      ]
-    },
-    "public.theme": {
-      "name": "theme",
-      "schema": "public",
-      "values": [
-        "auto",
-        "burning-love",
-        "oceanside",
-        "ribbit-dark",
-        "ribbit-light"
       ]
     }
   },

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { hmac } from "@oslojs/crypto/hmac";
 import { SHA3_256 } from "@oslojs/crypto/sha3";
 import { constantTimeEqual } from "@oslojs/crypto/subtle";
-import { PlatformRole, Session, SessionId, Theme, UserId } from "$types";
+import { PlatformRole, Session, SessionId, UserId } from "$types";
 import { env } from "$env/dynamic/private";
 
 const Header = z.looseObject({
@@ -18,7 +18,6 @@ const Payload = z.object({
   session_id: SessionId,
   session_exp: z.number(),
   platform_role: PlatformRole,
-  theme: Theme,
 });
 type Payload = z.infer<typeof Payload>;
 
@@ -78,7 +77,6 @@ export const validateToken = (jwt: string): ValidateResult => {
     userEmail: payload.email,
     expiresAt: date.fromUnixTime(payload.session_exp),
     platformRole: payload.platform_role,
-    theme: payload.theme,
   };
 
   return { valid: true, session, tokenExp: date.fromUnixTime(payload.exp) };
@@ -107,7 +105,6 @@ export const createToken = (session: Session): string => {
     session_id: session.sessionId,
     session_exp: date.getUnixTime(session.expiresAt),
     platform_role: session.platformRole,
-    theme: session.theme,
   };
 
   // encode payload

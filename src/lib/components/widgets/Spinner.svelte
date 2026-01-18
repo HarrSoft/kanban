@@ -32,7 +32,7 @@
   <div
     class={[
       "h-5 w-5 animate-spin rounded-full",
-      "border-4 border-gray-300 border-t-hilight",
+      "border-t-hilight border-4 border-gray-300",
       className,
     ]}
   ></div>
