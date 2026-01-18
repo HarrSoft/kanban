@@ -2,7 +2,7 @@
   import type { Snippet } from "svelte";
   import { onNavigate } from "$app/navigation";
   import { page } from "$app/state";
-  import { Logo } from "$com";
+  import { Logo } from "$com/icons";
   import { ProjectPicker, Nav, type NavTab } from "$com/layout";
   import favicon from "$lib/assets/harrsoft_border.svg";
   import burger from "$lib/assets/burger.png";
@@ -60,7 +60,7 @@
 <div class="flex h-full flex-col">
   <header
     class={[
-      "border-shadow w-full border-b-2",
+      "w-full border-b-2 border-shadow",
       "flex items-center justify-between p-2",
     ]}
   >
