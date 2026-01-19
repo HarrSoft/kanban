@@ -1,69 +1,38 @@
 <script lang="ts">
-  import { goto, invalidateAll } from "$app/navigation";
-  import { Button } from "$com/widgets";
+  import { buttonThemes } from "$com/widgets";
   import { login } from "$lib/remote";
-
-  let email = $state("");
-  let password = $state("");
-  let error = $state("");
-
-  let doingLogin = $state(false);
-  const doLogin = async () => {
-    if (doingLogin) {
-      return;
-    }
-    doingLogin = true;
-
-    try {
-      await login({ email, password });
-    } catch {
-      error = "Credentials are incorrect";
-      doingLogin = false;
-      return;
-    }
-
-    doingLogin = false;
-    await invalidateAll();
-    await goto("/");
-  };
 </script>
 
-<form class="m-auto grid grid-cols-[5rem_15rem] items-center gap-2">
-  {#if error}
-    <span class="col-span-2 text-red-500">
-      Error: {error}
-    </span>
-  {/if}
+<form {...login} class="mx-auto flex flex-col items-center gap-2">
+  <h1 class="text-xl font-bold">Login</h1>
 
-  <label for="email">Email</label>
-  <input
-    id="email"
-    type="email"
-    bind:value={email}
-    class="rounded-md bg-transparent"
-    oninput={() => {
-      error = "";
-    }}
-  />
+  <label>
+    <h2>Email</h2>
+    <input
+      {...login.fields.email.as("email")}
+      class="rounded-md bg-transparent"
+    />
+    {#each login.fields.email.issues() || [] as issue}
+      <p class="text-red-500">{issue.message}</p>
+    {/each}
+  </label>
 
-  <label for="password">Password</label>
-  <input
-    id="password"
-    type="password"
-    bind:value={password}
-    class="rounded-md bg-transparent"
-    oninput={() => {
-      error = "";
-    }}
-  />
+  <label>
+    <h2>Password</h2>
+    <input
+      {...login.fields._password.as("password")}
+      type="password"
+      class="rounded-md bg-transparent"
+    />
+    {#each login.fields._password.issues() || [] as issue}
+      <p class="text-red-500">{issue.message}</p>
+    {/each}
+  </label>
 
-  <Button
+  <button
     type="submit"
-    onclick={doLogin}
-    class="col-span-2"
-    disabled={!email || !password}
-    spin={doingLogin}
+    class={[buttonThemes.solid.base, buttonThemes.solid.enabled]}
   >
-    Login
-  </Button>
+    Submit
+  </button>
 </form>

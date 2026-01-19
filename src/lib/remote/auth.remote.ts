@@ -1,23 +1,23 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { error } from "@sveltejs/kit";
-import { getRequestEvent, command } from "$app/server";
+import { error, redirect } from "@sveltejs/kit";
+import { command, form, getRequestEvent } from "$app/server";
 import db, { passwords, users } from "$db";
 import { setSessionTokenCookie } from "$server/auth/cookie";
 import { createSession } from "$server/auth/session";
 import { createToken } from "$server/auth/token";
 import { checkPassword, hashNewPassword } from "$server/crypto";
 
-///////////////////
-// login command //
-///////////////////
+////////////////
+// login form //
+////////////////
 
-export const login = command(
+export const login = form(
   z.object({
     email: z.email(),
-    password: z.string(),
+    _password: z.string(),
   }),
-  async ({ email, password }) => {
+  async ({ email, _password }) => {
     const session = await db.transaction(async tx => {
       const [pwRecord] = await tx
         .select({
@@ -33,7 +33,7 @@ export const login = command(
         throw error(400);
       }
 
-      const authed = checkPassword(password, pwRecord.hash, pwRecord.salt);
+      const authed = checkPassword(_password, pwRecord.hash, pwRecord.salt);
 
       if (!authed) {
         throw error(300);
@@ -45,6 +45,8 @@ export const login = command(
 
     const token = createToken(session);
     setSessionTokenCookie(token);
+
+    redirect(303, "/");
   },
 );
 
