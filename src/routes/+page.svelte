@@ -23,9 +23,17 @@
   </div>
 {:else}
   <div class="flex h-full w-full flex-col gap-2">
-    {#if activeProject}
-      <h1 class="text-xl font-bold">Active Project</h1>
-      <Project project={activeProject} />
+    {#if data.activeProjectId}
+      {#await getProject(data.activeProjectId)}
+        <span class="text-xl font-bold">...</span>
+      {:then activeProject}
+        <h1 class="text-xl font-bold">Active Project</h1>
+        <Project project={activeProject} />
+      {:catch}
+        <span class="text-red-500">
+          Error: Failed to fetch active project
+        </span>
+      {/await}
     {:else}
       <h1 class="text-xl font-bold">No Active Project</h1>
     {/if}
