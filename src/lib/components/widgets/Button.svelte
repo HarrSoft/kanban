@@ -1,3 +1,34 @@
+<script module>
+  export const themes = {
+    solid: {
+      base: [
+        "rounded-lg font-bold px-6 py-2 inline-flex",
+        "border-2 justify-center items-center text-center no-underline",
+        "transition-colors duration-200",
+      ],
+      enabled: [
+        "border-accent bg-accent",
+        "hover:border-accent/80 hover:bg-accent/80",
+      ],
+      disabled: ["border-shadow bg-shadow cursor-not-allowed"],
+    },
+    border: {
+      base: [
+        "rounded-lg font-bold px-6 py-2 inline-flex",
+        "border-2 justify-center items-center text-center no-underline",
+        "transition-colors duration-200",
+      ],
+      enabled: ["border-accent text-accent hover:bg-accent/20"],
+      disabled: ["border-shadow text-shadow cursor-not-allowed"],
+    },
+    none: {
+      base: [],
+      enabled: [],
+      disabled: [],
+    },
+  };
+</script>
+
 <script lang="ts">
   import type { Snippet } from "svelte";
   import type {
@@ -7,35 +38,6 @@
   } from "svelte/elements";
   import { goto } from "$app/navigation";
   import { default as Spinner } from "./Spinner.svelte";
-
-  const themes = {
-    solid: {
-      base: [
-        "rounded-lg font-semibold text-invert px-6 py-2 inline-flex",
-        "border-2 justify-center items-center text-center no-underline",
-        "transition-colors duration-200",
-      ],
-      enabled: [
-        "border-hilight bg-hilight",
-        "hover:border-hilight/80 hover:bg-hilight/80",
-      ],
-      disabled: ["border-shadow bg-shadow cursor-not-allowed"],
-    },
-    border: {
-      base: [
-        "rounded-lg font-semibold text-invert px-6 py-2 inline-flex",
-        "border-2 justify-center items-center text-center no-underline",
-        "transition-colors duration-200",
-      ],
-      enabled: ["border-hilight text-hilight hover:bg-hilight/20"],
-      disabled: ["border-shadow text-shadow cursor-not-allowed"],
-    },
-    none: {
-      base: [],
-      enabled: [],
-      disabled: [],
-    },
-  };
 
   const {
     children,
