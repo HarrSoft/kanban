@@ -38,6 +38,10 @@ body {
   height: 100vh;
 }
 
+input {
+  @apply rounded-md bg-transparent;
+}
+
 .button {
   @apply rounded-lg border-2 px-6 py-2 font-bold;
   @apply inline-flex items-center justify-center text-center no-underline;
