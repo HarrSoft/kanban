@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Snippet } from "svelte";
+  import { onMount, type Snippet } from "svelte";
   import { onNavigate } from "$app/navigation";
   import { page } from "$app/state";
   import { Logo } from "$com/icons";
@@ -19,7 +19,10 @@
 
   const session = $derived(data.session);
 
-  let navOpen = $state(false);
+  let navOpen = $state(true);
+  onMount(() => {
+    navOpen = false;
+  });
   onNavigate(() => {
     navOpen = false;
   });
