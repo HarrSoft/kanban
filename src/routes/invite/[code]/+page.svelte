@@ -1,52 +1,19 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import { createUser, fetchInviteEmail } from "$lib/remote";
+  import { CreateUserSchema, createUser, fetchInviteEmail } from "$lib/remote";
 
-  const email = $derived(fetchInviteEmail(page.params.code!));
-  let name = $state("");
-  let password = $state("");
-  let confirm = $state("");
-  let error = $state("");
-
-  let doingSignup = $state(false);
-  const doSignup = async () => {
-    if (doingSignup) {
-      return;
-    }
-
-    if (!name.trim()) {
-      error = "Please give a name";
-      return;
-    }
-
-    if (password !== confirm) {
-      error = "Passwords must match";
-      return;
-    }
-
-    doingSignup = true;
-
-    try {
-      await createUser({
-        inviteCode: page.params.code!,
-        name: name.trim(),
-        password,
-      });
-    } catch (e) {
-      error = "Invite code has become invalid";
-      doingSignup = false;
-      return;
-    }
-
-    goto("/login");
-  };
-
-  const clearError = () => (error = "");
+  const code = $derived(page.params.code!);
+  const email = $derived(await fetchInviteEmail(code));
 </script>
 
-<form class="mx-auto flex flex-col items-center gap-2" {...createUser}>
-  <h1 class="col-span-2 font-bold">Create your account</h1>
+<form
+  {...createUser.preflight(CreateUserSchema)}
+  oninput={() => createUser.validate()}
+  class="mx-auto flex flex-col items-center gap-2"
+>
+  <h1 class="col-span-2 text-xl font-bold">Create your account</h1>
+
+  <input {...createUser.fields.inviteCode.as("hidden", code)} />
 
   <label>
     <h2>Email</h2>
@@ -55,10 +22,7 @@
 
   <label>
     <h2>Name</h2>
-    <input
-      {...createUser.fields.name.as("text")}
-      class="rounded-md bg-transparent"
-    />
+    <input {...createUser.fields.name.as("text")} />
     {#each createUser.fields.name.issues() || [] as issue}
       <p class="text-red-500">{issue.message}</p>
     {/each}
@@ -66,10 +30,7 @@
 
   <label>
     <h2>Password</h2>
-    <input
-      {...createUser.fields._password.as("password")}
-      class="rounded-md bg-transparent"
-    />
+    <input {...createUser.fields._password.as("password")} />
     {#each createUser.fields._password.issues() || [] as issue}
       <p class="text-red-500">{issue.message}</p>
     {/each}
@@ -77,20 +38,11 @@
 
   <label>
     <h2>Confirm Password</h2>
-    <input
-      id="confirm"
-      type="password"
-      bind:value={confirm}
-      oninput={clearError}
-    />
+    <input {...createUser.fields._confirm.as("password")} />
+    {#each createUser.fields._confirm.issues() || [] as issue}
+      <p class="text-red-500">{issue.message}</p>
+    {/each}
   </label>
 
-  <button
-    type="submit"
-    onclick={doSignup}
-    disabled={password !== confirm}
-    class="button solid col-span-2"
-  >
-    Submit
-  </button>
+  <button type="submit" class="button solid col-span-2"> Submit </button>
 </form>
