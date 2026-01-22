@@ -3,7 +3,7 @@ import * as t from "drizzle-orm/pg-core";
 import { Base64Url, PlatformRole, SessionId, UserId } from "$types";
 import { id, timestamps } from "./util";
 
-export const platformRole = t.pgEnum("platform_role", PlatformRole.enum);
+export const platformRole = t.pgEnum("platform_role", PlatformRole.options);
 
 export const sessions = t.pgTable("sessions", {
   id: id().primaryKey().$type<SessionId>(),

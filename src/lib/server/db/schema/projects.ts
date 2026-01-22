@@ -12,7 +12,7 @@ export const projects = t.pgTable("projects", {
 
 export const projectMemberRole = t.pgEnum(
   "project_member_role",
-  ProjectMemberRole.enum,
+  ProjectMemberRole.options,
 );
 
 export const projectMembers = t.pgTable(
