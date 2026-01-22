@@ -1,6 +1,6 @@
 import { eq, inArray } from "drizzle-orm";
+import * as v from "valibot";
 import { error } from "@sveltejs/kit";
-import { z } from "zod";
 import { command, getRequestEvent, query } from "$app/server";
 import db, { projects, projectMembers, users } from "$db";
 import { ProjectId, ProjectInfo, ProjectFull } from "$types";
@@ -88,7 +88,7 @@ export const getProject = query.batch(ProjectId, async () => {
     if (!dirty) {
       throw error(404);
     }
-    const clean = ProjectFull.parse(dirty satisfies ProjectFull);
+    const clean = v.parse(ProjectFull, dirty satisfies ProjectFull);
     return clean;
   };
 });
@@ -116,7 +116,10 @@ export const getProjects = query(async () => {
 
   const mapped = projectsRes.map(pr => pr.project);
 
-  const projectList = ProjectInfo.array().parse(mapped satisfies ProjectInfo[]);
+  const projectList = v.parse(
+    v.array(ProjectInfo),
+    mapped satisfies ProjectInfo[],
+  );
 
   return projectList;
 });
@@ -142,7 +145,7 @@ export const getAllProjects = query(async () => {
     })
     .from(projects);
 
-  return ProjectInfo.array().parse(allProjects satisfies ProjectInfo[]);
+  return v.parse(v.array(ProjectInfo), allProjects satisfies ProjectInfo[]);
 });
 
 /////////////////////////
@@ -150,8 +153,8 @@ export const getAllProjects = query(async () => {
 /////////////////////////
 
 export const pickProject = command(
-  z.object({
-    projectId: ProjectId.nullable(),
+  v.object({
+    projectId: v.nullable(ProjectId),
   }),
   async ({ projectId }) => {
     const event = getRequestEvent();
@@ -172,8 +175,8 @@ export const pickProject = command(
 ///////////////////////////
 
 export const createProject = command(
-  z.object({
-    name: z.string(),
+  v.object({
+    name: v.string(),
   }),
   async ({ name }) => {
     const event = getRequestEvent();

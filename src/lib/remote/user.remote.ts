@@ -1,6 +1,6 @@
-import { error, redirect } from "@sveltejs/kit";
 import { eq } from "drizzle-orm";
-import { z } from "zod";
+import * as v from "valibot";
+import { error, redirect } from "@sveltejs/kit";
 import { form, query } from "$app/server";
 import db, { invites, passwords, users } from "$db";
 import { hashNewPassword } from "$server/crypto";
@@ -9,28 +9,31 @@ import { hashNewPassword } from "$server/crypto";
 // fetchInviteEmail query //
 ////////////////////////////
 
-export const fetchInviteEmail = query(z.string(), async code => {
-  const [invite] = await db
-    .select({ email: invites.email })
-    .from(invites)
-    .where(eq(invites.code, code));
+export const fetchInviteEmail = query(
+  v.pipe(v.string(), v.email()),
+  async code => {
+    const [invite] = await db
+      .select({ email: invites.email })
+      .from(invites)
+      .where(eq(invites.code, code));
 
-  if (!invite) {
-    throw error(404, "Invalid code");
-  }
+    if (!invite) {
+      throw error(404, "Invalid code");
+    }
 
-  return invite.email;
-});
+    return invite.email;
+  },
+);
 
 /////////////////////
 // createUser form //
 /////////////////////
 
 export const createUser = form(
-  z.object({
-    inviteCode: z.string(),
-    name: z.string(),
-    _password: z.string(),
+  v.object({
+    inviteCode: v.string(),
+    name: v.string(),
+    _password: v.string(),
   }),
   async ({ inviteCode, name, _password }) => {
     const passwordHash = hashNewPassword(_password);

@@ -1,5 +1,6 @@
 import * as dates from "date-fns";
 import { eq } from "drizzle-orm";
+import * as v from "valibot";
 import { type Tx, sessions, users } from "$db";
 import { Session, SessionId, UserId } from "$types";
 import { deleteSessionTokenCookie } from "./cookie";
@@ -16,7 +17,7 @@ export const createSession = async (tx: Tx, userId: UserId) => {
     .from(users)
     .where(eq(users.id, userId));
 
-  return Session.parse({
+  return v.parse(Session, {
     sessionId: dbSession.id,
     expiresAt: dbSession.expiresAt,
     ...dbUser,
@@ -36,7 +37,7 @@ export const getSession = async (tx: Tx, sessionId: SessionId) => {
     .innerJoin(users, eq(users.id, sessions.userId))
     .where(eq(sessions.id, sessionId));
 
-  return Session.parse(dbSession satisfies Session);
+  return v.parse(Session, dbSession satisfies Session);
 };
 
 export const extendSession = async (tx: Tx, sessionId: SessionId) => {

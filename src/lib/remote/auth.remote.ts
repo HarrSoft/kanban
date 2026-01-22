@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { z } from "zod";
+import * as v from "valibot";
 import { error, redirect } from "@sveltejs/kit";
 import { command, form, getRequestEvent } from "$app/server";
 import db, { passwords, users } from "$db";
@@ -13,9 +13,9 @@ import { checkPassword, hashNewPassword } from "$server/crypto";
 ////////////////
 
 export const login = form(
-  z.object({
-    email: z.email(),
-    _password: z.string(),
+  v.object({
+    email: v.pipe(v.string(), v.email()),
+    _password: v.string(),
   }),
   async ({ email, _password }) => {
     const session = await db.transaction(async tx => {
@@ -55,9 +55,9 @@ export const login = form(
 ////////////////////////////
 
 export const updatePassword = command(
-  z.object({
-    old: z.string(),
-    new: z.string(),
+  v.object({
+    old: v.string(),
+    new: v.string(),
   }),
   async input => {
     const event = getRequestEvent();

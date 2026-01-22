@@ -1,25 +1,25 @@
 import * as date from "date-fns";
-import { z } from "zod";
+import * as v from "valibot";
 import { hmac } from "@oslojs/crypto/hmac";
 import { SHA3_256 } from "@oslojs/crypto/sha3";
 import { constantTimeEqual } from "@oslojs/crypto/subtle";
 import { PlatformRole, Session, SessionId, UserId } from "$types";
 import { env } from "$env/dynamic/private";
 
-const Header = z.looseObject({
-  typ: z.literal("JWT"),
-  alg: z.literal("HS256"),
+const Header = v.looseObject({
+  typ: v.literal("JWT"),
+  alg: v.literal("HS256"),
 });
 
-const Payload = z.object({
+const Payload = v.object({
   sub: UserId,
-  exp: z.number(),
-  email: z.email(),
+  exp: v.number(),
+  email: v.pipe(v.string(), v.email()),
   session_id: SessionId,
-  session_exp: z.number(),
+  session_exp: v.number(),
   platform_role: PlatformRole,
 });
-type Payload = z.infer<typeof Payload>;
+type Payload = v.InferOutput<typeof Payload>;
 
 type ValidateResult =
   | { valid: false; error: "token" | "unsigned" | "header" | "payload" | "aud" }
@@ -43,7 +43,7 @@ export const validateToken = (jwt: string): ValidateResult => {
   // decode header
   const headerStr = Buffer.from(encHeader, "base64url").toString("utf-8");
   const headerObj = JSON.parse(headerStr);
-  const headerRes = Header.safeParse(headerObj);
+  const headerRes = v.safeParse(Header, headerObj);
   if (!headerRes.success) {
     return { valid: false, error: "header" };
   }
@@ -51,11 +51,11 @@ export const validateToken = (jwt: string): ValidateResult => {
   // decode payload
   const payloadStr = Buffer.from(encPayload, "base64url").toString("utf-8");
   const payloadObj = JSON.parse(payloadStr);
-  const payloadRes = Payload.safeParse(payloadObj);
+  const payloadRes = v.safeParse(Payload, payloadObj);
   if (!payloadRes.success) {
     return { valid: false, error: "payload" };
   }
-  const payload = payloadRes.data;
+  const payload = payloadRes.output;
 
   // verify signature
   const key = Buffer.from(env.AUTH_SECRET, "utf-8");

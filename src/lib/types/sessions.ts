@@ -1,11 +1,11 @@
-import { z } from "zod";
+import * as v from "valibot";
 import { PlatformRole, SessionId, UserId } from "./ids";
 
-export const Session = z.object({
+export const Session = v.object({
   sessionId: SessionId,
   userId: UserId,
-  userEmail: z.email(),
+  userEmail: v.pipe(v.string(), v.email()),
   platformRole: PlatformRole,
-  expiresAt: z.date(),
+  expiresAt: v.date(),
 });
-export type Session = z.infer<typeof Session>;
+export type Session = v.InferOutput<typeof Session>;

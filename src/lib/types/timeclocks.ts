@@ -1,11 +1,11 @@
-import { z } from "zod";
+import * as v from "valibot";
 import { ProjectId, TimeclockId, UserId } from "./ids";
 
-export const Timeclock = z.object({
+export const Timeclock = v.object({
   id: TimeclockId,
   projectId: ProjectId,
   userId: UserId,
-  start: z.date(),
-  duration: z.number(), // seconds
+  start: v.date(),
+  duration: v.number(), // seconds
 });
-export type Timeclock = z.infer<typeof Timeclock>;
+export type Timeclock = v.InferOutput<typeof Timeclock>;

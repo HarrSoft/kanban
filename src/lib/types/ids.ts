@@ -1,39 +1,43 @@
-import { z } from "zod";
+import * as v from "valibot";
 
-export const PlatformRole = z.enum(["user", "admin"]);
-export type PlatformRole = z.infer<typeof PlatformRole>;
+export const PlatformRole = v.picklist(["user", "admin"]);
+export type PlatformRole = v.InferOutput<typeof PlatformRole>;
 
 //////////////
 // Projects //
 //////////////
 
-export const ProjectId = z.cuid2().brand<"ProjectId">();
-export type ProjectId = z.infer<typeof ProjectId>;
+export const ProjectId = v.pipe(v.string(), v.cuid2(), v.brand("ProjectId"));
+export type ProjectId = v.InferOutput<typeof ProjectId>;
 
 //////////////
 // Sessions //
 //////////////
 
-export const SessionId = z.cuid2().brand<"SessionId">();
-export type SessionId = z.infer<typeof SessionId>;
+export const SessionId = v.pipe(v.string(), v.cuid2(), v.brand("SessionId"));
+export type SessionId = v.InferOutput<typeof SessionId>;
 
 /////////////
 // Tickets //
 /////////////
 
-export const TicketId = z.cuid2().brand<"TicketId">();
-export type TicketId = z.infer<typeof TicketId>;
+export const TicketId = v.pipe(v.string(), v.cuid2(), v.brand("TicketId"));
+export type TicketId = v.InferOutput<typeof TicketId>;
 
 ////////////////
 // Timeclocks //
 ////////////////
 
-export const TimeclockId = z.cuid2().brand<"TimeclockId">();
-export type TimeclockId = z.infer<typeof TimeclockId>;
+export const TimeclockId = v.pipe(
+  v.string(),
+  v.cuid2(),
+  v.brand("TimeclockId"),
+);
+export type TimeclockId = v.InferOutput<typeof TimeclockId>;
 
 ///////////
 // Users //
 ///////////
 
-export const UserId = z.cuid2().brand<"UserId">();
-export type UserId = z.infer<typeof UserId>;
+export const UserId = v.pipe(v.string(), v.cuid2(), v.brand("UserId"));
+export type UserId = v.InferOutput<typeof UserId>;

@@ -1,5 +1,5 @@
 import { eq, and, gte, lte } from "drizzle-orm";
-import { z } from "zod";
+import * as v from "valibot";
 import { error } from "@sveltejs/kit";
 import { getRequestEvent, command, query } from "$app/server";
 import db, { projectMembers, projects, timeclocks } from "$db";
@@ -10,10 +10,10 @@ import { ProjectId, Timeclock, TimeclockId } from "$types";
 /////////////////////////
 
 export const getTimeclocks = query(
-  z.object({
+  v.object({
     projectId: ProjectId,
-    from: z.date(),
-    to: z.date(),
+    from: v.date(),
+    to: v.date(),
   }),
   async ({ projectId, from, to }) => {
     const session = getRequestEvent().locals.session;
@@ -66,7 +66,7 @@ export const getTimeclocks = query(
       return times;
     });
 
-    return Timeclock.array().parse(times satisfies Timeclock[]);
+    return v.parse(v.array(Timeclock), times satisfies Timeclock[]);
   },
 );
 
@@ -75,18 +75,16 @@ export const getTimeclocks = query(
 /////////////////////////////
 
 export const createTimeclock = command(
-  z.object({
+  v.object({
     projectId: ProjectId,
-    start: z.iso.date(),
-    duration: z.number().optional(),
+    start: v.date(),
+    duration: v.optional(v.number()),
   }),
   async ({ projectId, start, duration }) => {
     const event = getRequestEvent();
     const session = event.locals.session;
     if (!session) {
       throw error(401);
-    } else if (session.platformRole === "viewer") {
-      throw error(403, "Viewer accounts may not create timeclocks");
     }
 
     const startDate = new Date(start);
@@ -109,7 +107,7 @@ export const createTimeclock = command(
       return tc;
     });
 
-    return Timeclock.parse(timeclock satisfies Timeclock);
+    return v.parse(Timeclock, timeclock satisfies Timeclock);
   },
 );
 
@@ -118,15 +116,15 @@ export const createTimeclock = command(
 /////////////////////////////
 
 export const updateTimeclock = command(
-  z.object({
+  v.object({
     timeclockId: TimeclockId,
-    start: z.iso.date().optional(),
-    duration: z.number().optional(),
-    admin: z
-      .object({
-        locked: z.boolean().optional(),
-      })
-      .optional(),
+    start: v.optional(v.date()),
+    duration: v.optional(v.number()),
+    admin: v.optional(
+      v.object({
+        locked: v.optional(v.boolean()),
+      }),
+    ),
   }),
   async ({ timeclockId, start, duration, admin }) => {
     // authenticate
@@ -134,8 +132,6 @@ export const updateTimeclock = command(
     const session = event.locals.session;
     if (!session) {
       throw error(401, "Must be logged in");
-    } else if (session.platformRole === "viewer") {
-      throw error(403, "Viewer accounts may not edit timeclocks");
     } else if (admin && session.platformRole !== "admin") {
       throw error(403, "Non-admins cannot set admin fields");
     }
@@ -171,6 +167,6 @@ export const updateTimeclock = command(
       return updatedTc;
     });
 
-    return Timeclock.parse(updatedTimeclock satisfies Timeclock);
+    return v.parse(Timeclock, updatedTimeclock satisfies Timeclock);
   },
 );
