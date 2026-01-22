@@ -51,5 +51,4 @@ export const invites = t.pgTable("invites", {
     .notNull()
     .default("user")
     .$type<PlatformRole>(),
-  admin: t.boolean().notNull().default(false),
 });
