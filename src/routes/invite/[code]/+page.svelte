@@ -1,7 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import { Button } from "$com/widgets";
   import { createUser, fetchInviteEmail } from "$lib/remote";
 
   const email = $derived(fetchInviteEmail(page.params.code!));
@@ -46,44 +45,52 @@
   const clearError = () => (error = "");
 </script>
 
-<form class="m-auto grid grid-cols-[5rem_15rem] items-center gap-2">
+<form class="mx-auto flex flex-col items-center gap-2" {...createUser}>
   <h1 class="col-span-2 font-bold">Create your account</h1>
 
-  {#if error}
-    <span class="col-span-2 text-red-500">
-      Error: {error}
-    </span>
-  {/if}
+  <label>
+    <h2>Email</h2>
+    <input value={email} disabled class="rounded-md bg-transparent" />
+  </label>
 
-  <label for="email">Email</label>
-  <input id="email" type="email" value={email} disabled />
+  <label>
+    <h2>Name</h2>
+    <input
+      {...createUser.fields.name.as("text")}
+      class="rounded-md bg-transparent"
+    />
+    {#each createUser.fields.name.issues() || [] as issue}
+      <p class="text-red-500">{issue.message}</p>
+    {/each}
+  </label>
 
-  <label for="name">Name</label>
-  <input id="name" type="text" bind:value={name} oninput={clearError} />
+  <label>
+    <h2>Password</h2>
+    <input
+      {...createUser.fields._password.as("password")}
+      class="rounded-md bg-transparent"
+    />
+    {#each createUser.fields._password.issues() || [] as issue}
+      <p class="text-red-500">{issue.message}</p>
+    {/each}
+  </label>
 
-  <label for="password">Password</label>
-  <input
-    id="password"
-    type="password"
-    bind:value={password}
-    oninput={clearError}
-  />
+  <label>
+    <h2>Confirm Password</h2>
+    <input
+      id="confirm"
+      type="password"
+      bind:value={confirm}
+      oninput={clearError}
+    />
+  </label>
 
-  <label for="confirm">Confirm Password</label>
-  <input
-    id="confirm"
-    type="password"
-    bind:value={confirm}
-    oninput={clearError}
-  />
-
-  <Button
+  <button
     type="submit"
     onclick={doSignup}
     disabled={password !== confirm}
-    spin={doingSignup}
-    class="col-span-2"
+    class="button solid col-span-2"
   >
     Submit
-  </Button>
+  </button>
 </form>

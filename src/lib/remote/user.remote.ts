@@ -1,7 +1,7 @@
-import { error } from "@sveltejs/kit";
+import { error, redirect } from "@sveltejs/kit";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { command, query } from "$app/server";
+import { form, query } from "$app/server";
 import db, { invites, passwords, users } from "$db";
 import { hashNewPassword } from "$server/crypto";
 
@@ -22,18 +22,18 @@ export const fetchInviteEmail = query(z.string(), async code => {
   return invite.email;
 });
 
-////////////////////////
-// createUser command //
-////////////////////////
+/////////////////////
+// createUser form //
+/////////////////////
 
-export const createUser = command(
+export const createUser = form(
   z.object({
     inviteCode: z.string(),
     name: z.string(),
-    password: z.string(),
+    _password: z.string(),
   }),
-  async ({ inviteCode, name, password }) => {
-    const passwordHash = hashNewPassword(password);
+  async ({ inviteCode, name, _password }) => {
+    const passwordHash = hashNewPassword(_password);
 
     await db.transaction(async tx => {
       const [invite] = await tx
@@ -64,5 +64,7 @@ export const createUser = command(
 
       await tx.delete(invites).where(eq(invites.email, invite.email));
     });
+
+    redirect(303, "/login");
   },
 );

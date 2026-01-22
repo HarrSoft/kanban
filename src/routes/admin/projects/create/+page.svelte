@@ -1,6 +1,5 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { Button } from "$com/widgets";
   import { createProject } from "$lib/remote";
 
   let name = $state("");
@@ -49,12 +48,12 @@
     }}
   />
 
-  <Button
+  <button
     type="submit"
     onclick={doCreate}
     disabled={!formComplete}
-    spin={doingCreate}
+    class={["button solid", !formComplete ? "disabled" : []]}
   >
     Create Project
-  </Button>
+  </button>
 </div>

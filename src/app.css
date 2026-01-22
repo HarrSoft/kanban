@@ -37,3 +37,25 @@ body {
   @apply bg-base text-print;
   height: 100vh;
 }
+
+.button {
+  @apply rounded-lg border-2 px-6 py-2 font-bold;
+  @apply inline-flex items-center justify-center text-center no-underline;
+  @apply transition-colors duration-200;
+}
+
+.button.solid {
+  @apply border-accent bg-accent hover:border-accent/80 hover:bg-accent/80;
+}
+
+.button.solid.disabled {
+  @apply cursor-not-allowed border-shadow bg-shadow;
+}
+
+.button.border {
+  @apply border-accent text-accent hover:bg-accent/20;
+}
+
+.button.border.disabled {
+  @apply cursor-not-allowed border-shadow text-shadow;
+}
