@@ -1,18 +1,10 @@
 <script lang="ts">
   import { Project } from "$com";
-  import { getProject } from "$lib/remote";
-  import type { PageData } from "./$types";
+  import { getActiveProject, getProject, getSession } from "$lib/remote";
 
-  const {
-    data,
-  }: {
-    data: PageData;
-  } = $props();
-
-  const session = $derived(data.session);
-  const activeProject = $derived(
-    data.activeProjectId ? await getProject(data.activeProjectId) : null,
-  );
+  const session = $derived(await getSession());
+  const apid = $derived(await getActiveProject());
+  const activeProject = $derived(apid ? await getProject(apid) : null);
 </script>
 
 {#if !session}
@@ -23,17 +15,9 @@
   </div>
 {:else}
   <div class="flex h-full w-full flex-col gap-2">
-    {#if data.activeProjectId}
-      {#await getProject(data.activeProjectId)}
-        <span class="text-xl font-bold">...</span>
-      {:then activeProject}
-        <h1 class="text-xl font-bold">Active Project</h1>
-        <Project project={activeProject} />
-      {:catch}
-        <span class="text-red-500">
-          Error: Failed to fetch active project
-        </span>
-      {/await}
+    {#if activeProject}
+      <h1 class="text-xl font-bold">Active Project</h1>
+      <Project project={activeProject} />
     {:else}
       <h1 class="text-xl font-bold">No Active Project</h1>
     {/if}

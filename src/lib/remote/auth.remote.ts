@@ -1,12 +1,24 @@
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
 import { error, redirect } from "@sveltejs/kit";
-import { command, form, getRequestEvent } from "$app/server";
+import { command, form, getRequestEvent, query } from "$app/server";
 import db, { passwords, users } from "$db";
-import { setSessionTokenCookie } from "$server/auth/cookie";
-import { createSession } from "$server/auth/session";
+import {
+  setSessionTokenCookie,
+  deleteSessionTokenCookie,
+} from "$server/auth/cookie";
+import { createSession, invalidateSession } from "$server/auth/session";
 import { createToken } from "$server/auth/token";
 import { checkPassword, hashNewPassword } from "$server/crypto";
+
+//////////////////////
+// getSession query //
+//////////////////////
+
+export const getSession = query(() => {
+  const event = getRequestEvent();
+  return event.locals.session;
+});
 
 ////////////////
 // login form //
@@ -43,12 +55,32 @@ export const login = form(
       return session;
     });
 
+    getSession().set(session);
+
     const token = createToken(session);
     setSessionTokenCookie(token);
 
     redirect(303, "/");
   },
 );
+
+/////////////////
+// logout form //
+/////////////////
+
+export const logout = form(async () => {
+  const event = getRequestEvent();
+  const session = event.locals.session;
+
+  if (session) {
+    await invalidateSession(db, session.sessionId);
+    deleteSessionTokenCookie();
+  }
+
+  getSession().set(null);
+
+  redirect(303, "/");
+});
 
 ////////////////////////////
 // updatePassword command //

@@ -8,6 +8,7 @@
 <script lang="ts">
   import type { ClassValue } from "svelte/elements";
   import { page } from "$app/state";
+  import { logout } from "$lib/remote";
 
   const {
     className,
@@ -43,4 +44,10 @@
       {@html tab.name}
     </a>
   {/each}
+  <form
+    {...logout}
+    class="w-full cursor-pointer px-4 py-2 text-center hover:bg-content"
+  >
+    <button type="submit" class="h-full w-full cursor-pointer">Logout</button>
+  </form>
 </nav>

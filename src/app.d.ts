@@ -11,13 +11,11 @@ declare global {
 
     // frontend-available data
     // (use optional values for data only on specific pages)
-    interface PageData {
-      session: Session | null;
-    }
+    //interface PageData {}
 
-    interface Error {}
-    // interface PageState {}
-    // interface Platform {}
+    //interface Error {}
+    //interface PageState {}
+    //interface Platform {}
   }
 }
 

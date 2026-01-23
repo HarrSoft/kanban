@@ -6,18 +6,12 @@
   import { ProjectPicker, Nav, type NavTab } from "$com/layout";
   import favicon from "$lib/assets/harrsoft_border.svg";
   import burger from "$lib/assets/burger.png";
-  import type { LayoutData } from "./$types";
+  import { getSession } from "$lib/remote";
   import "../app.css";
 
-  let {
-    children,
-    data,
-  }: {
-    children?: Snippet;
-    data: LayoutData;
-  } = $props();
+  let { children }: { children?: Snippet } = $props();
 
-  const session = $derived(data.session);
+  const session = $derived(await getSession());
 
   let navOpen = $state(true);
   onMount(() => {
@@ -41,7 +35,6 @@
         { path: "/admin/projects", name: "Projects" },
         { path: "/admin/users", name: "Users" },
         { path: "/", name: "User&nbsp;Dashboard" },
-        { path: "/logout", name: "Logout" },
       ];
     } else {
       // User tabs
@@ -50,7 +43,6 @@
         { path: "/time", name: "Time&nbsp;Clock" },
         { path: "/settings", name: "Settings" },
         isAdmin ? { path: "/admin", name: "Admin&nbsp;Dashboard" } : [],
-        { path: "/logout", name: "Logout" },
       ].flat();
     }
   });
