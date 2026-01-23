@@ -8,8 +8,10 @@
   } from "$lib/remote";
   import { ProjectInfo } from "$types";
 
-  const apid = $derived(await getActiveProject());
-  const activeProject = $derived(apid ? await getProject(apid) : null);
+  const apPromise = getActiveProject().then(apid =>
+    apid ? getProject(apid) : null,
+  );
+  const activeProject = $derived(await apPromise);
 
   // component works with pure css, but this code makes ux better
   let justFocused = false;
