@@ -1,6 +1,6 @@
 import { eq, inArray } from "drizzle-orm";
 import * as v from "valibot";
-import { error } from "@sveltejs/kit";
+import { error, redirect } from "@sveltejs/kit";
 import { form, getRequestEvent, query } from "$app/server";
 import db, { projects, projectMembers, users } from "$db";
 import { ProjectId, ProjectInfo, ProjectFull } from "$types";
@@ -227,6 +227,6 @@ export const createProject = form(
     getAllProjects().refresh();
     getProjects().refresh();
 
-    return newProjectId;
+    redirect(303, `/projects/${newProjectId}`);
   },
 );
