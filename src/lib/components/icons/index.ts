@@ -1,3 +1,4 @@
+export { default as Chevron } from "./Chevron.svelte";
 export { default as EditIcon } from "./EditIcon.svelte";
 export { default as Logo } from "./Logo.svelte";
 export { default as PauseIcon } from "./PauseIcon.svelte";

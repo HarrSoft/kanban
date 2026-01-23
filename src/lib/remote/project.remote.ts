@@ -1,7 +1,7 @@
 import { eq, inArray } from "drizzle-orm";
 import * as v from "valibot";
 import { error } from "@sveltejs/kit";
-import { command, getRequestEvent, query } from "$app/server";
+import { command, form, getRequestEvent, query } from "$app/server";
 import db, { projects, projectMembers, users } from "$db";
 import { ProjectId, ProjectInfo, ProjectFull } from "$types";
 
@@ -148,13 +148,27 @@ export const getAllProjects = query(async () => {
   return v.parse(v.array(ProjectInfo), allProjects satisfies ProjectInfo[]);
 });
 
-/////////////////////////
-// pickProject command //
-/////////////////////////
+////////////////////////////
+// getActiveProject query //
+////////////////////////////
 
-export const pickProject = command(
+export const getActiveProject = query(() => {
+  const event = getRequestEvent();
+
+  if (event.locals.session) {
+    return (event.cookies.get("activeProject") as ProjectId) || null;
+  } else {
+    return null;
+  }
+});
+
+//////////////////////
+// pickProject form //
+//////////////////////
+
+export const pickProject = form(
   v.object({
-    projectId: v.nullable(ProjectId),
+    projectId: v.optional(ProjectId),
   }),
   async ({ projectId }) => {
     const event = getRequestEvent();
@@ -164,8 +178,10 @@ export const pickProject = command(
 
     if (projectId) {
       event.cookies.set("activeProject", projectId, { path: "/" });
+      getActiveProject().set(projectId);
     } else {
       event.cookies.delete("activeProject", { path: "/" });
+      getActiveProject().set(null);
     }
   },
 );
