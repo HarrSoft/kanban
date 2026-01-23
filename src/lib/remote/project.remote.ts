@@ -1,7 +1,7 @@
 import { eq, inArray } from "drizzle-orm";
 import * as v from "valibot";
 import { error } from "@sveltejs/kit";
-import { command, form, getRequestEvent, query } from "$app/server";
+import { form, getRequestEvent, query } from "$app/server";
 import db, { projects, projectMembers, users } from "$db";
 import { ProjectId, ProjectInfo, ProjectFull } from "$types";
 
@@ -186,11 +186,11 @@ export const pickProject = form(
   },
 );
 
-///////////////////////////
-// createProject command //
-///////////////////////////
+////////////////////////
+// createProject form //
+////////////////////////
 
-export const createProject = command(
+export const createProject = form(
   v.object({
     name: v.string(),
   }),
@@ -224,6 +224,7 @@ export const createProject = command(
 
     event.cookies.set("activeProject", newProjectId, { path: "/" });
 
+    getAllProjects().refresh();
     getProjects().refresh();
 
     return newProjectId;
