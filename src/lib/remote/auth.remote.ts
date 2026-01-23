@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
 import { error, redirect } from "@sveltejs/kit";
-import { command, form, getRequestEvent, query } from "$app/server";
+import { form, getRequestEvent, query } from "$app/server";
 import db, { passwords, users } from "$db";
 import {
   setSessionTokenCookie,
@@ -82,14 +82,14 @@ export const logout = form(async () => {
   redirect(303, "/");
 });
 
-////////////////////////////
-// updatePassword command //
-////////////////////////////
+/////////////////////////
+// updatePassword form //
+/////////////////////////
 
-export const updatePassword = command(
+export const updatePassword = form(
   v.object({
-    old: v.string(),
-    new: v.string(),
+    _old: v.string(),
+    _new: v.string(),
   }),
   async input => {
     const event = getRequestEvent();
@@ -98,7 +98,7 @@ export const updatePassword = command(
       throw error(401);
     }
 
-    const newHash = hashNewPassword(input.new);
+    const newHash = hashNewPassword(input._new);
 
     await db.transaction(async tx => {
       const [pwRecord] = await tx
@@ -116,7 +116,7 @@ export const updatePassword = command(
         return;
       }
 
-      if (!checkPassword(input.old, pwRecord.hash, pwRecord.salt)) {
+      if (!checkPassword(input._old, pwRecord.hash, pwRecord.salt)) {
         throw error(400, "Incorrect password");
       }
 
@@ -125,5 +125,7 @@ export const updatePassword = command(
         salt: newHash.salt,
       });
     });
+
+    redirect(303, `/user/${session.userId}`);
   },
 );
