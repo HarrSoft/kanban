@@ -66,7 +66,7 @@
     </div>
 
     <!-- Right side -->
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-4">
       {#if session && !onAdminPage}
         <ProjectPicker />
       {/if}
