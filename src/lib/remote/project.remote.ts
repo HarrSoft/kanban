@@ -227,6 +227,6 @@ export const createProject = form(
     getAllProjects().refresh();
     getProjects().refresh();
 
-    redirect(303, `/projects/${newProjectId}`);
+    redirect(303, `/project/${newProjectId}`);
   },
 );
