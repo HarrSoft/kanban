@@ -10,63 +10,59 @@
 
   const apid = $derived(await getActiveProject());
   const activeProject = $derived(apid ? await getProject(apid) : null);
+
+  // component works with pure css, but this code makes ux better
+  let justFocused = false;
 </script>
 
-<form {...pickProject} class="relative h-[3rem] w-55">
-  <ul
+<div class="group relative w-55 max-w-70 **:cursor-pointer">
+  <button
     class={[
-      "rounded-lg border bg-base",
-      "h-[3rem] has-[:focus]:h-auto",
-      "overflow-y-hidden has-[:focus]:overflow-y-auto",
-      "absolute top-0 left-0 w-max",
+      "w-full border bg-base p-2",
+      "flex items-center justify-between gap-2",
+      "rounded-lg group-focus-within:rounded-b-none",
+    ]}
+    onfocus={() => (justFocused = true)}
+    onblur={() => (justFocused = false)}
+    onclick={e => {
+      if (justFocused) {
+        justFocused = false;
+      } else {
+        e.currentTarget.blur();
+      }
+    }}
+  >
+    {#if activeProject}
+      {@render projectInfo(activeProject)}
+    {:else}
+      <span class="mx-auto">-- Pick a Project --</span>
+    {/if}
+
+    <Chevron className="group-focus-within:rotate-180" />
+  </button>
+
+  <form
+    {...pickProject}
+    class={[
+      "absolute rounded-lg rounded-t-none bg-base",
+      "h-0 max-h-100 group-focus-within:h-auto",
+      "border-0 group-focus-within:border group-focus-within:border-t-0",
+      "overflow-y-hidden group-focus-within:overflow-y-auto",
     ]}
   >
-    <li>
-      <button
-        form=""
-        tabindex="0"
-        class={[
-          "h-[2.8rem] w-full px-4 py-2",
-          "flex items-center justify-between gap-4",
-          "group cursor-pointer",
-        ]}
-      >
-        {#if activeProject}
-          {@render projectInfo(activeProject)}
-        {:else}
-          <span>-- Pick a Project --</span>
-        {/if}
-
-        <Chevron className="group-focus:rotate-180" />
-      </button>
-    </li>
-
     {#each await getProjects() as project}
-      <li>
-        <button
-          {...pickProject.fields.projectId.as("submit", project.id)}
-          class={[
-            "h-[2.8rem] w-full px-4 py-2",
-            "flex items-center justify-between",
-            "cursor-pointer hover:bg-shadow",
-          ]}
-        >
-          {@render projectInfo(project)}
-        </button>
-      </li>
-    {:else}
-      <li
-        class={[
-          "w-full h-[2.8rem] px-4 py-2",
-          "flex items-center justify-between",
-          "cursor-pointer hover:bg-shadow",
-        ]}
+      <button
+        {...pickProject.fields.projectId.as("submit", project.id)}
+        class="w-full p-2 hover:bg-shadow"
+        onclick={e => e.currentTarget.blur()}
       >
-        -- No Projects --
-      </li>
+        {@render projectInfo(project)}
+      </button>
+    {:else}
+      <div class="w-full p-2 hover:bg-shadow">-- No Projects --</div>
     {/each}
-  </ul>
-</form>
+  </form>
+</div>
 
 {#snippet projectInfo(project: ProjectInfo)}
   <div class="flex items-center gap-2">
