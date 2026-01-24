@@ -9,88 +9,72 @@ import { ProjectId, ProjectInfo, ProjectFull } from "$types";
 // getProject query //
 //////////////////////
 
-export const getProject = query.batch(ProjectId, async () => {
+const getProjectInternal = async (projectId: ProjectId) => {
+  const projectRaw = await db.transaction(async tx => {
+    const [project] = await tx
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId));
+
+    if (!project) {
+      throw error(404);
+    }
+
+    const memberRows = await tx
+      .select({
+        user: users,
+        member: projectMembers,
+      })
+      .from(projectMembers)
+      .innerJoin(users, eq(projectMembers.userId, users.id))
+      .where(eq(projectMembers.projectId, project.id));
+
+    const admins: ProjectFull["admins"] = [];
+    const contributors: ProjectFull["contributors"] = [];
+    const viewers: ProjectFull["viewers"] = [];
+
+    for (const row of memberRows) {
+      if (row.member.role === "admin") {
+        admins.push({
+          ...row.member,
+          ...row.user,
+        });
+      } else if (row.member.role === "contributor") {
+        contributors.push({
+          ...row.member,
+          ...row.user,
+        });
+      } else if (row.member.role === "viewer") {
+        viewers.push({
+          ...row.member,
+          ...row.user,
+        });
+      } else {
+        console.error(
+          `Member ${row.user.id} of project ${project.id} has no role`,
+        );
+      }
+    }
+
+    return {
+      ...project,
+      admins,
+      contributors,
+      viewers,
+    } satisfies ProjectFull;
+  });
+
+  const project = v.parse(ProjectFull, projectRaw);
+  return project;
+};
+
+export const getProject = query(ProjectId, projectId => {
   const session = getRequestEvent().locals.session;
   if (!session) {
     throw error(401, "Must be logged in");
   }
 
-  const [projectList, membersByProject] = await db.transaction(async tx => {
-    const projectList = await tx
-      .select({ project: projects })
-      .from(projects)
-      .innerJoin(projectMembers, eq(projects.id, projectMembers.projectId))
-      .where(eq(projectMembers.userId, session.userId));
-
-    const projectIds = projectList.map(row => row.project.id);
-
-    const membersByProject = await tx
-      .select({
-        projectId: projects.id,
-        user: users,
-        member: projectMembers,
-      })
-      .from(projects)
-      .innerJoin(projectMembers, eq(projects.id, projectMembers.projectId))
-      .innerJoin(users, eq(users.id, projectMembers.userId))
-      .where(inArray(projects.id, [...projectIds]));
-
-    return [projectList, membersByProject];
-  });
-
-  const projectsMap: Map<ProjectId, ProjectFull> = new Map(
-    projectList.map(row => [
-      row.project.id,
-      {
-        ...row.project,
-        admins: [],
-        contributors: [],
-        viewers: [],
-      },
-    ]),
-  );
-
-  // Assemble members list data
-  for (const row of membersByProject) {
-    const projectRef = projectsMap.get(row.projectId);
-
-    if (!projectRef) {
-      // this shouldn't happen
-      console.warn(
-        [
-          "A sql query appears to be wrong",
-          "in getProject remote function",
-        ].join(" "),
-      );
-      continue;
-    }
-
-    if (row.member.role === "admin") {
-      projectRef.admins.push({
-        ...row.member,
-        ...row.user,
-      });
-    } else if (row.member.role === "contributor") {
-      projectRef.contributors.push({
-        ...row.member,
-        ...row.user,
-      });
-    } else if (row.member.role === "viewer") {
-      projectRef.viewers.push({
-        ...row.member,
-        ...row.user,
-      });
-    }
-  }
-
-  return (projectId: ProjectId) => {
-    const dirty = projectsMap.get(projectId);
-    if (!dirty) {
-      throw error(404);
-    }
-    const clean = v.parse(ProjectFull, dirty satisfies ProjectFull);
-    return clean;
-  };
+  return getProjectInternal(projectId);
 });
 
 ///////////////////////
@@ -152,14 +136,19 @@ export const getAllProjects = query(async () => {
 // getActiveProject query //
 ////////////////////////////
 
-export const getActiveProject = query(() => {
+export const getActiveProject = query(async () => {
   const event = getRequestEvent();
-
-  if (event.locals.session) {
-    return (event.cookies.get("activeProject") as ProjectId) || null;
-  } else {
+  const session = event.locals.session;
+  if (!session) {
     return null;
   }
+
+  const projectId = event.cookies.get("activeProject") as ProjectId;
+  if (!projectId) {
+    return null;
+  }
+
+  return getProjectInternal(projectId);
 });
 
 //////////////////////
@@ -178,7 +167,8 @@ export const pickProject = form(
 
     if (projectId) {
       event.cookies.set("activeProject", projectId, { path: "/" });
-      getActiveProject().set(projectId);
+      const project = await getProjectInternal(projectId);
+      getActiveProject().set(project);
     } else {
       event.cookies.delete("activeProject", { path: "/" });
       getActiveProject().set(null);

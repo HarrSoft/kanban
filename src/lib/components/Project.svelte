@@ -13,7 +13,7 @@
 </script>
 
 {#if link}
-  <a href={`/projects/${project.id}`} class="flex items-center gap-2">
+  <a href={`/project/${project.id}`} class="flex items-center gap-2">
     {@render content()}
   </a>
 {:else}

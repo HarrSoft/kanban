@@ -1,17 +1,9 @@
 <script lang="ts">
   import { Chevron } from "$com/icons";
-  import {
-    getActiveProject,
-    getProject,
-    getProjects,
-    pickProject,
-  } from "$lib/remote";
+  import { getActiveProject, getProjects, pickProject } from "$lib/remote";
   import { ProjectInfo } from "$types";
 
-  const apPromise = getActiveProject().then(apid =>
-    apid ? getProject(apid) : null,
-  );
-  const activeProject = $derived(await apPromise);
+  const activeProject = $derived(await getActiveProject());
 
   // component works with pure css, but this code makes ux better
   let justFocused = false;
@@ -46,7 +38,7 @@
   <form
     {...pickProject}
     class={[
-      "absolute rounded-lg rounded-t-none bg-base",
+      "absolute w-full rounded-lg rounded-t-none bg-base",
       "h-0 max-h-100 group-focus-within:h-auto",
       "border-0 group-focus-within:border group-focus-within:border-t-0",
       "overflow-y-hidden group-focus-within:overflow-y-auto",
@@ -61,7 +53,7 @@
         {@render projectInfo(project)}
       </button>
     {:else}
-      <div class="w-full p-2 hover:bg-shadow">-- No Projects --</div>
+      <div class="w-full p-2 text-center">-- No Projects --</div>
     {/each}
   </form>
 </div>
