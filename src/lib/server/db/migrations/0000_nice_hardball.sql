@@ -4,7 +4,7 @@ CREATE TABLE "invites" (
 	"email" text NOT NULL,
 	"code" text NOT NULL,
 	"platform_role" "platform_role" DEFAULT 'user' NOT NULL,
-	"admin" boolean DEFAULT false NOT NULL,
+	"expires_at" bigint NOT NULL,
 	CONSTRAINT "invites_email_unique" UNIQUE("email"),
 	CONSTRAINT "invites_code_unique" UNIQUE("code")
 );
@@ -13,18 +13,18 @@ CREATE TABLE "passwords" (
 	"user_id" text PRIMARY KEY NOT NULL,
 	"hash" text NOT NULL,
 	"salt" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp NOT NULL,
-	"deleted_at" timestamp
+	"created_at" bigint NOT NULL,
+	"updated_at" bigint NOT NULL,
+	"deleted_at" bigint
 );
 --> statement-breakpoint
 CREATE TABLE "project_members" (
 	"user_id" text,
 	"project_id" text,
 	"role" "project_member_role",
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp NOT NULL,
-	"deleted_at" timestamp,
+	"created_at" bigint NOT NULL,
+	"updated_at" bigint NOT NULL,
+	"deleted_at" bigint,
 	CONSTRAINT "project_members_user_id_project_id_pk" PRIMARY KEY("user_id","project_id")
 );
 --> statement-breakpoint
@@ -32,27 +32,27 @@ CREATE TABLE "projects" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"imageUrl" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp NOT NULL,
-	"deleted_at" timestamp
+	"created_at" bigint NOT NULL,
+	"updated_at" bigint NOT NULL,
+	"deleted_at" bigint
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
-	"expires_at" timestamp NOT NULL
+	"expires_at" bigint NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "timeclocks" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
 	"project_id" text NOT NULL,
-	"start" timestamp DEFAULT now() NOT NULL,
+	"start" bigint NOT NULL,
 	"duration" integer DEFAULT 0 NOT NULL,
 	"locked" boolean DEFAULT false NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp NOT NULL,
-	"deleted_at" timestamp
+	"created_at" bigint NOT NULL,
+	"updated_at" bigint NOT NULL,
+	"deleted_at" bigint
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -63,9 +63,9 @@ CREATE TABLE "users" (
 	"name" text,
 	"imageUrl" text,
 	"bio" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp NOT NULL,
-	"deleted_at" timestamp,
+	"created_at" bigint NOT NULL,
+	"updated_at" bigint NOT NULL,
+	"deleted_at" bigint,
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint

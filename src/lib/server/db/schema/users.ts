@@ -1,7 +1,6 @@
-import * as dates from "date-fns";
 import * as t from "drizzle-orm/pg-core";
 import { Base64Url, PlatformRole, SessionId, UserId } from "$types";
-import { id, timestamps } from "./util";
+import { id, now, timestamps, unix } from "./util";
 
 export const platformRole = t.pgEnum("platform_role", PlatformRole.options);
 
@@ -12,10 +11,9 @@ export const sessions = t.pgTable("sessions", {
     .references(() => users.id)
     .notNull()
     .$type<UserId>(),
-  expiresAt: t
-    .timestamp("expires_at")
+  expiresAt: unix("expires_at")
     .notNull()
-    .$default(() => dates.add(new Date(), { days: 30 })),
+    .$default(() => now() + 30 * 24 * 60 * 60), // +30 days
 });
 
 export const users = t.pgTable("users", {
@@ -51,4 +49,7 @@ export const invites = t.pgTable("invites", {
     .notNull()
     .default("user")
     .$type<PlatformRole>(),
+  expiresAt: unix("expires_at")
+    .notNull()
+    .$default(() => now() + 30 * 24 * 60 * 60), // +30 days
 });

@@ -1,7 +1,7 @@
 import * as t from "drizzle-orm/pg-core";
 import { projects } from "./projects";
 import { users } from "./users";
-import { id, timestamps } from "./util";
+import { id, seconds, timestamps, unix } from "./util";
 import { ProjectId, TimeclockId, UserId } from "$types";
 
 export const timeclocks = t.pgTable("timeclocks", {
@@ -16,8 +16,8 @@ export const timeclocks = t.pgTable("timeclocks", {
     .references(() => projects.id)
     .notNull()
     .$type<ProjectId>(),
-  start: t.timestamp().notNull().defaultNow(),
-  duration: t.integer().notNull().default(0), // seconds
+  start: unix().notNull(),
+  duration: seconds().notNull().default(0),
   locked: t.boolean().notNull().default(false),
   ...timestamps,
 });

@@ -9,3 +9,9 @@ export const Base64Url = v.pipe(
   v.brand("Base64Url"),
 );
 export type Base64Url = v.InferOutput<typeof Base64Url>;
+
+export const Seconds = v.pipe(v.number(), v.flavor("Seconds"));
+export type Seconds = v.InferOutput<typeof Seconds>;
+
+export const Unix = v.pipe(v.number(), v.flavor("Unix"));
+export type Unix = v.InferOutput<typeof Unix>;
