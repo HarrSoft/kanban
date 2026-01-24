@@ -50,6 +50,7 @@
 
 <svelte:head>
   <link rel="icon" href={favicon} />
+  <title>Harrsoft Kanban</title>
 </svelte:head>
 
 <div class="flex h-full flex-col">
