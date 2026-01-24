@@ -3,7 +3,7 @@ import * as v from "valibot";
 import { error } from "@sveltejs/kit";
 import { getRequestEvent, command, query } from "$app/server";
 import db, { projectMembers, projects, timeclocks } from "$db";
-import { ProjectId, Timeclock, TimeclockId } from "$types";
+import { ProjectId, Seconds, Timeclock, TimeclockId, Unix } from "$types";
 
 /////////////////////////
 // getTimeclocks query //
@@ -12,8 +12,8 @@ import { ProjectId, Timeclock, TimeclockId } from "$types";
 export const getTimeclocks = query(
   v.object({
     projectId: ProjectId,
-    from: v.date(),
-    to: v.date(),
+    from: Unix,
+    to: Unix,
   }),
   async ({ projectId, from, to }) => {
     const session = getRequestEvent().locals.session;
@@ -77,20 +77,13 @@ export const getTimeclocks = query(
 export const createTimeclock = command(
   v.object({
     projectId: ProjectId,
-    start: v.date(),
-    duration: v.optional(v.number()),
+    start: Unix,
   }),
-  async ({ projectId, start, duration }) => {
+  async ({ projectId, start }) => {
     const event = getRequestEvent();
     const session = event.locals.session;
     if (!session) {
       throw error(401);
-    }
-
-    const startDate = new Date(start);
-
-    if (duration && duration < 0) {
-      throw error(400, "End date occurs before start date");
     }
 
     const timeclock = await db.transaction(async tx => {
@@ -99,8 +92,7 @@ export const createTimeclock = command(
         .values({
           projectId,
           userId: session.userId,
-          start: startDate,
-          duration: duration ?? undefined,
+          start,
         })
         .returning();
 
@@ -118,8 +110,8 @@ export const createTimeclock = command(
 export const updateTimeclock = command(
   v.object({
     timeclockId: TimeclockId,
-    start: v.optional(v.date()),
-    duration: v.optional(v.number()),
+    start: v.optional(Unix),
+    duration: v.optional(Seconds),
     admin: v.optional(
       v.object({
         locked: v.optional(v.boolean()),
@@ -135,8 +127,6 @@ export const updateTimeclock = command(
     } else if (admin && session.platformRole !== "admin") {
       throw error(403, "Non-admins cannot set admin fields");
     }
-
-    const startDate = start ? new Date(start) : null;
 
     const updatedTimeclock = await db.transaction(async tx => {
       const [rec] = await tx
@@ -157,7 +147,7 @@ export const updateTimeclock = command(
       const [updatedTc] = await tx
         .update(timeclocks)
         .set({
-          start: startDate ?? undefined,
+          start: start ?? undefined,
           duration: duration ?? undefined,
           locked: admin?.locked ?? undefined,
         })
