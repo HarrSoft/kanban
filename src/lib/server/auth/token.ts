@@ -1,9 +1,11 @@
-import * as date from "date-fns";
+import * as df from "date-fns";
 import * as v from "valibot";
+import { UTCDateMini } from "@date-fns/utc";
 import { hmac } from "@oslojs/crypto/hmac";
 import { SHA3_256 } from "@oslojs/crypto/sha3";
 import { constantTimeEqual } from "@oslojs/crypto/subtle";
-import { PlatformRole, Session, SessionId, UserId } from "$types";
+import { PlatformRole, Session, SessionId, Unix, UserId } from "$types";
+
 import { env } from "$env/dynamic/private";
 
 const Header = v.looseObject({
@@ -13,10 +15,10 @@ const Header = v.looseObject({
 
 const Payload = v.object({
   sub: UserId,
-  exp: v.number(),
+  exp: Unix,
   email: v.pipe(v.string(), v.email()),
   session_id: SessionId,
-  session_exp: v.number(),
+  session_exp: Unix,
   platform_role: PlatformRole,
 });
 type Payload = v.InferOutput<typeof Payload>;
@@ -24,7 +26,7 @@ type Payload = v.InferOutput<typeof Payload>;
 type ValidateResult =
   | { valid: false; error: "token" | "unsigned" | "header" | "payload" | "aud" }
   | { valid: false; error: "signature"; sessionId: SessionId }
-  | { valid: true; session: Session; tokenExp: Date };
+  | { valid: true; session: Session; tokenExp: Unix };
 
 export const validateToken = (jwt: string): ValidateResult => {
   if (!env.AUTH_SECRET) {
@@ -75,11 +77,11 @@ export const validateToken = (jwt: string): ValidateResult => {
     sessionId: payload.session_id,
     userId: payload.sub,
     userEmail: payload.email,
-    expiresAt: date.fromUnixTime(payload.session_exp),
+    expiresAt: payload.session_exp,
     platformRole: payload.platform_role,
   };
 
-  return { valid: true, session, tokenExp: date.fromUnixTime(payload.exp) };
+  return { valid: true, session, tokenExp: payload.exp };
 };
 
 export const createToken = (session: Session): string => {
@@ -95,15 +97,15 @@ export const createToken = (session: Session): string => {
   const encHeader = Buffer.from(strHeader, "utf-8").toString("base64url");
 
   // set token expiration
-  const tokenExpiresAt = date.add(new Date(), { hours: 24 });
+  const tokenExpiresAt = df.add(new UTCDateMini(), { hours: 24 });
 
   // build payload
   const payload: Payload = {
     sub: session.userId,
-    exp: date.getUnixTime(tokenExpiresAt),
+    exp: df.getUnixTime(tokenExpiresAt),
     email: session.userEmail,
     session_id: session.sessionId,
-    session_exp: date.getUnixTime(session.expiresAt),
+    session_exp: session.expiresAt,
     platform_role: session.platformRole,
   };
 
