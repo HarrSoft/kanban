@@ -1,10 +1,9 @@
 <script lang="ts">
   import { Project } from "$com";
-  import { getActiveProject, getProject, getSession } from "$lib/remote";
+  import { getActiveProject, getSession } from "$lib/remote";
 
   const session = $derived(await getSession());
-  const apid = $derived(await getActiveProject());
-  const activeProject = $derived(apid ? await getProject(apid) : null);
+  const activeProject = $derived(await getActiveProject());
 </script>
 
 {#if !session}
