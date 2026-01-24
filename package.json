@@ -53,6 +53,7 @@
     "vitest-browser-svelte": "^1.1.0"
   },
   "dependencies": {
+    "@date-fns/utc": "^2.1.1",
     "@oslojs/crypto": "^1.0.1",
     "@paralleldrive/cuid2": "^3.1.0",
     "date-fns": "^4.1.0",
