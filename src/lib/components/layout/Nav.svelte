@@ -8,7 +8,7 @@
 <script lang="ts">
   import type { ClassValue } from "svelte/elements";
   import { page } from "$app/state";
-  import { logout } from "$lib/remote";
+  import { getSession, logout } from "$lib/remote";
 
   const {
     className,
@@ -19,6 +19,8 @@
     open?: boolean;
     tabs: NavTab[];
   } = $props();
+
+  const session = $derived(await getSession());
 </script>
 
 <nav
@@ -46,7 +48,10 @@
   {/each}
   <form
     {...logout}
-    class="w-full cursor-pointer px-4 py-2 text-center hover:bg-content"
+    class={[
+      "w-full cursor-pointer px-4 py-2 text-center hover:bg-content",
+      session ? "visible" : "hidden",
+    ]}
   >
     <button type="submit" class="h-full w-full cursor-pointer">Logout</button>
   </form>
