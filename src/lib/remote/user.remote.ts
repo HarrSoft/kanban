@@ -1,5 +1,7 @@
+import * as df from "date-fns";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
+import { utc } from "@date-fns/utc";
 import { error, redirect } from "@sveltejs/kit";
 import { form, query } from "$app/server";
 import db, { invites, passwords, users } from "$db";
@@ -30,7 +32,6 @@ export const fetchInviteEmail = query(v.string(), async code => {
 export const createUser = form(
   CreateUserSchema,
   async ({ inviteCode, name, _password }) => {
-    console.log("HELLO");
     const passwordHash = hashNewPassword(_password);
 
     await db.transaction(async tx => {
@@ -41,6 +42,12 @@ export const createUser = form(
 
       if (!invite) {
         throw error(404, "No such code");
+      }
+
+      const expiryDate = df.fromUnixTime(invite.expiresAt);
+      if (df.isPast(expiryDate)) {
+        await tx.delete(invites).where(eq(invites.code, invite.code));
+        throw error(400, "Code has expired");
       }
 
       const [newUser] = await tx
