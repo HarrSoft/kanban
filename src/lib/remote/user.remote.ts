@@ -1,11 +1,12 @@
 import * as df from "date-fns";
-import { eq } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
 import * as v from "valibot";
-import { utc } from "@date-fns/utc";
+import { UTCDateMini } from "@date-fns/utc";
 import { error, redirect } from "@sveltejs/kit";
-import { form, query } from "$app/server";
+import { form, getRequestEvent, query } from "$app/server";
 import db, { invites, passwords, users } from "$db";
-import { hashNewPassword } from "$server/crypto";
+import { cuid2, hashNewPassword } from "$server/crypto";
+import { PlatformRole, Unix, UserInvite } from "$types";
 import { CreateUserSchema } from "./schemas";
 
 ////////////////////////////
@@ -24,6 +25,81 @@ export const fetchInviteEmail = query(v.string(), async code => {
 
   return invite.email;
 });
+
+///////////////////////////
+// fetchAllInvites query //
+///////////////////////////
+
+export const fetchAllInvites = query(async () => {
+  const event = getRequestEvent();
+  const session = event.locals.session;
+  if (!session) {
+    throw error(401);
+  } else if (session.platformRole !== "admin") {
+    throw error(403);
+  }
+
+  const inviteRows = await db.transaction(async tx => {
+    const unixNow = df.getUnixTime(new UTCDateMini());
+
+    // delete expired invites
+    await tx.delete(invites).where(lt(invites.expiresAt, unixNow));
+
+    return tx.select().from(invites);
+  });
+
+  const allInvites = v.parse(v.array(UserInvite), inviteRows);
+
+  return allInvites;
+});
+
+export const createInvite = form(
+  v.object({
+    email: v.pipe(v.string(), v.email()),
+    platformRole: PlatformRole,
+  }),
+  async ({ email, platformRole }) => {
+    const event = getRequestEvent();
+    const session = event.locals.session;
+    if (!session) {
+      throw error(401);
+    } else if (session.platformRole !== "admin") {
+      throw error(403);
+    }
+
+    const code = cuid2();
+    const expiresAtDate = df.add(new UTCDateMini(), { days: 30 });
+    const expiresAt = df.getUnixTime(expiresAtDate) as Unix;
+
+    await db.insert(invites).values({ code, email, expiresAt, platformRole });
+
+    fetchAllInvites().refresh();
+    throw redirect(303, "/admin/invites");
+  },
+);
+
+///////////////////////
+// deleteInvite form //
+///////////////////////
+
+export const deleteInvite = form(
+  v.object({
+    email: v.pipe(v.string(), v.email()),
+  }),
+  async ({ email }) => {
+    const event = getRequestEvent();
+    const session = event.locals.session;
+    if (!session) {
+      throw error(401);
+    } else if (session.platformRole !== "admin") {
+      throw error(403);
+    }
+
+    await db.delete(invites).where(eq(invites.email, email));
+
+    fetchAllInvites().refresh();
+  },
+);
 
 /////////////////////
 // createUser form //

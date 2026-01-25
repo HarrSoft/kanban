@@ -34,6 +34,7 @@
         { path: "/admin", name: "Admin&nbsp;Dashboard" },
         { path: "/admin/projects", name: "Projects" },
         { path: "/admin/users", name: "Users" },
+        { path: "/admin/invites", name: "User&nbsp;Invites" },
         { path: "/", name: "User&nbsp;Dashboard" },
       ];
     } else {
