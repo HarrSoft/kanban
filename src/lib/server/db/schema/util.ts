@@ -1,6 +1,5 @@
 import * as df from "date-fns";
 import * as t from "drizzle-orm/pg-core";
-import { UTCDateMini } from "@date-fns/utc";
 import { cuid2 } from "$server/crypto";
 import { Seconds, Unix } from "$types";
 
@@ -16,10 +15,10 @@ export const unix = (name?: string) =>
   : t.bigint({ mode: "number" })
   ).$type<Unix>();
 
-export const now = () => df.getUnixTime(new UTCDateMini()) as Unix;
+export const unixNow = () => df.getUnixTime(new Date()) as Unix;
 
 export const timestamps = {
-  createdAt: unix("created_at").notNull().$default(now),
-  updatedAt: unix("updated_at").notNull().$onUpdate(now),
+  createdAt: unix("created_at").notNull().$default(unixNow),
+  updatedAt: unix("updated_at").notNull().$onUpdate(unixNow),
   deletedAt: unix("deleted_at"),
 };

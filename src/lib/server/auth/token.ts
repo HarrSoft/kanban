@@ -1,6 +1,5 @@
 import * as df from "date-fns";
 import * as v from "valibot";
-import { UTCDateMini } from "@date-fns/utc";
 import { hmac } from "@oslojs/crypto/hmac";
 import { SHA3_256 } from "@oslojs/crypto/sha3";
 import { constantTimeEqual } from "@oslojs/crypto/subtle";
@@ -97,7 +96,7 @@ export const createToken = (session: Session): string => {
   const encHeader = Buffer.from(strHeader, "utf-8").toString("base64url");
 
   // set token expiration
-  const tokenExpiresAt = df.add(new UTCDateMini(), { hours: 24 });
+  const tokenExpiresAt = df.add(new Date(), { hours: 24 });
 
   // build payload
   const payload: Payload = {

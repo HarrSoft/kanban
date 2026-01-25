@@ -1,12 +1,11 @@
 import * as df from "date-fns";
 import { eq, lt } from "drizzle-orm";
 import * as v from "valibot";
-import { UTCDateMini } from "@date-fns/utc";
 import { error, redirect } from "@sveltejs/kit";
 import { form, getRequestEvent, query } from "$app/server";
 import db, { invites, passwords, users } from "$db";
 import { cuid2, hashNewPassword } from "$server/crypto";
-import { PlatformRole, Unix, UserInvite } from "$types";
+import { PlatformRole, UserInvite } from "$types";
 import { CreateUserSchema } from "./schemas";
 
 ////////////////////////////
@@ -40,7 +39,7 @@ export const fetchAllInvites = query(async () => {
   }
 
   const inviteRows = await db.transaction(async tx => {
-    const unixNow = df.getUnixTime(new UTCDateMini());
+    const unixNow = df.getUnixTime(new Date());
 
     // delete expired invites
     await tx.delete(invites).where(lt(invites.expiresAt, unixNow));
@@ -68,10 +67,8 @@ export const createInvite = form(
     }
 
     const code = cuid2();
-    const expiresAtDate = df.add(new UTCDateMini(), { days: 30 });
-    const expiresAt = df.getUnixTime(expiresAtDate) as Unix;
 
-    await db.insert(invites).values({ code, email, expiresAt, platformRole });
+    await db.insert(invites).values({ code, email, platformRole });
 
     fetchAllInvites().refresh();
     throw redirect(303, "/admin/invites");

@@ -1,7 +1,6 @@
 import * as df from "date-fns";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
-import { UTCDateMini } from "@date-fns/utc";
 import { type Tx, sessions, users } from "$db";
 import { Session, SessionId, UserId } from "$types";
 import { deleteSessionTokenCookie } from "./cookie";
@@ -42,7 +41,7 @@ export const getSession = async (tx: Tx, sessionId: SessionId) => {
 };
 
 export const extendSession = async (tx: Tx, sessionId: SessionId) => {
-  const extensionDate = df.add(new UTCDateMini(), { days: 30 });
+  const extensionDate = df.add(new Date(), { days: 30 });
   await tx
     .update(sessions)
     .set({ expiresAt: df.getUnixTime(extensionDate) })

@@ -1,6 +1,6 @@
 import * as t from "drizzle-orm/pg-core";
 import { Base64Url, PlatformRole, SessionId, UserId } from "$types";
-import { id, now, timestamps, unix } from "./util";
+import { id, timestamps, unix, unixNow } from "./util";
 
 export const platformRole = t.pgEnum("platform_role", PlatformRole.options);
 
@@ -13,7 +13,7 @@ export const sessions = t.pgTable("sessions", {
     .$type<UserId>(),
   expiresAt: unix("expires_at")
     .notNull()
-    .$default(() => now() + 30 * 24 * 60 * 60), // +30 days
+    .$default(() => unixNow() + 30 * 24 * 60 * 60), // +30 days
 });
 
 export const users = t.pgTable("users", {
@@ -51,5 +51,5 @@ export const invites = t.pgTable("invites", {
     .$type<PlatformRole>(),
   expiresAt: unix("expires_at")
     .notNull()
-    .$default(() => now() + 30 * 24 * 60 * 60), // +30 days
+    .$default(() => unixNow() + 30 * 24 * 60 * 60), // +30 days
 });

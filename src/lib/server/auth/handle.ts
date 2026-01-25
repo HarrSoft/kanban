@@ -1,5 +1,4 @@
 import * as df from "date-fns";
-import { UTCDateMini, utc } from "@date-fns/utc";
 import type { Handle } from "@sveltejs/kit";
 import db from "$db";
 import { Session } from "$types";
@@ -39,7 +38,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
 
   // check token expiration
-  const tokenExpDate = df.fromUnixTime(tokenRes.tokenExp, { in: utc });
+  const tokenExpDate = df.fromUnixTime(tokenRes.tokenExp);
   const tokenHasExpired = df.isPast(tokenExpDate);
 
   if (!tokenHasExpired) {
@@ -57,14 +56,14 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
 
     // check for expiration
-    const sessionExpDate = df.fromUnixTime(dbSession.expiresAt, { in: utc });
+    const sessionExpDate = df.fromUnixTime(dbSession.expiresAt);
     if (df.isPast(sessionExpDate)) {
       await invalidateSession(tx, dbSession.sessionId);
       return null;
     }
 
     // extend session if less than half duration remains
-    const extensionDate = df.add(new UTCDateMini(), { days: 15 });
+    const extensionDate = df.add(new Date(), { days: 15 });
     if (df.isBefore(sessionExpDate, extensionDate)) {
       await extendSession(tx, dbSession.sessionId);
     }
