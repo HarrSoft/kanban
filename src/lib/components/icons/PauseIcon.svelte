@@ -10,10 +10,10 @@
 
 <svg
   fill="currentColor"
-  viewBox="0 0 16 16"
+  viewBox="0 0 13 16"
   xmlns="http://www.w3.org/2000/svg"
   class={className}
 >
-  <path d="M7 1H2V15H7V1Z" />
-  <path d="M14 1H9V15H14V1Z" />
+  <path d="M0 0 V16 H5 V0 Z" />
+  <path d="M8 0 V16 H13 V0 Z" />
 </svg>

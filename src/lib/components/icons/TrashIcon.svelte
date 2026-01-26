@@ -12,7 +12,7 @@
   fill="currentColor"
   viewBox="-6.7 0 122.88 122.88"
   xmlns="http://www.w3.org/2000/svg"
-  class={className}
+  class={["h-5 w-5", className]}
 >
   <path
     fill-rule="evenodd"
