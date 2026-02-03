@@ -3,7 +3,14 @@ import * as v from "valibot";
 import { hmac } from "@oslojs/crypto/hmac";
 import { SHA3_256 } from "@oslojs/crypto/sha3";
 import { constantTimeEqual } from "@oslojs/crypto/subtle";
-import { PlatformRole, Session, SessionId, Unix, UserId } from "$types";
+import {
+  Base64Url,
+  PlatformRole,
+  Session,
+  SessionId,
+  Unix,
+  UserId,
+} from "$types";
 
 import { env } from "$env/dynamic/private";
 
@@ -42,26 +49,26 @@ export const validateToken = (jwt: string): ValidateResult => {
   }
 
   // decode header
-  const headerStr = Buffer.from(encHeader, "base64url").toString("utf-8");
-  const headerObj = JSON.parse(headerStr);
-  const headerRes = v.safeParse(Header, headerObj);
-  if (!headerRes.success) {
+  try {
+    const headerStr = Buffer.from(encHeader, "base64url").toString("utf-8");
+    const headerObj = JSON.parse(headerStr);
+    v.parse(Header, headerObj);
+  } catch {
     return { valid: false, error: "header" };
   }
 
   // decode payload
-  const payloadStr = Buffer.from(encPayload, "base64url").toString("utf-8");
-  const payloadObj = JSON.parse(payloadStr);
-  const payloadRes = v.safeParse(Payload, payloadObj);
-  if (!payloadRes.success) {
+  let payload: Payload;
+  try {
+    const payloadJson = Buffer.from(encPayload, "base64url").toString("utf-8");
+    const payloadObj = JSON.parse(payloadJson);
+    payload = v.parse(Payload, payloadObj);
+  } catch {
     return { valid: false, error: "payload" };
   }
-  const payload = payloadRes.output;
 
   // verify signature
-  const key = Buffer.from(env.AUTH_SECRET, "utf-8");
-  const message = Buffer.from(encHeader + "." + encPayload, "utf-8");
-  const computedMac = hmac(SHA3_256, key, message);
+  const computedMac = getMac(encHeader as Base64Url, encPayload as Base64Url);
   const decodedMac = Buffer.from(encSig, "base64url");
   const validSig = constantTimeEqual(computedMac, decodedMac);
   if (!validSig) {
@@ -93,7 +100,9 @@ export const createToken = (session: Session): string => {
     typ: "JWT",
     alg: "HS256",
   });
-  const encHeader = Buffer.from(strHeader, "utf-8").toString("base64url");
+  const encHeader = Buffer.from(strHeader, "utf-8").toString(
+    "base64url",
+  ) as Base64Url;
 
   // set token expiration
   const tokenExpiresAt = df.add(new Date(), { hours: 24 });
@@ -110,15 +119,21 @@ export const createToken = (session: Session): string => {
 
   // encode payload
   const strPayload = JSON.stringify(payload);
-  const encPayload = Buffer.from(strPayload, "utf-8").toString("base64url");
+  const encPayload = Buffer.from(strPayload, "utf-8").toString(
+    "base64url",
+  ) as Base64Url;
 
   // generate signature
+  const mac = getMac(encHeader, encPayload);
+  const signature = Buffer.from(mac).toString("base64url");
+
+  return [encHeader, encPayload, signature].join(".");
+};
+
+const getMac = (header: Base64Url, payload: Base64Url): Buffer => {
+  if (!env.AUTH_SECRET) throw new Error("Missing AUTH_SECRET");
   const key = Buffer.from(env.AUTH_SECRET, "utf-8");
-  const message = Buffer.from(encHeader + "." + encPayload, "utf-8");
+  const message = Buffer.from(header + "." + payload, "utf-8");
   const mac = hmac(SHA3_256, key, message);
-  const sig = Buffer.from(mac).toString("base64url");
-
-  const token = message + "." + sig;
-
-  return token;
+  return Buffer.from(mac);
 };
