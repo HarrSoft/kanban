@@ -1,6 +1,7 @@
+import * as argon2 from "argon2";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
-import { error, redirect } from "@sveltejs/kit";
+import { error, invalid, redirect } from "@sveltejs/kit";
 import { form, getRequestEvent, query } from "$app/server";
 import db, { passwords, users } from "$db";
 import {
@@ -9,7 +10,6 @@ import {
 } from "$server/auth/cookie";
 import { createSession, invalidateSession } from "$server/auth/session";
 import { createToken } from "$server/auth/token";
-import { checkPassword, hashNewPassword } from "$server/crypto";
 
 //////////////////////
 // getSession query //
@@ -29,26 +29,25 @@ export const login = form(
     email: v.pipe(v.string(), v.email()),
     _password: v.string(),
   }),
-  async ({ email, _password }) => {
+  async ({ email, _password }, issues) => {
     const session = await db.transaction(async tx => {
       const [pwRecord] = await tx
         .select({
           userId: users.id,
           hash: passwords.hash,
-          salt: passwords.salt,
         })
         .from(passwords)
         .innerJoin(users, eq(users.id, passwords.userId))
         .where(eq(users.email, email));
 
       if (!pwRecord) {
-        throw error(400);
+        throw invalid(issues.email("No account with this email exists"));
       }
 
-      const authed = checkPassword(_password, pwRecord.hash, pwRecord.salt);
+      const authed = await argon2.verify(pwRecord.hash, _password);
 
       if (!authed) {
-        throw error(400);
+        throw invalid(issues._password("Incorrect password"));
       }
 
       const session = await createSession(tx, pwRecord.userId);
@@ -60,7 +59,7 @@ export const login = form(
     const token = createToken(session);
     setSessionTokenCookie(token);
 
-    redirect(303, "/");
+    throw redirect(303, "/");
   },
 );
 
@@ -79,7 +78,7 @@ export const logout = form(async () => {
 
   getSession().set(null);
 
-  redirect(303, "/");
+  throw redirect(303, "/");
 });
 
 /////////////////////////
@@ -91,14 +90,12 @@ export const updatePassword = form(
     _old: v.string(),
     _new: v.string(),
   }),
-  async input => {
+  async ({ _old, _new }, issues) => {
     const event = getRequestEvent();
     const session = event.locals.session;
     if (!session) {
       throw error(401);
     }
-
-    const newHash = hashNewPassword(input._new);
 
     await db.transaction(async tx => {
       const [pwRecord] = await tx
@@ -106,26 +103,25 @@ export const updatePassword = form(
         .from(passwords)
         .where(eq(passwords.userId, session.userId));
 
+      const newHash = await argon2.hash(_new);
+
       if (!pwRecord) {
         console.warn(`User ${session.userEmail} had no password.`);
         await tx.insert(passwords).values({
           userId: session.userId,
-          hash: newHash.hash,
-          salt: newHash.salt,
+          hash: newHash,
         });
         return;
       }
 
-      if (!checkPassword(input._old, pwRecord.hash, pwRecord.salt)) {
-        throw error(400, "Incorrect password");
+      const check = await argon2.verify(pwRecord.hash, _old);
+      if (!check) {
+        throw invalid(issues._old("Incorrect password"));
       }
 
-      await tx.update(passwords).set({
-        hash: newHash.hash,
-        salt: newHash.salt,
-      });
+      await tx.update(passwords).set({ hash: newHash });
     });
 
-    redirect(303, `/user/${session.userId}`);
+    throw redirect(303, `/user/${session.userId}`);
   },
 );

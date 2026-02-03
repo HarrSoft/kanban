@@ -1,5 +1,5 @@
 import * as t from "drizzle-orm/pg-core";
-import { Base64Url, PlatformRole, SessionId, UserId } from "$types";
+import { PlatformRole, SessionId, UserId } from "$types";
 import { id, timestamps, unix, unixNow } from "./util";
 
 export const platformRole = t.pgEnum("platform_role", PlatformRole.options);
@@ -37,8 +37,7 @@ export const passwords = t.pgTable("passwords", {
     .references(() => users.id)
     .notNull()
     .$type<UserId>(),
-  hash: t.text("hash").notNull().$type<Base64Url>(),
-  salt: t.text("salt").notNull().$type<Base64Url>(),
+  hash: t.text("hash").notNull(),
   ...timestamps,
 });
 

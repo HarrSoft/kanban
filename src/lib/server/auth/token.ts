@@ -1,7 +1,7 @@
 import * as df from "date-fns";
 import * as v from "valibot";
 import { hmac } from "@oslojs/crypto/hmac";
-import { SHA3_256 } from "@oslojs/crypto/sha3";
+import { SHA256 } from "@oslojs/crypto/sha2";
 import { constantTimeEqual } from "@oslojs/crypto/subtle";
 import {
   Base64Url,
@@ -126,6 +126,6 @@ const getMac = (header: Base64Url, payload: Base64Url): Buffer => {
   if (!env.AUTH_SECRET) throw new Error("Missing AUTH_SECRET");
   const key = Buffer.from(env.AUTH_SECRET, "utf-8");
   const message = Buffer.from(header + "." + payload, "utf-8");
-  const mac = hmac(SHA3_256, key, message);
+  const mac = hmac(SHA256, key, message);
   return Buffer.from(mac);
 };

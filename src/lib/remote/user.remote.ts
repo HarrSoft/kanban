@@ -1,10 +1,11 @@
+import * as argon2 from "argon2";
 import * as df from "date-fns";
 import { eq, lt } from "drizzle-orm";
 import * as v from "valibot";
-import { error, redirect } from "@sveltejs/kit";
+import { error, invalid, redirect } from "@sveltejs/kit";
 import { form, getRequestEvent, query } from "$app/server";
 import db, { invites, passwords, users } from "$db";
-import { cuid2, hashNewPassword } from "$server/crypto";
+import { cuid2 } from "$server/crypto";
 import { PlatformRole, UserInvite } from "$types";
 import { CreateUserSchema } from "./schemas";
 
@@ -104,9 +105,7 @@ export const deleteInvite = form(
 
 export const createUser = form(
   CreateUserSchema,
-  async ({ inviteCode, name, _password }) => {
-    const passwordHash = hashNewPassword(_password);
-
+  async ({ inviteCode, name, _password }, issues) => {
     await db.transaction(async tx => {
       const [invite] = await tx
         .select()
@@ -114,14 +113,16 @@ export const createUser = form(
         .where(eq(invites.code, inviteCode));
 
       if (!invite) {
-        throw error(404, "No such code");
+        throw invalid(issues.inviteCode("No such code"));
       }
 
       const expiryDate = df.fromUnixTime(invite.expiresAt);
       if (df.isPast(expiryDate)) {
         await tx.delete(invites).where(eq(invites.code, invite.code));
-        throw error(400, "Code has expired");
+        throw invalid(issues.inviteCode("Code has expired"));
       }
+
+      const passwordHash = await argon2.hash(_password);
 
       const [newUser] = await tx
         .insert(users)
@@ -136,13 +137,12 @@ export const createUser = form(
 
       await tx.insert(passwords).values({
         userId: newUser.id,
-        hash: passwordHash.hash,
-        salt: passwordHash.salt,
+        hash: passwordHash,
       });
 
       await tx.delete(invites).where(eq(invites.email, invite.email));
     });
 
-    redirect(303, "/login");
+    throw redirect(303, "/login");
   },
 );

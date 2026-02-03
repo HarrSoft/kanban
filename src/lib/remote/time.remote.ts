@@ -1,19 +1,20 @@
-import { eq, and, gte, lte } from "drizzle-orm";
+import * as df from "date-fns";
+import { eq, and, gte, lte, inArray } from "drizzle-orm";
 import * as v from "valibot";
-import { error } from "@sveltejs/kit";
-import { getRequestEvent, command, query } from "$app/server";
+import { error, redirect } from "@sveltejs/kit";
+import { getRequestEvent, command, form, query } from "$app/server";
 import db, { projectMembers, projects, timeclocks } from "$db";
-import { ProjectId, Seconds, Timeclock, TimeclockId, Unix } from "$types";
+import { ProjectId, TimeclockId, Timeclock, Seconds, Unix } from "$types";
 
-/////////////////////////
-// getTimeclocks query //
-/////////////////////////
+////////////////////////////
+// listMyTimeclocks query //
+////////////////////////////
 
-export const getTimeclocks = query(
+export const listMyTimeclocks = query(
   v.object({
     projectId: ProjectId,
-    from: Unix,
-    to: Unix,
+    from: v.optional(Unix),
+    to: v.optional(Unix),
   }),
   async ({ projectId, from, to }) => {
     const session = getRequestEvent().locals.session;
@@ -21,65 +22,92 @@ export const getTimeclocks = query(
       throw error(401, "Must be logged in");
     }
 
-    // fetch times
-    const times = await db.transaction(async tx => {
-      if (session.platformRole === "user") {
-        // do an authorization check only if the user is not an admin
-        const dbRes = await tx
-          .select({ id: projects.id, userId: projectMembers.userId })
-          .from(projects)
-          .leftJoin(projectMembers, eq(projectMembers.projectId, projects.id))
-          .where(eq(projectMembers.userId, session.userId));
+    // fetch clocks
+    const clocks = await db.transaction(async tx => {
+      const timeConditions = [
+        eq(timeclocks.userId, session.userId),
+        eq(timeclocks.projectId, projectId),
+      ];
 
-        if (dbRes.length < 1) {
-          throw error(
-            403,
-            "Either the project doesn't exist or you are not a member",
-          );
-        }
-      } else if (session.platformRole === "admin") {
-        // if user is an admin, only do existence check
-        const dbRes = await tx
-          .select({ id: projects.id })
-          .from(projects)
-          .where(eq(projects.id, projectId));
-
-        if (dbRes.length < 1) {
-          throw error(404, "No such project");
-        }
-      } else {
-        throw new Error("Unreachable");
+      if (from) {
+        timeConditions.push(gte(timeclocks.start, from));
       }
-
-      const times = await tx
-        .select()
+      if (to) {
+        timeConditions.push(lte(timeclocks.start, to));
+      }
+      const clocks = await tx
+        .select({ id: timeclocks.id })
         .from(timeclocks)
-        .where(
-          and(
-            eq(timeclocks.userId, session.userId),
-            eq(timeclocks.projectId, projectId),
-            gte(timeclocks.start, from),
-            lte(timeclocks.start, to),
-          ),
-        );
+        .where(and(...timeConditions));
 
-      return times;
+      return clocks;
     });
 
-    return v.parse(v.array(Timeclock), times satisfies Timeclock[]);
+    return clocks.map(c => c.id);
   },
 );
 
-/////////////////////////////
-// createTimeclock command //
-/////////////////////////////
+////////////////////////
+// getTimeclock query //
+////////////////////////
 
-export const createTimeclock = command(
+export const getTimeclock = query.batch(TimeclockId, async timeclockIds => {
+  const session = getRequestEvent().locals.session;
+  if (!session) {
+    throw error(401, "Must be logged in");
+  }
+
+  const rawClocks = await db.transaction(async tx => {
+    const conditions = [
+      inArray(timeclocks.id, timeclockIds),
+      session.platformRole !== "admin" ?
+        eq(projectMembers.userId, session.userId)
+      : [],
+    ].flat();
+
+    const rcs = await tx
+      .select({
+        clock: timeclocks,
+        role: projectMembers.role,
+      })
+      .from(timeclocks)
+      .innerJoin(
+        projectMembers,
+        eq(timeclocks.projectId, projectMembers.projectId),
+      )
+      .where(and(...conditions));
+
+    return rcs;
+  });
+
+  const clockMap = new Map(rawClocks.map(rc => [rc.clock.id, rc]));
+
+  return timeclockId => {
+    const raw = clockMap.get(timeclockId);
+
+    if (!raw) {
+      throw error(404);
+    } else if (
+      session.platformRole !== "admin" &&
+      raw.role !== "admin" &&
+      raw.clock.userId !== session.userId
+    ) {
+      throw error(403);
+    }
+
+    return v.parse(Timeclock, raw.clock satisfies Timeclock);
+  };
+});
+
+//////////////////////////
+// createTimeclock form //
+//////////////////////////
+
+export const createTimeclock = form(
   v.object({
     projectId: ProjectId,
-    start: Unix,
   }),
-  async ({ projectId, start }) => {
+  async ({ projectId }) => {
     const event = getRequestEvent();
     const session = event.locals.session;
     if (!session) {
@@ -92,22 +120,24 @@ export const createTimeclock = command(
         .values({
           projectId,
           userId: session.userId,
-          start,
+          start: df.getUnixTime(new Date()),
         })
         .returning();
 
       return tc;
     });
 
+    listMyTimeclocks({ projectId }).refresh();
+
     return v.parse(Timeclock, timeclock satisfies Timeclock);
   },
 );
 
-/////////////////////////////
-// updateTimeclock command //
-/////////////////////////////
+//////////////////////////
+// updateTimeclock form //
+//////////////////////////
 
-export const updateTimeclock = command(
+export const updateTimeclock = form(
   v.object({
     timeclockId: TimeclockId,
     start: v.optional(Unix),
@@ -128,7 +158,7 @@ export const updateTimeclock = command(
       throw error(403, "Non-admins cannot set admin fields");
     }
 
-    const updatedTimeclock = await db.transaction(async tx => {
+    const updatedClock = await db.transaction(async tx => {
       const [rec] = await tx
         .select({
           projectId: projects.id,
@@ -144,7 +174,7 @@ export const updateTimeclock = command(
         throw error(403, "Timeclock has been locked");
       }
 
-      const [updatedTc] = await tx
+      const [updatedClock] = await tx
         .update(timeclocks)
         .set({
           start: start ?? undefined,
@@ -154,9 +184,144 @@ export const updateTimeclock = command(
         .where(eq(timeclocks.id, timeclockId))
         .returning();
 
-      return updatedTc;
+      return updatedClock;
     });
 
-    return v.parse(Timeclock, updatedTimeclock satisfies Timeclock);
+    const cleanClock = v.parse(Timeclock, updatedClock satisfies Timeclock);
+
+    getTimeclock(timeclockId).set(cleanClock);
+
+    throw redirect(303, "/time");
+  },
+);
+
+//////////////////////////
+// deleteTimeclock form //
+//////////////////////////
+
+export const deleteTimeclock = form(
+  v.object({
+    timeclockId: TimeclockId,
+  }),
+  async ({ timeclockId }) => {
+    // authenticate
+    const event = getRequestEvent();
+    const session = event.locals.session;
+    if (!session) {
+      throw error(401, "Must be logged in");
+    }
+
+    const projectId = await db.transaction(async tx => {
+      const [clock] = await tx
+        .select({
+          projectId: timeclocks.projectId,
+          locked: timeclocks.locked,
+          userId: timeclocks.userId,
+        })
+        .from(timeclocks)
+        .where(eq(timeclocks.id, timeclockId));
+
+      if (!clock) {
+        throw error(404);
+      }
+
+      const [member] = await tx
+        .select({ role: projectMembers.role })
+        .from(projectMembers)
+        .where(
+          and(
+            eq(projectMembers.userId, session.userId),
+            eq(projectMembers.projectId, clock.projectId),
+          ),
+        );
+
+      if (!member || member.role === "viewer") {
+        throw error(
+          403,
+          "Only project contributors may edit project timeclocks",
+        );
+      } else if (clock.locked && session.platformRole !== "admin") {
+        throw error(403, "Only admins may edit locked timeclocks");
+      } else if (
+        member.role === "contributor" &&
+        clock.userId !== session.userId
+      ) {
+        throw error(403, "You may not edit others' timeclocks");
+      }
+
+      await tx.delete(timeclocks).where(eq(timeclocks.id, timeclockId));
+
+      return clock.projectId;
+    });
+
+    listMyTimeclocks({ projectId }).refresh();
+  },
+);
+
+///////////////////////
+// pingClock command //
+///////////////////////
+
+export const pingClock = command(
+  v.object({
+    timeclockId: TimeclockId,
+    newDuration: Seconds,
+  }),
+  async ({ timeclockId, newDuration }) => {
+    // authenticate
+    const event = getRequestEvent();
+    const session = event.locals.session;
+    if (!session) {
+      throw error(401, "Must be logged in");
+    }
+
+    const [updatedTc] = await db.transaction(async tx => {
+      const [clock] = await tx
+        .select({
+          projectId: timeclocks.projectId,
+          locked: timeclocks.locked,
+          userId: timeclocks.userId,
+        })
+        .from(timeclocks)
+        .where(eq(timeclocks.id, timeclockId));
+
+      if (!clock) {
+        throw error(404);
+      }
+
+      const [member] = await tx
+        .select({ role: projectMembers.role })
+        .from(projectMembers)
+        .where(
+          and(
+            eq(projectMembers.userId, session.userId),
+            eq(projectMembers.projectId, clock.projectId),
+          ),
+        );
+
+      if (!member || member.role === "viewer") {
+        throw error(
+          403,
+          "Only project contributors may edit project timeclocks",
+        );
+      } else if (clock.locked && session.platformRole !== "admin") {
+        throw error(403, "Only admins may edit locked timeclocks");
+      } else if (
+        member.role === "contributor" &&
+        clock.userId !== session.userId
+      ) {
+        throw error(403, "You may not edit others' timeclocks");
+      }
+
+      return await tx
+        .update(timeclocks)
+        .set({ duration: newDuration })
+        .where(eq(timeclocks.id, timeclockId))
+        .returning();
+    });
+
+    const cleanTc = v.parse(Timeclock, updatedTc satisfies Timeclock);
+
+    getTimeclock(timeclockId).set(cleanTc);
   },
 );
