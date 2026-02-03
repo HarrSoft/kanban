@@ -48,7 +48,7 @@ export const login = form(
       const authed = checkPassword(_password, pwRecord.hash, pwRecord.salt);
 
       if (!authed) {
-        throw error(300);
+        throw error(400);
       }
 
       const session = await createSession(tx, pwRecord.userId);
