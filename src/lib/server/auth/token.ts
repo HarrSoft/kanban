@@ -35,10 +35,6 @@ type ValidateResult =
   | { valid: true; session: Session; tokenExp: Unix };
 
 export const validateToken = (jwt: string): ValidateResult => {
-  if (!env.AUTH_SECRET) {
-    throw new Error("Missing AUTH_SECRET");
-  }
-
   const [encHeader, encPayload, encSig] = jwt.split(".");
   if (!encHeader || !encPayload) {
     return { valid: false, error: "token" };
@@ -91,10 +87,6 @@ export const validateToken = (jwt: string): ValidateResult => {
 };
 
 export const createToken = (session: Session): string => {
-  if (!env.AUTH_SECRET) {
-    throw new Error("Missing AUTH_SECRET");
-  }
-
   // build and encode header
   const strHeader = JSON.stringify({
     typ: "JWT",
