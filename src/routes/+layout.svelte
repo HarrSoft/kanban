@@ -5,7 +5,7 @@
   import { Logo } from "$com/icons";
   import favicon from "$lib/assets/harrsoft_border.svg";
   import burger from "$lib/assets/burger.png";
-  import { getSession } from "$lib/remote";
+  import { getSession, logout } from "$lib/remote";
   import "../app.css";
 
   let { children }: { children?: Snippet } = $props();
@@ -108,12 +108,20 @@
             "w-full px-4 py-2 text-center",
             page.url.pathname === tab.path ?
               "bg-print font-bold text-invert"
-            : "hover: bg-content",
+            : "hover:bg-content",
           ]}
         >
           {@html tab.name}
         </a>
       {/each}
+
+      {#if session}
+        <form {...logout}>
+          <button class="w-full px-4 py-2 text-center hover:bg-content">
+            Logout
+          </button>
+        </form>
+      {/if}
     </nav>
 
     <div class="h-full w-full p-4">
