@@ -1,5 +1,5 @@
 {
-  "name": "harrsoft-kanban",
+  "name": "@harrsoft/kanban",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -55,6 +55,7 @@
     "vitest-browser-svelte": "^1.1.0"
   },
   "dependencies": {
+    "@harrsoft/logger": "harrsoft/logger",
     "@oslojs/crypto": "^1.0.1",
     "@paralleldrive/cuid2": "^3.3.0",
     "argon2": "^0.44.0",
