@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Snippet } from "svelte";
+  import type { Snippet } from "svelte";
   import { page } from "$app/state";
   import { ProjectPicker } from "$com";
   import { Logo } from "$com/icons";
@@ -13,35 +13,6 @@
   const session = $derived(await getSession());
 
   const onAdminPage = $derived(page.url.pathname.startsWith("/admin"));
-
-  interface NavTab {
-    path: string;
-    name: string;
-  }
-  const tabs: NavTab[] = $derived.by(() => {
-    const isAdmin = session?.platformRole === "admin";
-    if (!session) {
-      // Anonymous tabs
-      return [{ path: "/login", name: "Login" }];
-    } else if (onAdminPage) {
-      // Admin tabs
-      return [
-        { path: "/admin", name: "Admin&nbsp;Dashboard" },
-        { path: "/admin/projects", name: "Projects" },
-        { path: "/admin/users", name: "Users" },
-        { path: "/admin/invites", name: "User&nbsp;Invites" },
-        { path: "/", name: "User&nbsp;Dashboard" },
-      ];
-    } else {
-      // User tabs
-      return [
-        { path: "/", name: "Dashboard" },
-        { path: "/time", name: "Time&nbsp;Clock" },
-        { path: "/settings", name: "Settings" },
-        isAdmin ? { path: "/admin", name: "Admin&nbsp;Dashboard" } : [],
-      ].flat();
-    }
-  });
 
   // component works with pure css, but js improves ux
   let burgJustFocused = false;
@@ -101,19 +72,25 @@
         "border-b-2 border-shadow lg:border-r-2 lg:border-b-0",
       ]}
     >
-      {#each tabs as tab}
-        <a
-          href={tab.path}
-          class={[
-            "w-full px-4 py-2 text-center",
-            page.url.pathname === tab.path ?
-              "bg-print font-bold text-invert"
-            : "hover:bg-content",
-          ]}
-        >
-          {@html tab.name}
-        </a>
-      {/each}
+      {#if !session}
+        <!-- Unauthenticated Tabs -->
+        {@render navLink("Login", "/login")}
+      {:else if onAdminPage}
+        <!-- Admin Tabs -->
+        {@render navLink("Admin&nbsp;Dashboard", "/admin")}
+        {@render navLink("Projects", "/admin/projects")}
+        {@render navLink("Users", "/admin/users")}
+        {@render navLink("User&nbsp;Invites", "/admin/invites")}
+        {@render navLink("User&nbsp;Dashboard", "/")}
+      {:else}
+        <!-- User Tabs -->
+        {@render navLink("Dashboard", "/")}
+        {@render navLink("Time&nbsp;Clock", "/time")}
+        {@render navLink("Settings", "/settings")}
+        {#if session.platformRole === "admin"}
+          {@render navLink("Admin&nbsp;Dashboard", "/admin")}
+        {/if}
+      {/if}
 
       {#if session}
         <form {...logout}>
@@ -129,6 +106,20 @@
     </div>
   </div>
 </div>
+
+{#snippet navLink(name: string, path: string)}
+  <a
+    href={path}
+    class={[
+      "w-full px-4 py-2 text-center",
+      page.url.pathname === path ?
+        "bg-print font-bold text-invert"
+      : "hover:bg-content",
+    ]}
+  >
+    {@html name}
+  </a>
+{/snippet}
 
 <style>
   #root:has(#burger:focus) nav {
