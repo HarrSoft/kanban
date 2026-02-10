@@ -10,6 +10,16 @@ export type PlatformRole = v.InferOutput<typeof PlatformRole>;
 export const ProjectId = v.pipe(v.string(), v.cuid2(), v.brand("ProjectId"));
 export type ProjectId = v.InferOutput<typeof ProjectId>;
 
+export const KeyId = v.pipe(v.string(), v.cuid2(), v.brand("KeyId"));
+export type KeyId = v.InferOutput<typeof KeyId>;
+
+//////////
+// Logs //
+//////////
+
+export const LogId = v.pipe(v.string(), v.cuid2(), v.brand("LogId"));
+export type LogId = v.InferOutput<typeof LogId>;
+
 //////////////
 // Sessions //
 //////////////

@@ -15,6 +15,13 @@
       "when": 1770153098580,
       "tag": "0001_mixed_marten_broadcloak",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770702175865,
+      "tag": "0002_clumsy_ben_urich",
+      "breakpoints": true
     }
   ]
 }
