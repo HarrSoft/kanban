@@ -13,3 +13,10 @@ negotiate an exception.
 This package was developed primarily with bun as its runtime and package
 manager. If you run into issues executing these scripts, try using the command
 `$ bun -b run <script>`, which will correctly resolve aliases.
+
+## Env Variables
+
+Make sure to have the following variables set:
+
+    AUTH_SECRET="this can be anything"
+    DATABASE_URL="postgres://..."
