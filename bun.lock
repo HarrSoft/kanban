@@ -8,7 +8,7 @@
         "@paralleldrive/cuid2": "^3.3.0",
         "argon2": "^0.44.0",
         "date-fns": "^4.1.0",
-        "@harrsoft/logger": "github:harrsoft/logger",
+        "@harrsoft/logger": "harrsoft/logger",
         "valibot": "^1.2.0",
       },
       "devDependencies": {
@@ -140,7 +140,7 @@
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.4.1", "", { "dependencies": { "@eslint/core": "^0.17.0", "levn": "^0.4.1" } }, "sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA=="],
 
-    "@harrsoft/logger": ["@harrsoft/logger@github:harrsoft/logger#5fc1b7a", { "dependencies": { "valibot": "^1.2.0" } }, "HarrSoft-logger-5fc1b7a"],
+    "@harrsoft/logger": ["@harrsoft/logger@github:harrsoft/logger#1906518", { "dependencies": { "valibot": "^1.2.0" } }, "HarrSoft-logger-1906518"],
 
     "@humanfs/core": ["@humanfs/core@0.19.1", "", {}, "sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA=="],
 

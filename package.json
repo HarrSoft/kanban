@@ -55,7 +55,7 @@
     "vitest-browser-svelte": "^1.1.0"
   },
   "dependencies": {
-    "@harrsoft/logger": "github:harrsoft/logger",
+    "@harrsoft/logger": "harrsoft/logger",
     "@oslojs/crypto": "^1.0.1",
     "@paralleldrive/cuid2": "^3.3.0",
     "argon2": "^0.44.0",
