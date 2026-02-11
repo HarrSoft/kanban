@@ -143,6 +143,8 @@
 <form id="create" {...createTimeclock}></form>
 <form id="delete" {...deleteTimeclock}></form>
 
+<span class="text-red-500 text-xl font-bold">don't expect these to work yet lol</span>
+
 <!-- List of Timeclocks -->
 <table class="table-auto">
   <thead>
