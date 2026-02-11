@@ -18,5 +18,6 @@ manager. If you run into issues executing these scripts, try using the command
 
 Make sure to have the following variables set:
 
+    ORIGIN="http://localhost:5173" # optional in dev mode, required in builds
     AUTH_SECRET="this can be anything"
     DATABASE_URL="postgres://..."
