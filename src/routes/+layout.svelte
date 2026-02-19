@@ -77,18 +77,18 @@
 				{@render navLink('Login', '/login')}
 			{:else if onAdminPage}
 				<!-- Admin Tabs -->
-				{@render navLink('Admin&nbsp;Dashboard', '/admin')}
+				{@render navLink('Admin Dashboard', '/admin')}
 				{@render navLink('Projects', '/admin/projects')}
 				{@render navLink('Users', '/admin/users')}
-				{@render navLink('User&nbsp;Invites', '/admin/invites')}
-				{@render navLink('User&nbsp;Dashboard', '/')}
+				{@render navLink('User Invites', '/admin/invites')}
+				{@render navLink('User Dashboard', '/')}
 			{:else}
 				<!-- User Tabs -->
 				{@render navLink('Dashboard', '/')}
-				{@render navLink('Time&nbsp;Clock', '/time')}
+				{@render navLink('Time Clock', '/time')}
 				{@render navLink('Settings', '/settings')}
 				{#if session.platformRole === 'admin'}
-					{@render navLink('Admin&nbsp;Dashboard', '/admin')}
+					{@render navLink('Admin Dashboard', '/admin')}
 				{/if}
 			{/if}
 
@@ -117,7 +117,7 @@
 			:	'hover:bg-content',
 		]}
 	>
-		{@html name}
+		{name}
 	</a>
 {/snippet}
 
