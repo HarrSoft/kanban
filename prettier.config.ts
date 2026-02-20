@@ -1,18 +1,20 @@
 import type { Config } from "prettier";
 
 const config: Config = {
-  experimentalTernaries: true,
-  arrowParens: "avoid",
-  plugins: ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
-  overrides: [
-    {
-      files: "*.svelte",
-      options: {
-        parser: "svelte",
-      },
-    },
-  ],
-  tailwindStylesheet: "./src/app.css",
+	experimentalTernaries: true,
+	arrowParens: "avoid",
+	plugins: ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
+	overrides: [
+		{
+			files: "*.svelte",
+			options: {
+				parser: "svelte",
+			},
+		},
+	],
+	tailwindStylesheet: "./src/app.css",
+	useTabs: true,
+	tabWidth: 2,
 };
 
 export default config;

@@ -8,20 +8,20 @@ export const handle: Handle = authHandle;
 
 // create first user if there are none
 export const init: ServerInit = () =>
-  db.transaction(async tx => {
-    const [userRows] = await tx.select({ count: count() }).from(users);
+	db.transaction(async tx => {
+		const [userRows] = await tx.select({ count: count() }).from(users);
 
-    const [adminInviteRows] = await tx
-      .select({ count: count() })
-      .from(invites)
-      .where(eq(invites.platformRole, "admin"));
+		const [adminInviteRows] = await tx
+			.select({ count: count() })
+			.from(invites)
+			.where(eq(invites.platformRole, "admin"));
 
-    if (userRows?.count === 0 && adminInviteRows?.count === 0) {
-      await tx.insert(invites).values({
-        email: "admin@example.com",
-        code: "admin",
-        platformRole: "admin",
-        expiresAt: df.getUnixTime(df.add(new Date(), { years: 10 })),
-      });
-    }
-  });
+		if (userRows?.count === 0 && adminInviteRows?.count === 0) {
+			await tx.insert(invites).values({
+				email: "admin@example.com",
+				code: "admin",
+				platformRole: "admin",
+				expiresAt: df.getUnixTime(df.add(new Date(), { years: 10 })),
+			});
+		}
+	});

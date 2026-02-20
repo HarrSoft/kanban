@@ -3,34 +3,34 @@ import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-  preprocess: vitePreprocess(),
+	preprocess: vitePreprocess(),
 
-  kit: {
-    adapter: adapter(),
+	kit: {
+		adapter: adapter(),
 
-    experimental: {
-      remoteFunctions: true,
-    },
+		experimental: {
+			remoteFunctions: true,
+		},
 
-    alias: {
-      $: "./src",
-      "$/*": "./src/*",
-      $com: "./src/lib/components",
-      "$com/*": "./src/lib/components/*",
-      $db: "./src/lib/server/db",
-      "$db/*": "./src/lib/server/db/*",
-      $server: "./src/lib/server",
-      "$server/*": "./src/lib/server/*",
-      $types: "./src/lib/types",
-      "$types/*": "./src/lib/types/*",
-    },
-  },
+		alias: {
+			$: "./src",
+			"$/*": "./src/*",
+			$com: "./src/lib/components",
+			"$com/*": "./src/lib/components/*",
+			$db: "./src/lib/server/db",
+			"$db/*": "./src/lib/server/db/*",
+			$server: "./src/lib/server",
+			"$server/*": "./src/lib/server/*",
+			$types: "./src/lib/types",
+			"$types/*": "./src/lib/types/*",
+		},
+	},
 
-  compilerOptions: {
-    experimental: {
-      async: true,
-    },
-  },
+	compilerOptions: {
+		experimental: {
+			async: true,
+		},
+	},
 };
 
 export default config;

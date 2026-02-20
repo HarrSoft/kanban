@@ -5,8 +5,8 @@ import { error, invalid, redirect } from "@sveltejs/kit";
 import { form, getRequestEvent, query } from "$app/server";
 import db, { passwords, users } from "$db";
 import {
-  setSessionTokenCookie,
-  deleteSessionTokenCookie,
+	setSessionTokenCookie,
+	deleteSessionTokenCookie,
 } from "$server/auth/cookie";
 import { createSession, invalidateSession } from "$server/auth/session";
 import { createToken } from "$server/auth/token";
@@ -16,8 +16,8 @@ import { createToken } from "$server/auth/token";
 //////////////////////
 
 export const getSession = query(() => {
-  const event = getRequestEvent();
-  return event.locals.session;
+	const event = getRequestEvent();
+	return event.locals.session;
 });
 
 ////////////////
@@ -25,42 +25,42 @@ export const getSession = query(() => {
 ////////////////
 
 export const login = form(
-  v.object({
-    email: v.pipe(v.string(), v.email()),
-    _password: v.string(),
-  }),
-  async ({ email, _password }, issues) => {
-    const session = await db.transaction(async tx => {
-      const [pwRecord] = await tx
-        .select({
-          userId: users.id,
-          hash: passwords.hash,
-        })
-        .from(passwords)
-        .innerJoin(users, eq(users.id, passwords.userId))
-        .where(eq(users.email, email));
+	v.object({
+		email: v.pipe(v.string(), v.email()),
+		_password: v.string(),
+	}),
+	async ({ email, _password }, issues) => {
+		const session = await db.transaction(async tx => {
+			const [pwRecord] = await tx
+				.select({
+					userId: users.id,
+					hash: passwords.hash,
+				})
+				.from(passwords)
+				.innerJoin(users, eq(users.id, passwords.userId))
+				.where(eq(users.email, email));
 
-      if (!pwRecord) {
-        throw invalid(issues.email("No account with this email exists"));
-      }
+			if (!pwRecord) {
+				throw invalid(issues.email("No account with this email exists"));
+			}
 
-      const authed = await argon2.verify(pwRecord.hash, _password);
+			const authed = await argon2.verify(pwRecord.hash, _password);
 
-      if (!authed) {
-        throw invalid(issues._password("Incorrect password"));
-      }
+			if (!authed) {
+				throw invalid(issues._password("Incorrect password"));
+			}
 
-      const session = await createSession(tx, pwRecord.userId);
-      return session;
-    });
+			const session = await createSession(tx, pwRecord.userId);
+			return session;
+		});
 
-    getSession().set(session);
+		getSession().set(session);
 
-    const token = createToken(session);
-    setSessionTokenCookie(token);
+		const token = createToken(session);
+		setSessionTokenCookie(token);
 
-    throw redirect(303, "/");
-  },
+		throw redirect(303, "/");
+	},
 );
 
 /////////////////
@@ -68,17 +68,17 @@ export const login = form(
 /////////////////
 
 export const logout = form(async () => {
-  const event = getRequestEvent();
-  const session = event.locals.session;
+	const event = getRequestEvent();
+	const session = event.locals.session;
 
-  if (session) {
-    await invalidateSession(db, session.sessionId);
-    deleteSessionTokenCookie();
-  }
+	if (session) {
+		await invalidateSession(db, session.sessionId);
+		deleteSessionTokenCookie();
+	}
 
-  getSession().set(null);
+	getSession().set(null);
 
-  throw redirect(303, "/");
+	throw redirect(303, "/");
 });
 
 /////////////////////////
@@ -86,42 +86,42 @@ export const logout = form(async () => {
 /////////////////////////
 
 export const updatePassword = form(
-  v.object({
-    _old: v.string(),
-    _new: v.string(),
-  }),
-  async ({ _old, _new }, issues) => {
-    const event = getRequestEvent();
-    const session = event.locals.session;
-    if (!session) {
-      throw error(401);
-    }
+	v.object({
+		_old: v.string(),
+		_new: v.string(),
+	}),
+	async ({ _old, _new }, issues) => {
+		const event = getRequestEvent();
+		const session = event.locals.session;
+		if (!session) {
+			throw error(401);
+		}
 
-    await db.transaction(async tx => {
-      const [pwRecord] = await tx
-        .select()
-        .from(passwords)
-        .where(eq(passwords.userId, session.userId));
+		await db.transaction(async tx => {
+			const [pwRecord] = await tx
+				.select()
+				.from(passwords)
+				.where(eq(passwords.userId, session.userId));
 
-      const newHash = await argon2.hash(_new);
+			const newHash = await argon2.hash(_new);
 
-      if (!pwRecord) {
-        console.warn(`User ${session.userEmail} had no password.`);
-        await tx.insert(passwords).values({
-          userId: session.userId,
-          hash: newHash,
-        });
-        return;
-      }
+			if (!pwRecord) {
+				console.warn(`User ${session.userEmail} had no password.`);
+				await tx.insert(passwords).values({
+					userId: session.userId,
+					hash: newHash,
+				});
+				return;
+			}
 
-      const check = await argon2.verify(pwRecord.hash, _old);
-      if (!check) {
-        throw invalid(issues._old("Incorrect password"));
-      }
+			const check = await argon2.verify(pwRecord.hash, _old);
+			if (!check) {
+				throw invalid(issues._old("Incorrect password"));
+			}
 
-      await tx.update(passwords).set({ hash: newHash });
-    });
+			await tx.update(passwords).set({ hash: newHash });
+		});
 
-    throw redirect(303, `/user/${session.userId}`);
-  },
+		throw redirect(303, `/user/${session.userId}`);
+	},
 );

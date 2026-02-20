@@ -6,49 +6,49 @@ import { Session, SessionId, UserId } from "$types";
 import { deleteSessionTokenCookie } from "./cookie";
 
 export const createSession = async (tx: Tx, userId: UserId) => {
-  const [dbSession] = await tx.insert(sessions).values({ userId }).returning();
+	const [dbSession] = await tx.insert(sessions).values({ userId }).returning();
 
-  const [dbUser] = await tx
-    .select({
-      userId: users.id,
-      userEmail: users.email,
-      platformRole: users.platformRole,
-    })
-    .from(users)
-    .where(eq(users.id, userId));
+	const [dbUser] = await tx
+		.select({
+			userId: users.id,
+			userEmail: users.email,
+			platformRole: users.platformRole,
+		})
+		.from(users)
+		.where(eq(users.id, userId));
 
-  return v.parse(Session, {
-    sessionId: dbSession.id,
-    expiresAt: dbSession.expiresAt,
-    ...dbUser,
-  } satisfies Session);
+	return v.parse(Session, {
+		sessionId: dbSession.id,
+		expiresAt: dbSession.expiresAt,
+		...dbUser,
+	} satisfies Session);
 };
 
 export const getSession = async (tx: Tx, sessionId: SessionId) => {
-  const [dbSession] = await tx
-    .select({
-      sessionId: sessions.id,
-      userId: sessions.userId,
-      userEmail: users.email,
-      platformRole: users.platformRole,
-      expiresAt: sessions.expiresAt,
-    })
-    .from(sessions)
-    .innerJoin(users, eq(users.id, sessions.userId))
-    .where(eq(sessions.id, sessionId));
+	const [dbSession] = await tx
+		.select({
+			sessionId: sessions.id,
+			userId: sessions.userId,
+			userEmail: users.email,
+			platformRole: users.platformRole,
+			expiresAt: sessions.expiresAt,
+		})
+		.from(sessions)
+		.innerJoin(users, eq(users.id, sessions.userId))
+		.where(eq(sessions.id, sessionId));
 
-  return v.parse(Session, dbSession satisfies Session);
+	return v.parse(Session, dbSession satisfies Session);
 };
 
 export const extendSession = async (tx: Tx, sessionId: SessionId) => {
-  const extensionDate = df.add(new Date(), { days: 30 });
-  await tx
-    .update(sessions)
-    .set({ expiresAt: df.getUnixTime(extensionDate) })
-    .where(eq(sessions.id, sessionId));
+	const extensionDate = df.add(new Date(), { days: 30 });
+	await tx
+		.update(sessions)
+		.set({ expiresAt: df.getUnixTime(extensionDate) })
+		.where(eq(sessions.id, sessionId));
 };
 
 export const invalidateSession = async (tx: Tx, sessionId: SessionId) => {
-  deleteSessionTokenCookie();
-  await tx.delete(sessions).where(eq(sessions.id, sessionId));
+	deleteSessionTokenCookie();
+	await tx.delete(sessions).where(eq(sessions.id, sessionId));
 };

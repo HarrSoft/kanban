@@ -14,16 +14,16 @@ import { CreateUserSchema } from "./schemas";
 ////////////////////////////
 
 export const fetchInviteEmail = query(v.string(), async code => {
-  const [invite] = await db
-    .select({ email: invites.email })
-    .from(invites)
-    .where(eq(invites.code, code));
+	const [invite] = await db
+		.select({ email: invites.email })
+		.from(invites)
+		.where(eq(invites.code, code));
 
-  if (!invite) {
-    throw error(404, "Invalid code");
-  }
+	if (!invite) {
+		throw error(404, "Invalid code");
+	}
 
-  return invite.email;
+	return invite.email;
 });
 
 ///////////////////////////
@@ -31,49 +31,49 @@ export const fetchInviteEmail = query(v.string(), async code => {
 ///////////////////////////
 
 export const fetchAllInvites = query(async () => {
-  const event = getRequestEvent();
-  const session = event.locals.session;
-  if (!session) {
-    throw error(401);
-  } else if (session.platformRole !== "admin") {
-    throw error(403);
-  }
+	const event = getRequestEvent();
+	const session = event.locals.session;
+	if (!session) {
+		throw error(401);
+	} else if (session.platformRole !== "admin") {
+		throw error(403);
+	}
 
-  const inviteRows = await db.transaction(async tx => {
-    const unixNow = df.getUnixTime(new Date());
+	const inviteRows = await db.transaction(async tx => {
+		const unixNow = df.getUnixTime(new Date());
 
-    // delete expired invites
-    await tx.delete(invites).where(lt(invites.expiresAt, unixNow));
+		// delete expired invites
+		await tx.delete(invites).where(lt(invites.expiresAt, unixNow));
 
-    return tx.select().from(invites);
-  });
+		return tx.select().from(invites);
+	});
 
-  const allInvites = v.parse(v.array(UserInvite), inviteRows);
+	const allInvites = v.parse(v.array(UserInvite), inviteRows);
 
-  return allInvites;
+	return allInvites;
 });
 
 export const createInvite = form(
-  v.object({
-    email: v.pipe(v.string(), v.email()),
-    platformRole: PlatformRole,
-  }),
-  async ({ email, platformRole }) => {
-    const event = getRequestEvent();
-    const session = event.locals.session;
-    if (!session) {
-      throw error(401);
-    } else if (session.platformRole !== "admin") {
-      throw error(403);
-    }
+	v.object({
+		email: v.pipe(v.string(), v.email()),
+		platformRole: PlatformRole,
+	}),
+	async ({ email, platformRole }) => {
+		const event = getRequestEvent();
+		const session = event.locals.session;
+		if (!session) {
+			throw error(401);
+		} else if (session.platformRole !== "admin") {
+			throw error(403);
+		}
 
-    const code = cuid2();
+		const code = cuid2();
 
-    await db.insert(invites).values({ code, email, platformRole });
+		await db.insert(invites).values({ code, email, platformRole });
 
-    fetchAllInvites().refresh();
-    throw redirect(303, "/admin/invites");
-  },
+		fetchAllInvites().refresh();
+		throw redirect(303, "/admin/invites");
+	},
 );
 
 ///////////////////////
@@ -81,22 +81,22 @@ export const createInvite = form(
 ///////////////////////
 
 export const deleteInvite = form(
-  v.object({
-    email: v.pipe(v.string(), v.email()),
-  }),
-  async ({ email }) => {
-    const event = getRequestEvent();
-    const session = event.locals.session;
-    if (!session) {
-      throw error(401);
-    } else if (session.platformRole !== "admin") {
-      throw error(403);
-    }
+	v.object({
+		email: v.pipe(v.string(), v.email()),
+	}),
+	async ({ email }) => {
+		const event = getRequestEvent();
+		const session = event.locals.session;
+		if (!session) {
+			throw error(401);
+		} else if (session.platformRole !== "admin") {
+			throw error(403);
+		}
 
-    await db.delete(invites).where(eq(invites.email, email));
+		await db.delete(invites).where(eq(invites.email, email));
 
-    fetchAllInvites().refresh();
-  },
+		fetchAllInvites().refresh();
+	},
 );
 
 /////////////////////
@@ -104,45 +104,45 @@ export const deleteInvite = form(
 /////////////////////
 
 export const createUser = form(
-  CreateUserSchema,
-  async ({ inviteCode, name, _password }, issues) => {
-    await db.transaction(async tx => {
-      const [invite] = await tx
-        .select()
-        .from(invites)
-        .where(eq(invites.code, inviteCode));
+	CreateUserSchema,
+	async ({ inviteCode, name, _password }, issues) => {
+		await db.transaction(async tx => {
+			const [invite] = await tx
+				.select()
+				.from(invites)
+				.where(eq(invites.code, inviteCode));
 
-      if (!invite) {
-        throw invalid(issues.inviteCode("No such code"));
-      }
+			if (!invite) {
+				throw invalid(issues.inviteCode("No such code"));
+			}
 
-      const expiryDate = df.fromUnixTime(invite.expiresAt);
-      if (df.isPast(expiryDate)) {
-        await tx.delete(invites).where(eq(invites.code, invite.code));
-        throw invalid(issues.inviteCode("Code has expired"));
-      }
+			const expiryDate = df.fromUnixTime(invite.expiresAt);
+			if (df.isPast(expiryDate)) {
+				await tx.delete(invites).where(eq(invites.code, invite.code));
+				throw invalid(issues.inviteCode("Code has expired"));
+			}
 
-      const passwordHash = await argon2.hash(_password);
+			const passwordHash = await argon2.hash(_password);
 
-      const [newUser] = await tx
-        .insert(users)
-        .values({
-          email: invite.email,
-          name: name.trim(),
-          platformRole: invite.platformRole,
-        })
-        .returning({
-          id: users.id,
-        });
+			const [newUser] = await tx
+				.insert(users)
+				.values({
+					email: invite.email,
+					name: name.trim(),
+					platformRole: invite.platformRole,
+				})
+				.returning({
+					id: users.id,
+				});
 
-      await tx.insert(passwords).values({
-        userId: newUser.id,
-        hash: passwordHash,
-      });
+			await tx.insert(passwords).values({
+				userId: newUser.id,
+				hash: passwordHash,
+			});
 
-      await tx.delete(invites).where(eq(invites.email, invite.email));
-    });
+			await tx.delete(invites).where(eq(invites.email, invite.email));
+		});
 
-    throw redirect(303, "/login");
-  },
+		throw redirect(303, "/login");
+	},
 );

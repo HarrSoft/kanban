@@ -1,26 +1,26 @@
 {
-  "[javascript]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features"
-  },
-  "[json]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
-  },
-  "[jsonc]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "css.lint.unknownAtRules": "ignore",
-  "editor.codeActionsOnSave": {
-    "source.fixAll": "explicit"
-  },
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.formatOnSave": true,
-  "editor.maxTokenizationLineLength": 20000,
-  "editor.tabSize": 2,
-  "eslint.validate": ["javascript", "svelte"],
-  "files.eol": "\n",
-  "[svelte]": {
-    "editor.defaultFormatter": "svelte.svelte-vscode"
-  },
-  "tailwindCSS.rootFontSize": 16
+	"[javascript]": {
+		"editor.defaultFormatter": "vscode.typescript-language-features"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"css.lint.unknownAtRules": "ignore",
+	"editor.codeActionsOnSave": {
+		"source.fixAll": "explicit"
+	},
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"editor.formatOnSave": true,
+	"editor.maxTokenizationLineLength": 20000,
+	"editor.tabSize": 2,
+	"eslint.validate": ["javascript", "svelte"],
+	"files.eol": "\n",
+	"[svelte]": {
+		"editor.defaultFormatter": "svelte.svelte-vscode"
+	},
+	"tailwindCSS.rootFontSize": 16
 }

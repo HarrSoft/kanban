@@ -39,9 +39,9 @@ export type TicketId = v.InferOutput<typeof TicketId>;
 ////////////////
 
 export const TimeclockId = v.pipe(
-  v.string(),
-  v.cuid2(),
-  v.brand("TimeclockId"),
+	v.string(),
+	v.cuid2(),
+	v.brand("TimeclockId"),
 );
 export type TimeclockId = v.InferOutput<typeof TimeclockId>;
 
