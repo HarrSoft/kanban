@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as df from "date-fns";
   import { onDestroy } from "svelte";
+  import { resolve } from "$app/paths";
   import {
     EditIcon,
     LockIcon,
@@ -143,7 +144,9 @@
 <form id="create" {...createTimeclock}></form>
 <form id="delete" {...deleteTimeclock}></form>
 
-<span class="text-red-500 text-xl font-bold">don't expect these to work yet lol</span>
+<span class="text-xl font-bold text-red-500">
+  don't expect these to work yet lol
+</span>
 
 <!-- List of Timeclocks -->
 <table class="table-auto">
@@ -155,7 +158,7 @@
           <button
             form="create"
             {...createTimeclock.fields.projectId.as("submit", activeProject.id)}
-            class="button solid !p-0 !px-1"
+            class="button solid p-0! px-1!"
           >
             + New
           </button>
@@ -172,7 +175,7 @@
   </thead>
 
   <tbody class="*:even:bg-shadow">
-    {#each timeclocks as clock}
+    {#each timeclocks as clock (clock.id)}
       {@const start = df.fromUnixTime(clock.start)}
       {@const iAmActive = active?.clock.id === clock.id}
       <tr class={["*:px-4 *:py-1", iAmActive ? "border-2 border-accent" : []]}>
@@ -204,7 +207,7 @@
               </button>
             {/if}
             <!-- Edit button -->
-            <a href={`/time/${clock.id}`}>
+            <a href={resolve(`/time/${clock.id}`)}>
               <EditIcon className="h-6" />
             </a>
             <!-- Delete button -->

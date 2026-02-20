@@ -13,19 +13,19 @@
   <!-- Project members -->
   {#if project.admins.length > 0}
     <h2 class="text-lg font-bold">Project Admins</h2>
-    {#each project.admins as admin}
+    {#each project.admins as admin (admin.id)}
       {@render userLine(admin)}
     {/each}
   {/if}
   {#if project.contributors.length > 0}
     <h2 class="text-lg font-bold">Project Contributors</h2>
-    {#each project.contributors as contributor}
+    {#each project.contributors as contributor (contributor.id)}
       {@render userLine(contributor)}
     {/each}
   {/if}
   {#if project.viewers.length > 0}
     <h2 class="text-lg font-bold">Project Viewers</h2>
-    {#each project.viewers as viewer}
+    {#each project.viewers as viewer (viewer.id)}
       {@render userLine(viewer)}
     {/each}
   {/if}

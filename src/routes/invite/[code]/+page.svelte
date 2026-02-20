@@ -23,7 +23,7 @@
   <label>
     <h2>Name</h2>
     <input {...createUser.fields.name.as("text")} />
-    {#each createUser.fields.name.issues() || [] as issue}
+    {#each createUser.fields.name.issues() || [] as issue (issue.message)}
       <p class="text-red-500">{issue.message}</p>
     {/each}
   </label>
@@ -31,7 +31,7 @@
   <label>
     <h2>Password</h2>
     <input {...createUser.fields._password.as("password")} />
-    {#each createUser.fields._password.issues() || [] as issue}
+    {#each createUser.fields._password.issues() || [] as issue (issue.message)}
       <p class="text-red-500">{issue.message}</p>
     {/each}
   </label>
@@ -39,10 +39,10 @@
   <label>
     <h2>Confirm Password</h2>
     <input {...createUser.fields._confirm.as("password")} />
-    {#each createUser.fields._confirm.issues() || [] as issue}
+    {#each createUser.fields._confirm.issues() || [] as issue (issue.message)}
       <p class="text-red-500">{issue.message}</p>
     {/each}
   </label>
 
-  <button type="submit" class="button solid col-span-2"> Submit </button>
+  <button type="submit" class="button solid col-span-2">Submit</button>
 </form>

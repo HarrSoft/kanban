@@ -44,7 +44,7 @@
       "overflow-y-hidden group-focus-within:overflow-y-auto",
     ]}
   >
-    {#each await getProjects() as project}
+    {#each await getProjects() as project (project.id)}
       <button
         {...pickProject.fields.projectId.as("submit", project.id)}
         class="w-full p-2 hover:bg-shadow"
@@ -61,9 +61,9 @@
 {#snippet projectInfo(project: ProjectInfo)}
   <div class="flex items-center gap-2">
     {#if project.imageUrl}
-      <img src={project.imageUrl} alt="icon" class="w-[2rem]" />
+      <img src={project.imageUrl} alt="icon" class="w-8" />
     {:else}
-      <span class="w-[2rem]">🎁</span>
+      <span class="w-8">🎁</span>
     {/if}
 
     <span>{project.name}</span>

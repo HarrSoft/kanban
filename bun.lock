@@ -1,14 +1,15 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "kanban",
       "dependencies": {
+        "@harrsoft/logger": "harrsoft/logger",
         "@oslojs/crypto": "^1.0.1",
         "@paralleldrive/cuid2": "^3.3.0",
         "argon2": "^0.44.0",
         "date-fns": "^4.1.0",
-        "@harrsoft/logger": "harrsoft/logger",
         "valibot": "^1.2.0",
       },
       "devDependencies": {

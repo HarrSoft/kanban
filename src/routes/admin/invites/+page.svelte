@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
   import * as df from "date-fns";
   import { TrashIcon } from "$com/icons";
   import { deleteInvite, fetchAllInvites } from "$lib/remote";
@@ -13,7 +14,7 @@
 <div class="flex flex-col gap-2">
   <div class="flex w-full justify-between">
     <h1 class="text-xl font-bold">Pending Invites</h1>
-    <a href="/admin/invites/create" class="button solid">
+    <a href={resolve("/admin/invites/create")} class="button solid">
       + Create new invite
     </a>
   </div>
@@ -23,13 +24,16 @@
     <span class="font-bold">Expires</span>
     <span class="font-bold">Actions</span>
 
-    {#each await fetchAllInvites() as invite}
+    {#each await fetchAllInvites() as invite (invite.code)}
       <span>{invite.email}</span>
 
       <span>{formatUnix(invite.expiresAt)}</span>
 
       <span class="flex gap-10">
-        <a href={`/invite/${invite.code}`} class="font-bold text-accent">
+        <a
+          href={resolve(`/invite/${invite.code}`)}
+          class="font-bold text-accent"
+        >
           invite link
         </a>
 

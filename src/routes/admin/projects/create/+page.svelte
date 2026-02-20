@@ -8,7 +8,7 @@
   <label>
     <h2>Project Name</h2>
     <input {...createProject.fields.name.as("text")} />
-    {#each createProject.fields.name.issues() || [] as issue}
+    {#each createProject.fields.name.issues() || [] as issue (issue.message)}
       <span class="text-red-500">{issue.message}</span>
     {/each}
   </label>

@@ -9,7 +9,7 @@
   <label>
     <h2>Email</h2>
     <input {...createInvite.fields.email.as("email")} />
-    {#each createInvite.fields.email.issues() || [] as issue}
+    {#each createInvite.fields.email.issues() || [] as issue (issue.message)}
       <span class="text-red-500">{issue.message}</span>
     {/each}
   </label>
@@ -20,11 +20,11 @@
       {...createInvite.fields.platformRole.as("select")}
       class="rounded-lg bg-transparent"
     >
-      {#each PlatformRole.options as role}
+      {#each PlatformRole.options as role (role)}
         <option>{role}</option>
       {/each}
     </select>
-    {#each createInvite.fields.platformRole.issues() || [] as issue}
+    {#each createInvite.fields.platformRole.issues() || [] as issue (issue.message)}
       <span class="text-red-500">{issue.message}</span>
     {/each}
   </label>

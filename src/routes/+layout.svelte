@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { page } from "$app/state";
+  import { resolve } from "$app/paths";
   import { ProjectPicker } from "$com";
   import { Logo } from "$com/icons";
   import favicon from "$lib/assets/harrsoft_border.svg";
@@ -11,6 +12,29 @@
   let { children }: { children?: Snippet } = $props();
 
   const session = $derived(await getSession());
+
+  // Nav links defined here and iterated in HTML to be rendered in navLink snippet
+  // All categories' links should be included in NavLinkPath type below
+  const loginLink = ["Login", "/login"] as const;
+  const userLinks = [
+    ["Dashboard", "/"],
+    ["Time Clock", "/time"],
+    ["Settings", "/settings"],
+  ] as const;
+  const adminLinks = [
+    ["Admin Dashboard", "/admin"],
+    ["Projects", "/admin/projects"],
+    ["Users", "/admin/users"],
+    ["User Invites", "/admin/invites"],
+    ["User Dashboard", "/"],
+  ] as const;
+  const adminDashLink = ["Admin Dashboard", "/admin"] as const;
+
+  type NavLinkPath =
+    | (typeof loginLink)[1]
+    | (typeof userLinks)[number][1]
+    | (typeof adminLinks)[number][1]
+    | (typeof adminDashLink)[1];
 
   const onAdminPage = $derived(page.url.pathname.startsWith("/admin"));
 
@@ -74,21 +98,19 @@
     >
       {#if !session}
         <!-- Unauthenticated Tabs -->
-        {@render navLink("Login", "/login")}
+        {@render navLink(loginLink[0], loginLink[1])}
       {:else if onAdminPage}
         <!-- Admin Tabs -->
-        {@render navLink("Admin&nbsp;Dashboard", "/admin")}
-        {@render navLink("Projects", "/admin/projects")}
-        {@render navLink("Users", "/admin/users")}
-        {@render navLink("User&nbsp;Invites", "/admin/invites")}
-        {@render navLink("User&nbsp;Dashboard", "/")}
+        {#each adminLinks as tab (tab[0])}
+          {@render navLink(tab[0], tab[1])}
+        {/each}
       {:else}
         <!-- User Tabs -->
-        {@render navLink("Dashboard", "/")}
-        {@render navLink("Time&nbsp;Clock", "/time")}
-        {@render navLink("Settings", "/settings")}
+        {#each userLinks as tab (tab[0])}
+          {@render navLink(tab[0], tab[1])}
+        {/each}
         {#if session.platformRole === "admin"}
-          {@render navLink("Admin&nbsp;Dashboard", "/admin")}
+          {@render navLink(adminDashLink[0], adminDashLink[1])}
         {/if}
       {/if}
 
@@ -107,9 +129,9 @@
   </div>
 </div>
 
-{#snippet navLink(name: string, path: string)}
+{#snippet navLink(name: string, path: NavLinkPath)}
   <a
-    href={path}
+    href={resolve(path)}
     class={[
       "w-full px-4 py-2 text-center",
       page.url.pathname === path ?
@@ -117,7 +139,7 @@
       : "hover:bg-content",
     ]}
   >
-    {@html name}
+    {name}
   </a>
 {/snippet}
 

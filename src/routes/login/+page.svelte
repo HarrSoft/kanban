@@ -8,7 +8,7 @@
   <label>
     <h2>Email</h2>
     <input {...login.fields.email.as("email")} />
-    {#each login.fields.email.issues() || [] as issue}
+    {#each login.fields.email.issues() || [] as issue (issue.message)}
       <p class="text-red-500">{issue.message}</p>
     {/each}
   </label>
@@ -16,7 +16,7 @@
   <label>
     <h2>Password</h2>
     <input {...login.fields._password.as("password")} />
-    {#each login.fields._password.issues() || [] as issue}
+    {#each login.fields._password.issues() || [] as issue (issue.message)}
       <p class="text-red-500">{issue.message}</p>
     {/each}
   </label>
