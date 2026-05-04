@@ -51,3 +51,16 @@ export type TimeclockId = v.InferOutput<typeof TimeclockId>;
 
 export const UserId = v.pipe(v.string(), v.cuid2(), v.brand("UserId"));
 export type UserId = v.InferOutput<typeof UserId>;
+
+////////////
+// Kanban //
+////////////
+
+export const BoardId = v.pipe(v.string(), v.cuid2(), v.brand("BoardId"));
+export type BoardId = v.InferOutput<typeof BoardId>;
+
+export const ColumnId = v.pipe(v.string(), v.cuid2(), v.brand("ColumnId"));
+export type ColumnId = v.InferOutput<typeof ColumnId>;
+
+export const CardId = v.pipe(v.string(), v.cuid2(), v.brand("CardId"));
+export type CardId = v.InferOutput<typeof CardId>;

@@ -147,3 +147,6 @@ DATABASE_URL="postgres://harrsoft:harrsoft-dev@localhost:5432/kanban_dev"
 
 - `project/[projectId]/+page.ts` has an empty `load` function — page data not loaded
 - `project/` dir at root is not a valid SvelteKit route location; needs migration to `src/routes/`
+- `src/routes/api/users/get/index.ts` and `src/routes/api/users/delete/index.ts` use zod (need valibot conversion)
+- `src/routes/api/users/` route files imported from `feature/kanban` but not wired into the app — need integration with main's remote function pattern
+- Layout components from Jade (`layout/Header.svelte`, `layout/Nav.svelte`, `layout/Themer.svelte`) may conflict with main's `+layout.svelte`

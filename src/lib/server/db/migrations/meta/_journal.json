@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1769213216620,
-      "tag": "0000_nice_hardball",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1770153098580,
-      "tag": "0001_mixed_marten_broadcloak",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1770702175865,
-      "tag": "0002_clumsy_ben_urich",
+      "when": 1765083383037,
+      "tag": "0000_steep_hercules",
       "breakpoints": true
     }
   ]
