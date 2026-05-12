@@ -1,21 +1,21 @@
 import { eq } from "drizzle-orm";
 import db, { users } from "$db";
 import { isUserOrAdmin } from "$api/rules";
+import { unixNow } from "$db/schema/util";
+import * as v from "valibot";
 import type { RequestHandler } from "./$types";
 import { Input } from ".";
 
 export const POST: RequestHandler = async ({ request }) => {
-  const input = Input.parse(await request.json());
+	const input = v.parse(Input, await request.json());
 
-  isUserOrAdmin(input);
+	isUserOrAdmin(input);
 
-  const identity =
-    input.id ? eq(users.id, input.id)
-    : input.handle ? eq(users.handle, input.handle)
-    : input.email ? eq(users.email, input.email)
-    : null;
+	// Soft-delete by setting deletedAt to now (unix timestamp)
+	await db
+		.update(users)
+		.set({ deletedAt: unixNow() })
+		.where(eq(users.id, input));
 
-  await db.update(users).set({ deletedAt: new Date() }).where(identity!);
-
-  return new Response();
+	return new Response();
 };

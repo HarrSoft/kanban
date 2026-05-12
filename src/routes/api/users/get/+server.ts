@@ -2,37 +2,34 @@ import { and, eq, isNull } from "drizzle-orm";
 import { error, json } from "@sveltejs/kit";
 import { isLoggedIn } from "$api/rules";
 import db, { users } from "$db";
+import * as v from "valibot";
+import { UserProfile } from "$types";
 import type { RequestHandler } from "./$types";
-import { Input, Result } from ".";
+import { Input } from ".";
 
 export const POST: RequestHandler = async ({ request }) => {
-  isLoggedIn();
+	isLoggedIn();
 
-  const input = Input.parse(await request.json());
+	const input = v.parse(Input, await request.json());
 
-  const identity =
-    input.id ? eq(users.id, input.id)
-    : input.handle ? eq(users.handle, input.handle)
-    : input.email ? eq(users.email, input.email)
-    : null;
+	const [dbUser] = await db
+		.select()
+		.from(users)
+		.where(and(eq(users.id, input), isNull(users.deletedAt)));
 
-  const [dbUser] = await db
-    .select()
-    .from(users)
-    .where(and(identity!, isNull(users.deletedAt)));
+	if (!dbUser) {
+		return error(404);
+	}
 
-  if (!dbUser) {
-    return error(404);
-  }
+	const profile = v.parse(UserProfile, {
+		id: dbUser.id,
+		name: dbUser.name,
+		email: dbUser.email,
+		platformRole: dbUser.platformRole,
+		imageUrl: dbUser.imageUrl,
+		verified: !!dbUser.emailVerified,
+		bio: dbUser.bio,
+	});
 
-  return json(
-    Result.parse({
-      ok: true,
-      user: {
-        ...dbUser,
-        image: dbUser.imageUrl,
-        verified: !!dbUser.emailVerified,
-      },
-    } satisfies Result),
-  );
+	return json(profile);
 };

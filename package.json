@@ -62,6 +62,7 @@
 		"argon2": "^0.44.0",
 		"date-fns": "^4.1.0",
 		"drizzle-seed": "^0.3.1",
+		"postgres": "^3.4.9",
 		"quill": "^2.0.3",
 		"svelte-dnd-action": "^0.9.68",
 		"valibot": "^1.2.0"
