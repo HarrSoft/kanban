@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dndzone } from 'svelte-dnd-action';
+  import { dndzone, type DndEvent } from 'svelte-dnd-action';
   import { flip } from 'svelte/animate';
   import Column from './Column.svelte';
   import { enhance } from '$app/forms';
@@ -17,7 +17,7 @@
     
     // Persist column order
     const data = new FormData();
-    data.append('items', JSON.stringify(board.columns.map((c, i) => ({ id: c.id, order: i }))));
+    data.append('items', JSON.stringify(board.columns.map((c: any, i: number) => ({ id: c.id, order: i }))));
     
     fetch('?/updateColumnOrder', {
         method: 'POST',
@@ -30,7 +30,7 @@
       // Persist card order/move
       const data = new FormData();
       data.append('columnId', columnId);
-      data.append('items', JSON.stringify(items.map((c, i) => ({ id: c.id, order: i }))));
+      data.append('items', JSON.stringify(items.map((c: any, i: number) => ({ id: c.id, order: i }))));
 
       fetch('?/updateCardOrder', {
           method: 'POST',
