@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- test helpers mock RequestEvent */
+
 import { describe, it, expect } from "vitest";
 
 /**
@@ -176,6 +178,108 @@ describe("kanban board server actions", () => {
 				// which ran before the DB query threw.
 				expect((e as Error).message).toContain("Failed query");
 			}
+		});
+	});
+
+	describe("edge cases — missing/malformed input", () => {
+		it("updateColumnOrder throws on missing items", async () => {
+			const formData = new FormData();
+			// no "items" field appended
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			// JSON.parse(null / undefined string) throws
+			await expect(
+				actions.updateColumnOrder({
+					request,
+					params: { id: "test-id" },
+				} as any),
+			).rejects.toThrow();
+		});
+
+		it("updateColumnOrder throws on malformed JSON", async () => {
+			const formData = new FormData();
+			formData.append("items", "{bad: json");
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			await expect(
+				actions.updateColumnOrder({
+					request,
+					params: { id: "test-id" },
+				} as any),
+			).rejects.toThrow();
+		});
+
+		it("updateCardOrder throws on missing items", async () => {
+			const formData = new FormData();
+			formData.append("columnId", "col1");
+			// no "items" field
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			await expect(
+				actions.updateCardOrder({ request, params: { id: "test-id" } } as any),
+			).rejects.toThrow();
+		});
+
+		it("createCard trims empty whitespace-only content", async () => {
+			const formData = new FormData();
+			formData.append("content", "   ");
+			formData.append("columnId", "clxabcdef1234567890abcdef");
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			// Content is whitespace-only — should be rejected like empty
+			const result = await actions.createCard({
+				request,
+				params: { id: "test-id" },
+			} as any);
+			expect(result).toHaveProperty("error");
+		});
+
+		it("deleteColumn rejects with empty columnId", async () => {
+			const formData = new FormData();
+			formData.append("columnId", "");
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			const result = await actions.deleteColumn({
+				request,
+				params: { id: "test-id" },
+			} as any);
+			expect(result).toEqual({ error: "Column ID is required" });
+		});
+
+		it("deleteCard rejects with empty cardId", async () => {
+			const formData = new FormData();
+			formData.append("cardId", "");
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			const result = await actions.deleteCard({
+				request,
+				params: { id: "test-id" },
+			} as any);
+			expect(result).toEqual({ error: "Card ID is required" });
 		});
 	});
 });

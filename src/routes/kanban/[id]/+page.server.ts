@@ -57,7 +57,7 @@ export const actions: Actions = {
 
 	createCard: async ({ request }) => {
 		const data = await request.formData();
-		const content = data.get("content") as string;
+		const content = ((data.get("content") as string) || "").trim();
 		const columnId = data.get("columnId") as ColumnId;
 
 		if (!content || !columnId)
