@@ -21,7 +21,7 @@
 			try {
 				const delta = JSON.parse(card.content);
 				quill.setContents(delta);
-			} catch (e) {
+			} catch {
 				quill.setText(card.content);
 			}
 		}

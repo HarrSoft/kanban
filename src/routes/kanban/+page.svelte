@@ -14,6 +14,7 @@
 			{#each data.boards as board (board.id)}
 				<a
 					href="/kanban/{board.id}"
+					data-sveltekit-reload
 					class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
 				>
 					<h2 class="mb-2 text-xl font-semibold text-gray-800">{board.name}</h2>

@@ -1,7 +1,5 @@
 import { error } from "@sveltejs/kit";
 import { getRequestEvent } from "$app/server";
-import * as v from "valibot";
-import { UserId, PlatformRole } from "$types";
 
 export const isLoggedIn = () => {
 	const event = getRequestEvent();

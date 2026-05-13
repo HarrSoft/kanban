@@ -28,8 +28,6 @@
 
 	import Quill from "quill";
 	import "quill/dist/quill.snow.css";
-	import { onMount } from "svelte";
-
 	function toggleAddCard() {
 		isAddingCard = !isAddingCard;
 		if (isAddingCard) {

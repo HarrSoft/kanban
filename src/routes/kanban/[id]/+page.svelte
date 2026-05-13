@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { browser } from "$app/environment";
 	import type { PageData } from "./$types";
 	import { enhance } from "$app/forms";
 	import { dndzone } from "svelte-dnd-action";
@@ -12,12 +11,7 @@
 	let showNewCardForm: Record<string, boolean> = {};
 	let quillEditors: Record<string, QuillEditor> = {};
 
-	let lockedColumns = false;
-
-	// Lock reactive updates during drag operations
-	function lockColumns() {
-		lockedColumns = true;
-	}
+	// Locking reserved for future drag-handling improvements
 
 	function unlockColumns() {
 		lockedColumns = false;
@@ -144,8 +138,10 @@
 	<div class="mb-6 flex items-center justify-between">
 		<div>
 			<h1 class="mb-2 text-2xl font-bold">{data.board.name}</h1>
-			<a href="/kanban" class="text-blue-600 hover:underline"
-				>← Back to Boards</a
+			<a
+				href="/kanban"
+				class="text-blue-600 hover:underline"
+				data-sveltekit-reload>← Back to Boards</a
 			>
 		</div>
 		<button
@@ -233,7 +229,7 @@
 									✕
 								</button>
 								<div class="prose prose-sm max-w-none">
-									{@html card.content}
+									{card.content}
 								</div>
 							</div>
 						{/each}

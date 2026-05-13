@@ -1,6 +1,5 @@
 import db from "$db";
-import { boards, projects } from "$db/schema";
-import { eq } from "drizzle-orm";
+import { boards } from "$db/schema";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async () => {

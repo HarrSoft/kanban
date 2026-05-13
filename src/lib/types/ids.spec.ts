@@ -67,7 +67,10 @@ describe("Branded ID schemas", () => {
 
 describe("ID brand type inference", () => {
 	it("BoardId branded value is assignable to string", () => {
-		const id: v.InferOutput<typeof BoardId> = v.parse(BoardId, "clxabcdef1234567890abcdef");
+		const id: v.InferOutput<typeof BoardId> = v.parse(
+			BoardId,
+			"clxabcdef1234567890abcdef",
+		);
 		const str: string = id;
 		expect(str).toBe(id);
 	});
