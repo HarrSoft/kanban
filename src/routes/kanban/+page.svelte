@@ -11,7 +11,7 @@
 		<p class="text-gray-500">No boards found. Run the seed script!</p>
 	{:else}
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-			{#each data.boards as board}
+			{#each data.boards as board (board.id)}
 				<a
 					href="/kanban/{board.id}"
 					class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"

@@ -12,41 +12,64 @@
 	let showNewCardForm: Record<string, boolean> = {};
 	let quillEditors: Record<string, QuillEditor> = {};
 
+	let lockedColumns = false;
+
+	// Lock reactive updates during drag operations
+	function lockColumns() {
+		lockedColumns = true;
+	}
+
+	function unlockColumns() {
+		lockedColumns = false;
+	}
+
 	// Make columns and cards reactive for drag and drop
-	$: columns =
-		data.board.columns?.map(col => ({
-			...col,
-			items: col.cards || [],
-		})) || [];
+	function transformColumns() {
+		return (
+			data.board.columns?.map(col => ({
+				...col,
+				items: col.cards || [],
+			})) || []
+		);
+	}
+
+	let columns = transformColumns();
+
+	$: if (data) {
+		columns = transformColumns();
+	}
 
 	const flipDurationMs = 200;
 
 	function handleColumnDndConsider(e: CustomEvent, columnId: ColumnId) {
-		const colIndex = columns.findIndex(c => c.id === columnId);
-		if (colIndex !== -1) {
-			columns[colIndex].items = e.detail.items;
-		}
+		lockColumns();
+		columns = columns.map(col =>
+			col.id === columnId ? { ...col, items: e.detail.items } : col,
+		);
 	}
 
 	async function handleColumnDndFinalize(e: CustomEvent, columnId: ColumnId) {
-		const colIndex = columns.findIndex(c => c.id === columnId);
-		if (colIndex !== -1) {
-			columns[colIndex].items = e.detail.items;
+		columns = columns.map(col =>
+			col.id === columnId ? { ...col, items: e.detail.items } : col,
+		);
+		unlockColumns();
 
-			// Update card order on server
-			const formData = new FormData();
-			formData.append("items", JSON.stringify(e.detail.items));
-			formData.append("columnId", columnId);
+		// Update card order on server
+		const formData = new FormData();
+		formData.append("items", JSON.stringify(e.detail.items));
+		formData.append("columnId", columnId);
 
-			await fetch(`?/updateCardOrder`, {
-				method: "POST",
-				body: formData,
-			});
-		}
+		await fetch("?/updateCardOrder", {
+			method: "POST",
+			body: formData,
+		});
 	}
 
 	function toggleNewCardForm(columnId: string) {
-		showNewCardForm[columnId] = !showNewCardForm[columnId];
+		showNewCardForm = {
+			...showNewCardForm,
+			[columnId]: !showNewCardForm[columnId],
+		};
 	}
 
 	async function handleCardSubmit(columnId: string) {
