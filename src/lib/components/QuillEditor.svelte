@@ -25,6 +25,13 @@
 		quill.setText("");
 	}
 
+	// Destroy Quill on unmount
+	import { onDestroy } from "svelte";
+
+	onDestroy(() => {
+		quill = null;
+	});
+
 	onMount(async () => {
 		if (!browser) return;
 
@@ -52,12 +59,6 @@
 		if (initialContent) {
 			quill.root.innerHTML = initialContent;
 		}
-
-		return () => {
-			if (quill) {
-				quill = null;
-			}
-		};
 	});
 </script>
 

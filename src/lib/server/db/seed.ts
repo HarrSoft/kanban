@@ -2,7 +2,6 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { users, projects, boards, columns, cards } from "./schema";
 import * as schema from "./schema";
-import { reset } from "drizzle-seed";
 
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
 
@@ -13,8 +12,6 @@ async function main() {
 	console.log("Seeding database...");
 
 	// clear existing data
-	// await reset(db, { users, projects, boards, columns, cards }); // drizzle-seed reset might be too aggressive or not configured, let's just insert for now or delete manually if needed.
-	// Actually, let's just delete from tables to be safe and simple.
 	await db.delete(cards);
 	await db.delete(columns);
 	await db.delete(boards);
@@ -25,20 +22,18 @@ async function main() {
 	const [user] = await db
 		.insert(users)
 		.values({
-			handle: "demo_user" as any,
 			email: "demo@example.com",
-			platformRole: "admin" as any,
-			theme: "ribbit-light" as any,
+			name: "Demo User",
+			platformRole: "admin",
 		})
 		.returning();
 
-	console.log("Created user:", user.handle);
+	console.log("Created user:", user.name);
 
 	// Create Project
 	const [project] = await db
 		.insert(projects)
 		.values({
-			handle: "demo_project" as any,
 			name: "Demo Project",
 		})
 		.returning();

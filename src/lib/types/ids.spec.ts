@@ -56,8 +56,8 @@ describe("Branded ID schemas", () => {
 	});
 
 	it("brand types are discriminant at type level", () => {
-		const board: v.InferOutput<typeof BoardId> = validCuid;
-		const column: v.InferOutput<typeof ColumnId> = validCuid;
+		const board: v.InferOutput<typeof BoardId> = v.parse(BoardId, validCuid);
+		const column: v.InferOutput<typeof ColumnId> = v.parse(ColumnId, validCuid);
 
 		// Both are strings at runtime
 		expect(typeof board).toBe("string");
@@ -67,7 +67,7 @@ describe("Branded ID schemas", () => {
 
 describe("ID brand type inference", () => {
 	it("BoardId branded value is assignable to string", () => {
-		const id: v.InferOutput<typeof BoardId> = "clxabcdef1234567890abcdef";
+		const id: v.InferOutput<typeof BoardId> = v.parse(BoardId, "clxabcdef1234567890abcdef");
 		const str: string = id;
 		expect(str).toBe(id);
 	});

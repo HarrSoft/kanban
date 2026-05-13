@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { Theme } from "$types";
+	import * as v from "valibot";
+
+	const Theme = v.picklist(["burning-love", "oceanside", "ribbit-dark", "ribbit-light", "auto"]);
+	type Theme = v.InferOutput<typeof Theme>;
 
 	const { theme }: { theme: Theme } = $props();
 </script>
