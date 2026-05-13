@@ -6,24 +6,25 @@ A project management / time-tracking app for Harrsoft workers' cooperative. User
 
 ## Tech Stack
 
-| Concern | Choice | Rationale |
-|---|---|---|
-| Package manager | Bun | Selected by Lavra; faster than npm, native TS |
-| Framework | SvelteKit 2 | Full-stack, server-rendered, Svelte 5 runes |
-| Validation | Valibot | Type-safe schema parsing, smaller than Zod |
-| Database | PostgreSQL | Relational, well-supported, Drizzle ORM |
-| ORM | Drizzle + Drizzle Kit | Schema-as-types, no code gen step |
-| Auth | Lucia patterns (manual) | Custom JWT + session model; no Auth.js library |
-| CSS | Tailwind CSS 4 + forms/typography plugins | Utility-first, tree-shakable |
-| Testing | Vitest (unit) + Playwright (E2E) | Unified with Vite config |
-| Linting | ESLint + Prettier + Svelte plugin | Standard Svelte ecosystem |
-| Adapter | svelte-adapter-bun | Bun-native deployment |
+| Concern         | Choice                                    | Rationale                                      |
+| --------------- | ----------------------------------------- | ---------------------------------------------- |
+| Package manager | Bun                                       | Selected by Lavra; faster than npm, native TS  |
+| Framework       | SvelteKit 2                               | Full-stack, server-rendered, Svelte 5 runes    |
+| Validation      | Valibot                                   | Type-safe schema parsing, smaller than Zod     |
+| Database        | PostgreSQL                                | Relational, well-supported, Drizzle ORM        |
+| ORM             | Drizzle + Drizzle Kit                     | Schema-as-types, no code gen step              |
+| Auth            | Lucia patterns (manual)                   | Custom JWT + session model; no Auth.js library |
+| CSS             | Tailwind CSS 4 + forms/typography plugins | Utility-first, tree-shakable                   |
+| Testing         | Vitest (unit) + Playwright (E2E)          | Unified with Vite config                       |
+| Linting         | ESLint + Prettier + Svelte plugin         | Standard Svelte ecosystem                      |
+| Adapter         | svelte-adapter-bun                        | Bun-native deployment                          |
 
 ## Architecture
 
 ### Route structure
 
 Current routes under `src/routes/`:
+
 - `/` — main dashboard/project list
 - `/login` — email + password auth
 - `/invite/[code]` — invite-based registration
@@ -38,6 +39,7 @@ Note: There's also a `project/` directory at repo root containing `+page.svelte`
 ### Data model
 
 **Core entities:**
+
 - `users` — email, name, avatar, bio, platform_role (user|admin)
 - `passwords` — argon2-hashed passwords, separate table
 - `sessions` — session tokens linked to users, 30-day expiry
@@ -49,6 +51,7 @@ Note: There's also a `project/` directory at repo root containing `+page.svelte`
 - `logging` — structured log entries
 
 **Auth flow:**
+
 1. Server: HMAC SHA256 JWT (HS256) with `AUTH_SECRET`, 24-hour token expiry
 2. Session cookie stores JWT; session row in DB has 30-day expiry
 3. On login: argon2 verify → create session → create JWT → set cookie
@@ -61,17 +64,18 @@ All IDs use Valibot brand types (e.g. `ProjectId`, `UserId`, `SessionId`) wrappi
 
 ### Path aliases
 
-| Alias | Maps to |
-|---|---|
-| `$` | `./src` |
-| `$com` | `./src/lib/components` |
-| `$db` & `$db/*` | `./src/lib/server/db` |
-| `$server` & `$server/*` | `./src/lib/server` |
-| `$types` & `$types/*` | `./src/lib/types` |
+| Alias                   | Maps to                |
+| ----------------------- | ---------------------- |
+| `$`                     | `./src`                |
+| `$com`                  | `./src/lib/components` |
+| `$db` & `$db/*`         | `./src/lib/server/db`  |
+| `$server` & `$server/*` | `./src/lib/server`     |
+| `$types` & `$types/*`   | `./src/lib/types`      |
 
 ## Conventions
 
 ### File placement
+
 - Route pages: `src/routes/[route]/(page|+page.svelte)`
 - Server-only code: `src/lib/server/`
 - Shared components: `src/lib/components/`
@@ -79,16 +83,19 @@ All IDs use Valibot brand types (e.g. `ProjectId`, `UserId`, `SessionId`) wrappi
 - Remote functions: `src/lib/remote/` — server-side forms/queries callable from client
 
 ### Component style
+
 - Svelte 5 runes (`$state`, `$derived`, `$effect`, `$props`)
 - TypeScript for all `.svelte` files (`<script lang="ts">`)
 - Tailwind for all styling; no separate CSS files
 
 ### Server functions
+
 - Use `$app/server`'s `form()` and `query()` for server-client communication
 - Forms return SvelteKit `invalid()` on validation failure, `redirect()` on success
 - Database access via Drizzle transactions where atomicity matters
 
 ### Naming
+
 - Tables: snake_case plural (e.g. `project_members`)
 - TS types: PascalCase (e.g. `ProjectInfo`, `UserProfile`)
 - Variables/functions: camelCase
@@ -106,15 +113,16 @@ All IDs use Valibot brand types (e.g. `ProjectId`, `UserId`, `SessionId`) wrappi
 
 ### Local setup (this VM)
 
-| Component | Detail |
-|---|---|
-| PostgreSQL 16 | Local, systemd-managed, user `harrsoft`
-| Database | `kanban_dev` owned by `harrsoft`
-| Auth secret | `alpha-dev-secret-local` (dev only, not in production)
-| Dev server | `bun run dev` → `localhost:5173`, verified HTTP 200
-| Migrations | Applied via `bun run db:migrate` — 3 migrations, 9 tables
+| Component     | Detail                                                    |
+| ------------- | --------------------------------------------------------- |
+| PostgreSQL 16 | Local, systemd-managed, user `harrsoft`                   |
+| Database      | `kanban_dev` owned by `harrsoft`                          |
+| Auth secret   | `alpha-dev-secret-local` (dev only, not in production)    |
+| Dev server    | `bun run dev` → `localhost:5173`, verified HTTP 200       |
+| Migrations    | Applied via `bun run db:migrate` — 3 migrations, 9 tables |
 
 `.env` file:
+
 ```
 ORIGIN="http://localhost:5173"
 AUTH_SECRET="alpha-dev-secret-local"

@@ -3,11 +3,13 @@
 ## Alpha's contribution conventions
 
 ### Git authorship
+
 - All commits authored by me should use: `Co-authored-by: Alpha <alpha@harrsoft.coop>`
 - Commits go through either quill's or Harrsoft's GitHub account credentials
 - PR descriptions should note AI-assisted authorship
 
 ### Commit message format
+
 ```
 type(scope): brief description
 
@@ -19,6 +21,7 @@ Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `style`, `db`
 Scope: `auth`, `board`, `project`, `time`, `admin`, `db`, `config`, etc.
 
 ### Branch naming
+
 - `feat/<short-description>` — new features
 - `fix/<short-description>` — bug fixes
 - `refactor/<short-description>` — code restructuring
@@ -26,6 +29,7 @@ Scope: `auth`, `board`, `project`, `time`, `admin`, `db`, `config`, etc.
 - `chore/<short-description>` — maintenance
 
 ### PR workflow
+
 1. Branch from `main`
 2. Implement changes with tests
 3. Run `bun run lint` and `bun run test:unit`
