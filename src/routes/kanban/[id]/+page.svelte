@@ -145,9 +145,8 @@
 	<div class="mb-6 flex items-center justify-between">
 		<div>
 			<h1 class="mb-2 text-2xl font-bold">{data.board.name}</h1>
-			<a
-				href={resolve("/kanban")}
-				class="text-blue-600 hover:underline">← Back to Boards</a
+			<a href={resolve("/kanban")} class="text-blue-600 hover:underline"
+				>← Back to Boards</a
 			>
 		</div>
 		<button
