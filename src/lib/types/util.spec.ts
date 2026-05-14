@@ -25,11 +25,22 @@ describe("Base64Url", () => {
 		expect(v.parse(Base64Url, "abc-123_def")).toBe("abc-123_def");
 	});
 
-	it("accepts plus sign (unbounded regex match)", () => {
-		// Note: the current regex is [A-Za-z0-9-_]* without anchors,
-		// so "ab+c" partially matches. Consider adding ^...$ anchors
-		// if strict matching is desired.
-		expect(v.parse(Base64Url, "ab+c")).toBe("ab+c");
+	it("rejects plus sign (non-base64url char)", () => {
+		expect(() => v.parse(Base64Url, "ab+c")).toThrow();
+	});
+
+	it("rejects spaces", () => {
+		expect(() => v.parse(Base64Url, "abc def")).toThrow();
+	});
+
+	it("empty string passes regex (zero-length match with *)", () => {
+		// Note: regex /^[A-Za-z0-9\\-_]*$/ matches empty string because *
+		// allows zero occurrences. Change * to + for non-empty enforcement.
+		expect(v.parse(Base64Url, "")).toBe("");
+	});
+
+	it("rejects strings with only non-base64url characters", () => {
+		expect(() => v.parse(Base64Url, "!!!")).toThrow();
 	});
 });
 
