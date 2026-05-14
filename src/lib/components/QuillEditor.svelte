@@ -3,8 +3,8 @@
 	import { browser } from "$app/environment";
 
 	let editorContainer: HTMLDivElement;
-	let quill: any = null;
-	let Quill: any = null;
+	let quill: Quill | null = null;
+	let QuillClass: typeof Quill | null = null;
 
 	export let placeholder = "Enter text...";
 	export let initialContent = "";
@@ -37,12 +37,12 @@
 
 		// Dynamically import Quill only on the client
 		const QuillModule = await import("quill");
-		Quill = QuillModule.default;
+		QuillClass = QuillModule.default;
 
 		// Also import the CSS
 		await import("quill/dist/quill.snow.css");
 
-		quill = new Quill(editorContainer, {
+		quill = new QuillClass(editorContainer, {
 			theme: "snow",
 			placeholder,
 			modules: {

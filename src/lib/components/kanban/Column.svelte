@@ -4,18 +4,25 @@
 	import Card from "./Card.svelte";
 	import { enhance } from "$app/forms";
 
-	export let column: { id: string; name: string; cards: any[] };
-	export let onDrop: (columnId: string, items: any[]) => void;
+	export let column: import("$types/frontend/kanban").Column;
+	export let onDrop: (
+		columnId: string,
+		items: import("$types/frontend/kanban").Card[],
+	) => void;
 	export let onDeleteCard: (cardId: string) => void;
 	export let onDeleteColumn: (columnId: string) => void;
 
 	const flipDurationMs = 200;
 
-	function handleDndConsider(e: CustomEvent<DndEvent<any>>) {
+	function handleDndConsider(
+		e: CustomEvent<DndEvent<import("$types/frontend/kanban").Card>>,
+	) {
 		column.cards = e.detail.items;
 	}
 
-	function handleDndFinalize(e: CustomEvent<DndEvent<any>>) {
+	function handleDndFinalize(
+		e: CustomEvent<DndEvent<import("$types/frontend/kanban").Card>>,
+	) {
 		column.cards = e.detail.items;
 		onDrop(column.id, e.detail.items);
 	}
@@ -24,7 +31,7 @@
 	let isAddingCard = false;
 	let newCardContent = "";
 	let quillEditor: HTMLDivElement;
-	let quill: any;
+	let quill: Quill | null;
 
 	import Quill from "quill";
 	import "quill/dist/quill.snow.css";

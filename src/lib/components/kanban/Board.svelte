@@ -4,15 +4,19 @@
 	import Column from "./Column.svelte";
 	import { enhance } from "$app/forms";
 
-	export let board: any;
+	export let board: import("$types/frontend/kanban").Board;
 
 	const flipDurationMs = 200;
 
-	function handleDndConsiderColumns(e: CustomEvent<DndEvent<any>>) {
+	function handleDndConsiderColumns(
+		e: CustomEvent<DndEvent<import("$types/frontend/kanban").Column>>,
+	) {
 		board.columns = e.detail.items;
 	}
 
-	function handleDndFinalizeColumns(e: CustomEvent<DndEvent<any>>) {
+	function handleDndFinalizeColumns(
+		e: CustomEvent<DndEvent<import("$types/frontend/kanban").Column>>,
+	) {
 		board.columns = e.detail.items;
 
 		// Persist column order
@@ -20,7 +24,12 @@
 		data.append(
 			"items",
 			JSON.stringify(
-				board.columns.map((c: any, i: number) => ({ id: c.id, order: i })),
+				board.columns.map(
+					(c: import("$types/frontend/kanban").Column, i: number) => ({
+						id: c.id,
+						order: i,
+					}),
+				),
 			),
 		);
 
@@ -30,7 +39,10 @@
 		});
 	}
 
-	function handleCardDrop(columnId: string, items: any[]) {
+	function handleCardDrop(
+		columnId: string,
+		items: import("$types/frontend/kanban").Card[],
+	) {
 		// Find the column and update its cards locally (already done in Column.svelte bind, but good to be explicit if needed)
 		// Persist card order/move
 		const data = new FormData();
@@ -38,7 +50,10 @@
 		data.append(
 			"items",
 			JSON.stringify(
-				items.map((c: any, i: number) => ({ id: c.id, order: i })),
+				items.map((c: import("$types/frontend/kanban").Card, i: number) => ({
+					id: c.id,
+					order: i,
+				})),
 			),
 		);
 
