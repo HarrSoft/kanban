@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from "./$types";
+	import { resolve } from "$app/paths";
 
 	export let data: PageData;
 </script>
@@ -13,8 +14,7 @@
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 			{#each data.boards as board (board.id)}
 				<a
-					href="/kanban/{board.id}"
-					data-sveltekit-reload
+					href={resolve("/kanban/{board.id}")}
 					class="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
 				>
 					<h2 class="mb-2 text-xl font-semibold text-gray-800">{board.name}</h2>

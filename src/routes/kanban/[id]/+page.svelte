@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from "./$types";
 	import { enhance } from "$app/forms";
+	import { resolve } from "$app/paths";
 	import { dndzone } from "svelte-dnd-action";
 	import QuillEditor from "$lib/components/QuillEditor.svelte";
 	import type { CardId, ColumnId } from "$types/ids";
@@ -11,7 +12,13 @@
 	let showNewCardForm: Record<string, boolean> = {};
 	let quillEditors: Record<string, QuillEditor> = {};
 
-	// Locking reserved for future drag-handling improvements
+	// Locking state for drag-handling — prevents reorder during animation
+	// Locking state reserved for future drag-handling improvements
+	let lockedColumns = false; // eslint-disable-line @typescript-eslint/no-unused-vars
+
+	function lockColumns() {
+		lockedColumns = true;
+	}
 
 	function unlockColumns() {
 		lockedColumns = false;
@@ -139,9 +146,8 @@
 		<div>
 			<h1 class="mb-2 text-2xl font-bold">{data.board.name}</h1>
 			<a
-				href="/kanban"
-				class="text-blue-600 hover:underline"
-				data-sveltekit-reload>← Back to Boards</a
+				href={resolve("/kanban")}
+				class="text-blue-600 hover:underline">← Back to Boards</a
 			>
 		</div>
 		<button
