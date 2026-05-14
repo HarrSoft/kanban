@@ -49,9 +49,7 @@ describe("createToken", () => {
 		expect(decoded.session_id).toBe(testSession.sessionId);
 		expect(decoded.session_exp).toBe(testSession.expiresAt);
 		expect(decoded.platform_role).toBe("user");
-		expect(decoded.exp).toBeGreaterThan(
-			Math.floor(Date.now() / 1000) + 85000,
-		); // ~24h
+		expect(decoded.exp).toBeGreaterThan(Math.floor(Date.now() / 1000) + 85000); // ~24h
 	});
 
 	it("generates unique tokens with different session IDs", () => {
@@ -79,7 +77,7 @@ describe("validateToken", () => {
 
 	it("rejects a token with a tampered payload", () => {
 		const token = createToken(testSession);
-		const [header, payload, sig] = token.split(".");
+		const [header, , sig] = token.split(".");
 
 		// Tamper the payload - change the email
 		const tamperedPayload = Buffer.from(
@@ -188,7 +186,9 @@ describe("validateToken", () => {
 			"utf-8",
 		).toString("base64url");
 		// Fake signature — payload validation check happens before signature check
-		const fakeSig = Buffer.from("fake-signature-for-testing").toString("base64url");
+		const fakeSig = Buffer.from("fake-signature-for-testing").toString(
+			"base64url",
+		);
 		const badToken = [header, noEmailPayload, fakeSig].join(".");
 
 		const result = validateToken(badToken);
@@ -203,7 +203,9 @@ describe("signature tamper returns sessionId", () => {
 	it("returns the session_id from the payload when signature is invalid", () => {
 		const token = createToken(testSession);
 		const [header, payload] = token.split(".");
-		const badSig = Buffer.from("this-is-a-fake-signature").toString("base64url");
+		const badSig = Buffer.from("this-is-a-fake-signature").toString(
+			"base64url",
+		);
 		const tampered = [header, payload, badSig].join(".");
 
 		const result = validateToken(tampered);
