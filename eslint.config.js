@@ -38,7 +38,7 @@ export default defineConfig(
 		files: ["**/*.svelte", "**/*.svelte.ts", "**/*.svelte.js"],
 		languageOptions: {
 			parserOptions: {
-				projectService: true,
+				project: "./tsconfig.json",
 				extraFileExtensions: [".svelte"],
 				parser: ts.parser,
 				svelteConfig,

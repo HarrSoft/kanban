@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
+	import { resolve } from "$app/paths";
 	import { createProject } from "$lib/remote";
 
 	let name = $state("");
@@ -23,7 +24,7 @@
 		}
 
 		doingCreate = false;
-		goto(`/project/${newProjectId}`);
+		goto(resolve(`/project/${newProjectId}`));
 	};
 </script>
 
