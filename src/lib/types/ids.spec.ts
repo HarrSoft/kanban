@@ -6,6 +6,11 @@ import {
 	CardId,
 	ProjectId,
 	UserId,
+	KeyId,
+	LogId,
+	SessionId,
+	TicketId,
+	TimeclockId,
 	PlatformRole,
 } from "./ids";
 
@@ -73,5 +78,65 @@ describe("ID brand type inference", () => {
 		);
 		const str: string = id;
 		expect(str).toBe(id);
+	});
+});
+
+describe("Additional ID schemas", () => {
+	const validCuid = "clxabcdef1234567890abcdef";
+
+	it("KeyId accepts a valid cuid2 string", () => {
+		expect(v.parse(KeyId, validCuid)).toBe(validCuid);
+	});
+
+	it("KeyId rejects an empty string", () => {
+		expect(() => v.parse(KeyId, "")).toThrow();
+	});
+
+	it("LogId accepts a valid cuid2 string", () => {
+		expect(v.parse(LogId, validCuid)).toBe(validCuid);
+	});
+
+	it("LogId rejects an empty string", () => {
+		expect(() => v.parse(LogId, "")).toThrow();
+	});
+
+	it("SessionId accepts a valid cuid2 string", () => {
+		expect(v.parse(SessionId, validCuid)).toBe(validCuid);
+	});
+
+	it("SessionId rejects an empty string", () => {
+		expect(() => v.parse(SessionId, "")).toThrow();
+	});
+
+	it("TicketId accepts a valid cuid2 string", () => {
+		expect(v.parse(TicketId, validCuid)).toBe(validCuid);
+	});
+
+	it("TicketId rejects an empty string", () => {
+		expect(() => v.parse(TicketId, "")).toThrow();
+	});
+
+	it("TimeclockId accepts a valid cuid2 string", () => {
+		expect(v.parse(TimeclockId, validCuid)).toBe(validCuid);
+	});
+
+	it("TimeclockId rejects an empty string", () => {
+		expect(() => v.parse(TimeclockId, "")).toThrow();
+	});
+
+	it("ProjectId rejects invalid characters (uppercase)", () => {
+		expect(() => v.parse(ProjectId, "CLXABCDEF1234567890ABCDEF")).toThrow();
+	});
+
+	it("BoardId rejects a string with special chars", () => {
+		expect(() => v.parse(BoardId, "clxabcd!!!!!!567890abcdef")).toThrow();
+	});
+
+	it("ColumnId rejects a string with special chars", () => {
+		expect(() => v.parse(ColumnId, "clxabcd!!!!!!567890abcdef")).toThrow();
+	});
+
+	it("CardId rejects a string with special chars", () => {
+		expect(() => v.parse(CardId, "clxabcd!!!!!!567890abcdef")).toThrow();
 	});
 });
