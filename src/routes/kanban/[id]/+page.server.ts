@@ -83,13 +83,23 @@ export const actions: Actions = {
 
 	updateColumnOrder: async ({ request }) => {
 		const data = await request.formData();
-		const items = JSON.parse(data.get("items") as string);
+		const raw = data.get("items") as string;
+
+		let items: unknown[];
+		try {
+			items = JSON.parse(raw);
+			if (!Array.isArray(items)) throw new Error();
+		} catch {
+			return { error: "Invalid items payload — expected a JSON array" };
+		}
 
 		for (let i = 0; i < items.length; i++) {
+			const item = items[i];
+			if (!item || typeof item !== "object" || !("id" in item)) continue;
 			await db
 				.update(columns)
 				.set({ order: i })
-				.where(eq(columns.id, items[i].id as ColumnId));
+				.where(eq(columns.id, (item as { id: string }).id as ColumnId));
 		}
 
 		return { success: true };
@@ -97,14 +107,24 @@ export const actions: Actions = {
 
 	updateCardOrder: async ({ request }) => {
 		const data = await request.formData();
-		const items = JSON.parse(data.get("items") as string);
+		const raw = data.get("items") as string;
 		const columnId = data.get("columnId") as ColumnId;
 
+		let items: unknown[];
+		try {
+			items = JSON.parse(raw);
+			if (!Array.isArray(items)) throw new Error();
+		} catch {
+			return { error: "Invalid items payload — expected a JSON array" };
+		}
+
 		for (let i = 0; i < items.length; i++) {
+			const item = items[i];
+			if (!item || typeof item !== "object" || !("id" in item)) continue;
 			await db
 				.update(cards)
 				.set({ order: i, columnId })
-				.where(eq(cards.id, items[i].id as CardId));
+				.where(eq(cards.id, (item as { id: string }).id as CardId));
 		}
 
 		return { success: true };

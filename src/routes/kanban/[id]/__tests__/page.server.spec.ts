@@ -182,7 +182,7 @@ describe("kanban board server actions", () => {
 	});
 
 	describe("edge cases — missing/malformed input", () => {
-		it("updateColumnOrder throws on missing items", async () => {
+		it("updateColumnOrder returns error on missing items", async () => {
 			const formData = new FormData();
 			// no "items" field appended
 
@@ -191,16 +191,17 @@ describe("kanban board server actions", () => {
 				body: formData,
 			});
 
-			// JSON.parse(null / undefined string) throws
-			await expect(
-				actions.updateColumnOrder({
-					request,
-					params: { id: "test-id" },
-				} as any),
-			).rejects.toThrow();
+			const result = await actions.updateColumnOrder({
+				request,
+				params: { id: "test-id" },
+			} as any);
+
+			expect(result).toEqual({
+				error: "Invalid items payload — expected a JSON array",
+			});
 		});
 
-		it("updateColumnOrder throws on malformed JSON", async () => {
+		it("updateColumnOrder returns error on malformed JSON", async () => {
 			const formData = new FormData();
 			formData.append("items", "{bad: json");
 
@@ -209,15 +210,17 @@ describe("kanban board server actions", () => {
 				body: formData,
 			});
 
-			await expect(
-				actions.updateColumnOrder({
-					request,
-					params: { id: "test-id" },
-				} as any),
-			).rejects.toThrow();
+			const result = await actions.updateColumnOrder({
+				request,
+				params: { id: "test-id" },
+			} as any);
+
+			expect(result).toEqual({
+				error: "Invalid items payload — expected a JSON array",
+			});
 		});
 
-		it("updateCardOrder throws on missing items", async () => {
+		it("updateCardOrder returns error on missing items", async () => {
 			const formData = new FormData();
 			formData.append("columnId", "col1");
 			// no "items" field
@@ -227,9 +230,14 @@ describe("kanban board server actions", () => {
 				body: formData,
 			});
 
-			await expect(
-				actions.updateCardOrder({ request, params: { id: "test-id" } } as any),
-			).rejects.toThrow();
+			const result = await actions.updateCardOrder({
+				request,
+				params: { id: "test-id" },
+			} as any);
+
+			expect(result).toEqual({
+				error: "Invalid items payload — expected a JSON array",
+			});
 		});
 
 		it("createCard trims empty whitespace-only content", async () => {
