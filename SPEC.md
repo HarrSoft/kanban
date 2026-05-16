@@ -151,6 +151,53 @@ DATABASE_URL="postgres://harrsoft:harrsoft-dev@localhost:5432/kanban_dev"
 6. [ ] Add project settings page (rename, change image, manage members)
 7. [ ] Migrate `project/` root dir into `src/routes/project/`
 
+## Agent-friendly API design
+
+The kanban app is designed to be consumed by both human users and autonomous agents (e.g., Harrsoft Alpha). Agents interact with the app programmatically through lightweight endpoints that return structured data with minimal rendering overhead.
+
+### Agent API conventions
+
+- **Prefix:** All agent-facing endpoints live under `/api/agent/`
+- **Auth:** Agents authenticate via API keys (`project_keys` table), passed as `Authorization: Bearer <key>`
+- **Response format:** All agent endpoints return JSON; no HTML fragments, no redirects
+- **Error format:** Always `{ error: string, code: string }` with appropriate HTTP status
+
+### Endpoint design principles
+
+1. **Ask what's due:** `GET /api/agent/pulse` — returns the current priority item for the agent (most urgent task across projects the agent has access to). Response: `{ taskId, title, project, dueAt, priority, type: "timeclock"|"review"|"kanban" }`
+2. **Structured inputs/outputs:** Mutation endpoints accept and return the same Valibot-validated types used server-side — no extra marshaling
+3. **Context window efficiency:** List endpoints support `fields` query param to select only needed columns, reducing response size for agents with limited context
+4. **Bulk operations:** Where possible, accept arrays of IDs/resources to batch work in fewer API calls
+5. **Idempotency key:** `Idempotency-Key` header honored on mutation endpoints to allow safe retries
+
+### Planned endpoints
+
+| Endpoint                 | Method | Purpose                         |
+| ------------------------ | ------ | ------------------------------- |
+| `/api/agent/pulse`       | GET    | Get current priority item       |
+| `/api/agent/tasks`       | GET    | List tasks with filters         |
+| `/api/agent/time/log`    | POST   | Log time against a task         |
+| `/api/agent/time/status` | GET    | Current active timeclock status |
+| `/api/agent/projects`    | GET    | List accessible projects        |
+
+> **Note for render targets without table support (Discord/WhatsApp):**
+>
+> - `/api/agent/pulse` (GET) — current priority
+> - `/api/agent/tasks` (GET) — list tasks
+> - `/api/agent/time/log` (POST) — log time
+> - `/api/agent/time/status` (GET) — active clock
+> - `/api/agent/projects` (GET) — accessible projects
+
+### Agent API key model
+
+- Separate `agent_keys` table (distinct from `project_keys` which is for external/3rd-party access)
+- Scoped to specific projects and action types (read-only, time-logging, task-management)
+- Key rotation supported via `POST /api/agent/keys/rotate`
+
+### Priority for agent-friendly features
+
+These are **phase 2** (post-merge, post-tests) — they won't block the current merge PR. The endpoints become meaningful once the kanban and timeclock models are stable.
+
 ## Known issues
 
 - `project/[projectId]/+page.ts` has an empty `load` function — page data not loaded

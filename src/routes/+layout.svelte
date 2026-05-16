@@ -18,6 +18,7 @@
 	const loginLink = ["Login", "/login"] as const;
 	const userLinks = [
 		["Dashboard", "/"],
+		["Kanban", "/kanban"],
 		["Time Clock", "/time"],
 		["Settings", "/settings"],
 	] as const;

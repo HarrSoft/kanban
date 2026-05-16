@@ -1,4 +1,4 @@
-import type { ProjectId, ProjectInfo, ProjectFull, Session } from "$types";
+import type { Session } from "$types";
 
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces

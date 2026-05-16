@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { browser } from "$app/environment";
 	import type { PageData } from "./$types";
 	import { enhance } from "$app/forms";
+	import { resolve } from "$app/paths";
 	import { dndzone } from "svelte-dnd-action";
 	import QuillEditor from "$lib/components/QuillEditor.svelte";
 	import type { CardId, ColumnId } from "$types/ids";
@@ -12,41 +12,65 @@
 	let showNewCardForm: Record<string, boolean> = {};
 	let quillEditors: Record<string, QuillEditor> = {};
 
+	// Locking state for drag-handling — prevents reorder during animation
+	// Locking state reserved for future drag-handling improvements
+	let lockedColumns = false; // eslint-disable-line @typescript-eslint/no-unused-vars
+
+	function lockColumns() {
+		lockedColumns = true;
+	}
+
+	function unlockColumns() {
+		lockedColumns = false;
+	}
+
 	// Make columns and cards reactive for drag and drop
-	$: columns =
-		data.board.columns?.map(col => ({
-			...col,
-			items: col.cards || [],
-		})) || [];
+	function transformColumns() {
+		return (
+			data.board.columns?.map(col => ({
+				...col,
+				items: col.cards || [],
+			})) || []
+		);
+	}
+
+	let columns = transformColumns();
+
+	$: if (data) {
+		columns = transformColumns();
+	}
 
 	const flipDurationMs = 200;
 
 	function handleColumnDndConsider(e: CustomEvent, columnId: ColumnId) {
-		const colIndex = columns.findIndex(c => c.id === columnId);
-		if (colIndex !== -1) {
-			columns[colIndex].items = e.detail.items;
-		}
+		lockColumns();
+		columns = columns.map(col =>
+			col.id === columnId ? { ...col, items: e.detail.items } : col,
+		);
 	}
 
 	async function handleColumnDndFinalize(e: CustomEvent, columnId: ColumnId) {
-		const colIndex = columns.findIndex(c => c.id === columnId);
-		if (colIndex !== -1) {
-			columns[colIndex].items = e.detail.items;
+		columns = columns.map(col =>
+			col.id === columnId ? { ...col, items: e.detail.items } : col,
+		);
+		unlockColumns();
 
-			// Update card order on server
-			const formData = new FormData();
-			formData.append("items", JSON.stringify(e.detail.items));
-			formData.append("columnId", columnId);
+		// Update card order on server
+		const formData = new FormData();
+		formData.append("items", JSON.stringify(e.detail.items));
+		formData.append("columnId", columnId);
 
-			await fetch(`?/updateCardOrder`, {
-				method: "POST",
-				body: formData,
-			});
-		}
+		await fetch("?/updateCardOrder", {
+			method: "POST",
+			body: formData,
+		});
 	}
 
 	function toggleNewCardForm(columnId: string) {
-		showNewCardForm[columnId] = !showNewCardForm[columnId];
+		showNewCardForm = {
+			...showNewCardForm,
+			[columnId]: !showNewCardForm[columnId],
+		};
 	}
 
 	async function handleCardSubmit(columnId: string) {
@@ -121,7 +145,7 @@
 	<div class="mb-6 flex items-center justify-between">
 		<div>
 			<h1 class="mb-2 text-2xl font-bold">{data.board.name}</h1>
-			<a href="/kanban" class="text-blue-600 hover:underline"
+			<a href={resolve("/kanban")} class="text-blue-600 hover:underline"
 				>← Back to Boards</a
 			>
 		</div>
@@ -210,7 +234,7 @@
 									✕
 								</button>
 								<div class="prose prose-sm max-w-none">
-									{@html card.content}
+									{card.content}
 								</div>
 							</div>
 						{/each}

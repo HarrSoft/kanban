@@ -57,7 +57,7 @@ export const actions: Actions = {
 
 	createCard: async ({ request }) => {
 		const data = await request.formData();
-		const content = data.get("content") as string;
+		const content = ((data.get("content") as string) || "").trim();
 		const columnId = data.get("columnId") as ColumnId;
 
 		if (!content || !columnId)
@@ -83,29 +83,66 @@ export const actions: Actions = {
 
 	updateColumnOrder: async ({ request }) => {
 		const data = await request.formData();
-		const items = JSON.parse(data.get("items") as string);
+		const raw = data.get("items") as string;
 
-		for (let i = 0; i < items.length; i++) {
-			await db
-				.update(columns)
-				.set({ order: i })
-				.where(eq(columns.id, items[i].id as ColumnId));
+		let items: { id: string }[];
+		try {
+			const parsed = JSON.parse(raw);
+			if (!Array.isArray(parsed)) throw new Error();
+			// Reject if any item lacks an id
+			for (const item of parsed) {
+				if (!item || typeof item !== "object" || typeof item.id !== "string") {
+					return { error: "Each item must have a string 'id' field" };
+				}
+			}
+			items = parsed;
+		} catch {
+			return { error: "Invalid items payload — expected a JSON array" };
 		}
+
+		// Batch update: map id → order, then update in parallel
+		await Promise.all(
+			items.map((item, i) =>
+				db
+					.update(columns)
+					.set({ order: i })
+					.where(eq(columns.id, item.id as ColumnId)),
+			),
+		);
 
 		return { success: true };
 	},
 
 	updateCardOrder: async ({ request }) => {
 		const data = await request.formData();
-		const items = JSON.parse(data.get("items") as string);
+		const raw = data.get("items") as string;
 		const columnId = data.get("columnId") as ColumnId;
 
-		for (let i = 0; i < items.length; i++) {
-			await db
-				.update(cards)
-				.set({ order: i, columnId })
-				.where(eq(cards.id, items[i].id as CardId));
+		let items: { id: string }[];
+		try {
+			const parsed = JSON.parse(raw);
+			if (!Array.isArray(parsed)) throw new Error();
+			for (const item of parsed) {
+				if (!item || typeof item !== "object" || typeof item.id !== "string") {
+					return { error: "Each item must have a string 'id' field" };
+				}
+			}
+			items = parsed;
+		} catch {
+			return { error: "Invalid items payload — expected a JSON array" };
 		}
+
+		if (!columnId) return { error: "Column ID is required" };
+
+		// Batch update: map id → order, update in parallel
+		await Promise.all(
+			items.map((item, i) =>
+				db
+					.update(cards)
+					.set({ order: i, columnId })
+					.where(eq(cards.id, item.id as CardId)),
+			),
+		);
 
 		return { success: true };
 	},
@@ -116,6 +153,7 @@ export const actions: Actions = {
 
 		if (!columnId) return { error: "Column ID is required" };
 
+		// DB cascade handles card deletion; just delete the column
 		await db.delete(columns).where(eq(columns.id, columnId));
 		return { success: true };
 	},
