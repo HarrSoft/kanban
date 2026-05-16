@@ -2,7 +2,7 @@ import * as t from "drizzle-orm/pg-core";
 import { projects } from "./projects";
 import { users } from "./users";
 import { id, seconds, timestamps, unix } from "./util";
-import { ProjectId, TimeclockId, UserId } from "$types";
+import { ProjectId, TimeclockId, UserId } from "../../../types"; // drizzle-kit can't handle path aliases
 
 export const timeclocks = t.pgTable("timeclocks", {
 	id: id().primaryKey().$type<TimeclockId>(),

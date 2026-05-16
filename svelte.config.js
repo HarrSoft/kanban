@@ -21,6 +21,8 @@ const config = {
 			"$db/*": "./src/lib/server/db/*",
 			$server: "./src/lib/server",
 			"$server/*": "./src/lib/server/*",
+			$api: "./src/routes/api",
+			"$api/*": "./src/routes/api/*",
 			$types: "./src/lib/types",
 			"$types/*": "./src/lib/types/*",
 		},
