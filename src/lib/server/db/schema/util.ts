@@ -1,7 +1,7 @@
 import * as df from "date-fns";
 import * as t from "drizzle-orm/pg-core";
-import { cuid2 } from "$server/crypto";
-import { Seconds, Unix } from "$types";
+import { cuid2 } from "../../crypto"; // drizzle-kit can't handle path aliases
+import { Seconds, Unix } from "../../../types"; // drizzle-kit can't handle path aliases
 
 export const id = (name?: string) =>
 	(name ? t.text(name) : t.text()).$default(cuid2);

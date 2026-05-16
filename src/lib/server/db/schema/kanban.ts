@@ -2,7 +2,7 @@ import * as t from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { projects } from "./projects";
 import { id, timestamps } from "./util";
-import { BoardId, ColumnId, CardId, ProjectId } from "$types/ids";
+import { BoardId, ColumnId, CardId, ProjectId } from "../../../types"; // drizzle-kit can't handle path aliases
 
 export const boards = t.pgTable("boards", {
 	id: id().primaryKey().$type<BoardId>(),

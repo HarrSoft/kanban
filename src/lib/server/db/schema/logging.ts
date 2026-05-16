@@ -1,6 +1,6 @@
 import * as t from "drizzle-orm/pg-core";
 import { LogLevel } from "@harrsoft/logger";
-import { LogId, ProjectId } from "$types";
+import { LogId, ProjectId } from "../../../types"; // drizzle-kit can't handle path aliases
 import { projects } from "./projects";
 import { id, timestamps } from "./util";
 
