@@ -9,15 +9,11 @@
 
 	const flipDurationMs = 200;
 
-	function handleDndConsiderColumns(
-		e: CustomEvent<DndEvent<Column>>,
-	) {
+	function handleDndConsiderColumns(e: CustomEvent<DndEvent<Column>>) {
 		board.columns = e.detail.items;
 	}
 
-	function handleDndFinalizeColumns(
-		e: CustomEvent<DndEvent<Column>>,
-	) {
+	function handleDndFinalizeColumns(e: CustomEvent<DndEvent<Column>>) {
 		board.columns = e.detail.items;
 
 		// Persist column order
@@ -25,12 +21,10 @@
 		data.append(
 			"items",
 			JSON.stringify(
-				board.columns.map(
-					(c: Column, i: number) => ({
-						id: c.id,
-						order: i,
-					}),
-				),
+				board.columns.map((c: Column, i: number) => ({
+					id: c.id,
+					order: i,
+				})),
 			),
 		);
 
@@ -40,10 +34,7 @@
 		});
 	}
 
-	function handleCardDrop(
-		columnId: string,
-		items: Card[],
-	) {
+	function handleCardDrop(columnId: string, items: Card[]) {
 		// Find the column and update its cards locally (already done in Column.svelte bind, but good to be explicit if needed)
 		// Persist card order/move
 		const data = new FormData();

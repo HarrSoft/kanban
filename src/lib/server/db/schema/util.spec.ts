@@ -46,7 +46,7 @@ describe("unixNow", () => {
 
 	it("increases over time (eventually)", async () => {
 		const a = unixNow();
-		await new Promise((r) => setTimeout(r, 5));
+		await new Promise(r => setTimeout(r, 5));
 		const b = unixNow();
 		expect(b).toBeGreaterThanOrEqual(a);
 	});

@@ -8,7 +8,6 @@
 
 import { describe, it, expect } from "vitest";
 import { POST, GET } from "../boards/+server";
-import type { RequestHandler } from "../boards/$types";
 
 // ---------------------------------------------------------------------------
 // POST /api/boards
@@ -113,7 +112,10 @@ describe("GET /api/boards", () => {
 			method: "GET",
 		});
 
-		const response = await GET({ request, url: new URL("http://localhost:5173/api/boards") } as Parameters<typeof GET>[0]);
+		const response = await GET({
+			request,
+			url: new URL("http://localhost:5173/api/boards"),
+		} as Parameters<typeof GET>[0]);
 		const body = await response.json();
 
 		expect(response.status).toBe(400);
