@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from "vitest";
 import * as v from "valibot";
-import { Theme } from "$types/themes";
+import { Theme } from "./themes";
 
 describe("Theme schema", () => {
 	const validThemes = [

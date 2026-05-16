@@ -9,15 +9,24 @@
 
 import { describe, it, expect } from "vitest";
 import { load } from "../+layout.server";
-import type { LayoutServerLoadEvent } from "./$types";
+
+type MockLoadEvent = {
+	locals: {
+		session?: {
+			sessionId: string;
+			userId: string;
+			userEmail: string;
+			expiresAt: number;
+			platformRole: "user" | "admin";
+		};
+	};
+};
 
 describe("root layout server load", () => {
 	it("returns null session when locals.session is undefined", async () => {
-		const event = {
-			locals: {},
-		} as LayoutServerLoadEvent;
+		const event: MockLoadEvent = { locals: {} };
 
-		const result = await load(event);
+		const result = await load(event as Parameters<typeof load>[0]);
 		expect(result).toEqual({ session: null });
 	});
 
@@ -30,11 +39,9 @@ describe("root layout server load", () => {
 			platformRole: "user" as const,
 		};
 
-		const event = {
-			locals: { session: mockSession },
-		} as unknown as LayoutServerLoadEvent;
+		const event: MockLoadEvent = { locals: { session: mockSession } };
 
-		const result = await load(event);
+		const result = await load(event as Parameters<typeof load>[0]);
 		expect(result).toEqual({ session: mockSession });
 	});
 
