@@ -1,5 +1,5 @@
 import * as t from "drizzle-orm/pg-core";
-import { PlatformRole, SessionId, UserId } from "$types";
+import { PlatformRole, SessionId, UserId } from "../../../types"; // drizzle-kit can't handle path aliases
 import { id, timestamps, unix, unixNow } from "./util";
 
 export const platformRole = t.pgEnum("platform_role", PlatformRole.options);
