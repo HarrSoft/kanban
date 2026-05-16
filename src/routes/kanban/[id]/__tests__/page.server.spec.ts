@@ -384,5 +384,102 @@ describe("kanban board server actions", () => {
 			} as any);
 			expect(result).toEqual({ error: "Card ID is required" });
 		});
+
+		describe("additional edge cases", () => {
+			it("createColumn with very long name (>500 chars) -- not blocked by action yet (DB unavailable)", async () => {
+				const formData = new FormData();
+				formData.append("name", "A".repeat(1000));
+
+				const request = new Request("http://localhost:5173/kanban/test-id", {
+					method: "POST",
+					body: formData,
+				});
+
+				// Name passes validation (no length check); the action will
+				// fail on DB queries (unavailable in unit tests). This documents
+				// the gap — a max length check on name could be added.
+				await expect(async () => {
+					await actions.createColumn({
+						request,
+						params: { id: "test-id" },
+					} as any);
+				}).rejects.toThrow();
+			});
+
+			it("updateColumnOrder rejects items with missing items field entirely", async () => {
+				const formData = new FormData();
+				formData.append("otherField", "value");
+
+				const request = new Request("http://localhost:5173/kanban/test-id", {
+					method: "POST",
+					body: formData,
+				});
+
+				const result = await actions.updateColumnOrder({
+					request,
+					params: { id: "test-id" },
+				} as any);
+				expect(result).toEqual({
+					error: "Invalid items payload — expected a JSON array",
+				});
+			});
+
+			it("createCard rejects with empty content after trim (whitespace only, with columnId)", async () => {
+				const formData = new FormData();
+				formData.append("content", "  \n  ");
+				formData.append("columnId", "clx12345");
+
+				const request = new Request("http://localhost:5173/kanban/test-id", {
+					method: "POST",
+					body: formData,
+				});
+
+				const result = await actions.createCard({
+					request,
+					params: { id: "test-id" },
+				} as any);
+				expect(result).toEqual({
+					error: "Content and Column ID are required",
+				});
+			});
+
+			it("createCard rejects when only content is missing but columnId is present", async () => {
+				const formData = new FormData();
+				formData.append("columnId", "clx12345");
+				// no content field
+
+				const request = new Request("http://localhost:5173/kanban/test-id", {
+					method: "POST",
+					body: formData,
+				});
+
+				const result = await actions.createCard({
+					request,
+					params: { id: "test-id" },
+				} as any);
+				expect(result).toEqual({
+					error: "Content and Column ID are required",
+				});
+			});
+
+			it("updateCardOrder rejects malformed JSON with columnId present", async () => {
+				const formData = new FormData();
+				formData.append("items", "[this is not json");
+				formData.append("columnId", "col1");
+
+				const request = new Request("http://localhost:5173/kanban/test-id", {
+					method: "POST",
+					body: formData,
+				});
+
+				const result = await actions.updateCardOrder({
+					request,
+					params: { id: "test-id" },
+				} as any);
+				expect(result).toEqual({
+					error: "Invalid items payload — expected a JSON array",
+				});
+			});
+		});
 	});
 });
