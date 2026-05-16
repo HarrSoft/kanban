@@ -63,11 +63,11 @@ describe("POST /api/boards", () => {
 			}),
 		});
 
-		// Valibot throws when parsing fails — handler doesn't catch it
-		// so the request propagates as an error
-		await expect(async () => {
-			await POST({ request } as Parameters<typeof POST>[0]);
-		}).rejects.toThrow();
+		const response = await POST({ request } as Parameters<typeof POST>[0]);
+		const body = await response.json();
+
+		expect(response.status).toBe(400);
+		expect(body).toEqual({ error: "Invalid projectId format" });
 	});
 
 	it("rejects empty projectId — caught by truthiness check", async () => {
@@ -135,8 +135,10 @@ describe("GET /api/boards", () => {
 		const url = new URL("http://localhost:5173/api/boards?projectId=!!!bad!!!");
 		const request = new Request(url, { method: "GET" });
 
-		await expect(async () => {
-			await GET({ request, url } as Parameters<typeof GET>[0]);
-		}).rejects.toThrow();
+		const response = await GET({ request, url } as Parameters<typeof GET>[0]);
+		const body = await response.json();
+
+		expect(response.status).toBe(400);
+		expect(body).toEqual({ error: "Invalid projectId format" });
 	});
 });

@@ -14,7 +14,12 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: "Missing projectId or name" }, { status: 400 });
 	}
 
-	const parsedProjectId = v.parse(ProjectId, projectId);
+	let parsedProjectId: string;
+	try {
+		parsedProjectId = v.parse(ProjectId, projectId);
+	} catch {
+		return json({ error: "Invalid projectId format" }, { status: 400 });
+	}
 
 	const [newBoard] = await db
 		.insert(boards)
@@ -34,7 +39,12 @@ export const GET: RequestHandler = async ({ url }) => {
 		return json({ error: "Missing projectId" }, { status: 400 });
 	}
 
-	const parsedProjectId = v.parse(ProjectId, rawProjectId);
+	let parsedProjectId: string;
+	try {
+		parsedProjectId = v.parse(ProjectId, rawProjectId);
+	} catch {
+		return json({ error: "Invalid projectId format" }, { status: 400 });
+	}
 
 	const projectBoards = await db.query.boards.findMany({
 		where: eq(boards.projectId, parsedProjectId),

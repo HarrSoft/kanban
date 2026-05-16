@@ -153,8 +153,7 @@ export const actions: Actions = {
 
 		if (!columnId) return { error: "Column ID is required" };
 
-		// Cascade: delete all cards in the column first, then the column
-		await db.delete(cards).where(eq(cards.columnId, columnId));
+		// DB cascade handles card deletion; just delete the column
 		await db.delete(columns).where(eq(columns.id, columnId));
 		return { success: true };
 	},
