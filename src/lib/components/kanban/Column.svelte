@@ -3,11 +3,12 @@
 	import { flip } from "svelte/animate";
 	import Card from "./Card.svelte";
 	import { enhance } from "$app/forms";
+	import type { Column, Card } from "$types/frontend/kanban";
 
-	export let column: import("$types/frontend/kanban").Column;
+	export let column: Column;
 	export let onDrop: (
 		columnId: string,
-		items: import("$types/frontend/kanban").Card[],
+		items: Card[],
 	) => void;
 	export let onDeleteCard: (cardId: string) => void;
 	export let onDeleteColumn: (columnId: string) => void;
@@ -15,13 +16,13 @@
 	const flipDurationMs = 200;
 
 	function handleDndConsider(
-		e: CustomEvent<DndEvent<import("$types/frontend/kanban").Card>>,
+		e: CustomEvent<DndEvent<Card>>,
 	) {
 		column.cards = e.detail.items;
 	}
 
 	function handleDndFinalize(
-		e: CustomEvent<DndEvent<import("$types/frontend/kanban").Card>>,
+		e: CustomEvent<DndEvent<Card>>,
 	) {
 		column.cards = e.detail.items;
 		onDrop(column.id, e.detail.items);

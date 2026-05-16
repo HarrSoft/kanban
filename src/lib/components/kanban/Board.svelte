@@ -3,19 +3,20 @@
 	import { flip } from "svelte/animate";
 	import Column from "./Column.svelte";
 	import { enhance } from "$app/forms";
+	import type { Board, Column, Card } from "$types/frontend/kanban";
 
-	export let board: import("$types/frontend/kanban").Board;
+	export let board: Board;
 
 	const flipDurationMs = 200;
 
 	function handleDndConsiderColumns(
-		e: CustomEvent<DndEvent<import("$types/frontend/kanban").Column>>,
+		e: CustomEvent<DndEvent<Column>>,
 	) {
 		board.columns = e.detail.items;
 	}
 
 	function handleDndFinalizeColumns(
-		e: CustomEvent<DndEvent<import("$types/frontend/kanban").Column>>,
+		e: CustomEvent<DndEvent<Column>>,
 	) {
 		board.columns = e.detail.items;
 
@@ -25,7 +26,7 @@
 			"items",
 			JSON.stringify(
 				board.columns.map(
-					(c: import("$types/frontend/kanban").Column, i: number) => ({
+					(c: Column, i: number) => ({
 						id: c.id,
 						order: i,
 					}),
@@ -41,7 +42,7 @@
 
 	function handleCardDrop(
 		columnId: string,
-		items: import("$types/frontend/kanban").Card[],
+		items: Card[],
 	) {
 		// Find the column and update its cards locally (already done in Column.svelte bind, but good to be explicit if needed)
 		// Persist card order/move
@@ -50,7 +51,7 @@
 		data.append(
 			"items",
 			JSON.stringify(
-				items.map((c: import("$types/frontend/kanban").Card, i: number) => ({
+				items.map((c: Card, i: number) => ({
 					id: c.id,
 					order: i,
 				})),
