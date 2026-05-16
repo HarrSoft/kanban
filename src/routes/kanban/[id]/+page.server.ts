@@ -85,22 +85,30 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const raw = data.get("items") as string;
 
-		let items: unknown[];
+		let items: { id: string }[];
 		try {
-			items = JSON.parse(raw);
-			if (!Array.isArray(items)) throw new Error();
+			const parsed = JSON.parse(raw);
+			if (!Array.isArray(parsed)) throw new Error();
+			// Reject if any item lacks an id
+			for (const item of parsed) {
+				if (!item || typeof item !== "object" || typeof item.id !== "string") {
+					return { error: "Each item must have a string 'id' field" };
+				}
+			}
+			items = parsed;
 		} catch {
 			return { error: "Invalid items payload — expected a JSON array" };
 		}
 
-		for (let i = 0; i < items.length; i++) {
-			const item = items[i];
-			if (!item || typeof item !== "object" || !("id" in item)) continue;
-			await db
-				.update(columns)
-				.set({ order: i })
-				.where(eq(columns.id, (item as { id: string }).id as ColumnId));
-		}
+		// Batch update: map id → order, then update in parallel
+		await Promise.all(
+			items.map((item, i) =>
+				db
+					.update(columns)
+					.set({ order: i })
+					.where(eq(columns.id, item.id as ColumnId)),
+			),
+		);
 
 		return { success: true };
 	},
@@ -110,22 +118,31 @@ export const actions: Actions = {
 		const raw = data.get("items") as string;
 		const columnId = data.get("columnId") as ColumnId;
 
-		let items: unknown[];
+		let items: { id: string }[];
 		try {
-			items = JSON.parse(raw);
-			if (!Array.isArray(items)) throw new Error();
+			const parsed = JSON.parse(raw);
+			if (!Array.isArray(parsed)) throw new Error();
+			for (const item of parsed) {
+				if (!item || typeof item !== "object" || typeof item.id !== "string") {
+					return { error: "Each item must have a string 'id' field" };
+				}
+			}
+			items = parsed;
 		} catch {
 			return { error: "Invalid items payload — expected a JSON array" };
 		}
 
-		for (let i = 0; i < items.length; i++) {
-			const item = items[i];
-			if (!item || typeof item !== "object" || !("id" in item)) continue;
-			await db
-				.update(cards)
-				.set({ order: i, columnId })
-				.where(eq(cards.id, (item as { id: string }).id as CardId));
-		}
+		if (!columnId) return { error: "Column ID is required" };
+
+		// Batch update: map id → order, update in parallel
+		await Promise.all(
+			items.map((item, i) =>
+				db
+					.update(cards)
+					.set({ order: i, columnId })
+					.where(eq(cards.id, item.id as CardId)),
+			),
+		);
 
 		return { success: true };
 	},
@@ -136,6 +153,8 @@ export const actions: Actions = {
 
 		if (!columnId) return { error: "Column ID is required" };
 
+		// Cascade: delete all cards in the column first, then the column
+		await db.delete(cards).where(eq(cards.columnId, columnId));
 		await db.delete(columns).where(eq(columns.id, columnId));
 		return { success: true };
 	},

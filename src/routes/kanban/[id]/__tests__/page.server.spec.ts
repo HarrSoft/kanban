@@ -181,6 +181,101 @@ describe("kanban board server actions", () => {
 		);
 	});
 
+	describe("item validation — updateColumnOrder and updateCardOrder reject malformed items", () => {
+		it("updateColumnOrder rejects items without an id field", async () => {
+			const formData = new FormData();
+			formData.append(
+				"items",
+				JSON.stringify([{ name: "Column A" }, { name: "Column B" }]),
+			);
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			const result = await actions.updateColumnOrder({
+				request,
+				params: { id: "test-id" },
+			} as any);
+
+			expect(result).toEqual({
+				error: "Each item must have a string 'id' field",
+			});
+		});
+
+		it("updateCardOrder rejects items without an id field", async () => {
+			const formData = new FormData();
+			formData.append(
+				"items",
+				JSON.stringify([{ content: "card1" }, { content: "card2" }]),
+			);
+			formData.append("columnId", "col1");
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			const result = await actions.updateCardOrder({
+				request,
+				params: { id: "test-id" },
+			} as any);
+
+			expect(result).toEqual({
+				error: "Each item must have a string 'id' field",
+			});
+		});
+
+		it("updateCardOrder rejects missing columnId", async () => {
+			const formData = new FormData();
+			formData.append(
+				"items",
+				JSON.stringify([{ id: "card1" }, { id: "card2" }]),
+			);
+			// no columnId appended
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			const result = await actions.updateCardOrder({
+				request,
+				params: { id: "test-id" },
+			} as any);
+
+			expect(result).toEqual({
+				error: "Column ID is required",
+			});
+		});
+
+		it("updateColumnOrder rejects items with numeric id instead of string", async () => {
+			const formData = new FormData();
+			formData.append(
+				"items",
+				JSON.stringify([
+					{ id: 1, order: 0 },
+					{ id: 2, order: 1 },
+				]),
+			);
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			const result = await actions.updateColumnOrder({
+				request,
+				params: { id: "test-id" },
+			} as any);
+
+			expect(result).toEqual({
+				error: "Each item must have a string 'id' field",
+			});
+		});
+	});
+
 	describe("edge cases — missing/malformed input", () => {
 		it("updateColumnOrder returns error on missing items", async () => {
 			const formData = new FormData();
