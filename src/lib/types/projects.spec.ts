@@ -48,7 +48,10 @@ describe("ProjectInfo", () => {
 	});
 
 	it("accepts a project with a URL image", () => {
-		const project = { ...validProject, imageUrl: "https://example.com/logo.png" };
+		const project = {
+			...validProject,
+			imageUrl: "https://example.com/logo.png",
+		};
 		const result = v.safeParse(ProjectInfo, project);
 		expect(result.success).toBe(true);
 	});
@@ -71,7 +74,11 @@ describe("ProjectInfo", () => {
 
 	it("allows empty name (schema currently lacks min-length)", () => {
 		// Schema uses v.string() without min-length — empty passes
-		const result = v.safeParse(ProjectInfo, { id: validCuid, name: "", imageUrl: null });
+		const result = v.safeParse(ProjectInfo, {
+			id: validCuid,
+			name: "",
+			imageUrl: null,
+		});
 		expect(result.success).toBe(true);
 		if (result.success) {
 			expect(result.output.name).toBe("");

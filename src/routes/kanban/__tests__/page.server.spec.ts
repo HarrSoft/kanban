@@ -1,25 +1,50 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- test helpers */
-import { describe, it, expect } from "vitest";
-import { load } from "../+page.server";
+import { describe, it, expect, vi } from "vitest";
 
-describe("kanban board list page server", () => {
-	describe("load function shape", () => {
-		it("exports a load function", () => {
-			expect(load).toBeDefined();
-			expect(typeof load).toBe("function");
-		});
+const mockBoards = [
+	{ id: "board1", projectId: "proj1", name: "Test Board 1" },
+	{ id: "board2", projectId: "proj1", name: "Test Board 2" },
+	{ id: "board3", projectId: "proj2", name: "Solo Board" },
+];
 
-		it("load function is async and expects no params", () => {
-			expect(load.constructor.name).toBe("AsyncFunction");
-			// load() takes no params, returns boards from DB
-			// Since no live DB in unit tests, this will throw on DB access
-		});
+// Mock $db to match Drizzle's chained API: db.select().from(table)
+const mockFrom = vi.fn().mockResolvedValue(mockBoards);
+const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
-		it("fails when called without live DB connection", async () => {
-			// The load function hits the DB directly with no mocks.
-			// Without PostgreSQL running, it throws a connection error.
-			// Full integration testing belongs in e2e/.
-			await expect(load({} as any)).rejects.toThrow();
-		});
+vi.mock("$db", () => {
+	return {
+		default: {
+			select: mockSelect,
+		},
+		// Named export for the boards table object
+		boards: {},
+	};
+});
+
+vi.mock("$db/schema", () => ({
+	boards: {},
+}));
+
+const mod = await import("../+page.server.ts");
+const { load } = mod;
+
+describe("kanban list page server load", () => {
+	it("returns an array of boards", async () => {
+		const result = await load();
+		expect(result).toHaveProperty("boards");
+		expect(Array.isArray(result.boards)).toBe(true);
+	});
+
+	it("returns all available boards", async () => {
+		const result = await load();
+		expect(result.boards).toHaveLength(3);
+	});
+
+	it("each board has id, projectId, and name fields", async () => {
+		const result = await load();
+		for (const board of result.boards) {
+			expect(board).toHaveProperty("id");
+			expect(board).toHaveProperty("projectId");
+			expect(board).toHaveProperty("name");
+		}
 	});
 });
