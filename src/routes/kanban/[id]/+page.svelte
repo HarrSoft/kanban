@@ -66,9 +66,13 @@
 		});
 	}
 
-	// Editing state
+	// Editing state — cards
 	let editingCardId: CardId | null = null;
 	let editingCardContent: string = "";
+
+	// Editing state — columns
+	let editingColumnId: ColumnId | null = null;
+	let editingColumnName: string = "";
 
 	function startEdit(cardId: CardId, content: string) {
 		editingCardId = cardId;
@@ -158,6 +162,40 @@
 		}
 	}
 
+	function startEditColumn(columnId: ColumnId, name: string) {
+		editingColumnId = columnId;
+		editingColumnName = name;
+	}
+
+	function cancelEditColumn() {
+		editingColumnId = null;
+		editingColumnName = "";
+	}
+
+	async function saveEditColumn(columnId: ColumnId) {
+		const trimmed = editingColumnName.trim();
+		if (!trimmed) {
+			alert("Column name cannot be empty.");
+			return;
+		}
+
+		const formData = new FormData();
+		formData.append("columnId", columnId);
+		formData.append("name", editingColumnName);
+
+		const response = await fetch("?/updateColumn", {
+			method: "POST",
+			body: formData,
+		});
+
+		if (response.ok) {
+			editingColumnId = null;
+			window.location.reload();
+		} else {
+			alert("Failed to update column. Please try again.");
+		}
+	}
+
 	async function deleteColumn(columnId: ColumnId) {
 		if (!confirm("Delete this column and all its cards?")) return;
 
@@ -233,14 +271,45 @@
 			{#each columns as column (column.id)}
 				<div class="w-80 flex-shrink-0 rounded-lg bg-gray-100 p-4">
 					<div class="mb-4 flex items-center justify-between">
-						<h2 class="text-lg font-semibold">{column.name}</h2>
-						<button
-							onclick={() => deleteColumn(column.id)}
-							class="text-sm text-red-500 hover:text-red-700"
-							title="Delete column"
-						>
-							✕
-						</button>
+						{#if editingColumnId === column.id}
+							<div class="flex flex-1 items-center gap-2">
+								<input
+									type="text"
+									bind:value={editingColumnName}
+									class="flex-1 rounded border border-indigo-300 px-2 py-1 text-sm font-semibold focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+									placeholder="Column name"
+								/>
+								<button
+									onclick={() => saveEditColumn(column.id)}
+									class="rounded bg-indigo-600 px-2 py-1 text-xs text-white hover:bg-indigo-700"
+									title="Save"
+								>
+									💾
+								</button>
+								<button
+									onclick={cancelEditColumn}
+									class="rounded bg-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-400"
+									title="Cancel"
+								>
+									✕
+								</button>
+							</div>
+						{:else}
+							<h2
+								class="cursor-pointer text-lg font-semibold hover:text-indigo-600"
+								onclick={() => startEditColumn(column.id, column.name)}
+								title="Rename column"
+							>
+								{column.name}
+							</h2>
+							<button
+								onclick={() => deleteColumn(column.id)}
+								class="text-sm text-red-500 hover:text-red-700"
+								title="Delete column"
+							>
+								✕
+							</button>
+						{/if}
 					</div>
 
 					<div

@@ -18,13 +18,15 @@ import { actions } from "../+page.server";
 
 describe("kanban board server actions", () => {
 	describe("action shape", () => {
-		it("exports createColumn, createCard, updateColumnOrder, updateCardOrder, deleteColumn, deleteCard", () => {
+		it("exports all server actions", () => {
 			expect(actions.createColumn).toBeDefined();
 			expect(actions.createCard).toBeDefined();
 			expect(actions.updateColumnOrder).toBeDefined();
 			expect(actions.updateCardOrder).toBeDefined();
 			expect(actions.deleteColumn).toBeDefined();
 			expect(actions.deleteCard).toBeDefined();
+			expect(actions.updateColumn).toBeDefined();
+			expect(actions.updateCard).toBeDefined();
 		});
 	});
 
@@ -479,6 +481,58 @@ describe("kanban board server actions", () => {
 				expect(result).toEqual({
 					error: "Invalid items payload — expected a JSON array",
 				});
+			});
+
+			it("updateColumn rejects missing columnId", async () => {
+				const formData = new FormData();
+				formData.append("name", "Todo");
+
+				const request = new Request("http://localhost:5173/kanban/test-id", {
+					method: "POST",
+					body: formData,
+				});
+
+				const result = await actions.updateColumn({
+					request,
+					params: { id: "test-id" },
+				} as any);
+				expect(result).toEqual({ error: "Column ID is required" });
+			});
+
+			it("updateColumn rejects empty name", async () => {
+				const formData = new FormData();
+				formData.append("columnId", "clx12345");
+				formData.append("name", "  ");
+
+				const request = new Request("http://localhost:5173/kanban/test-id", {
+					method: "POST",
+					body: formData,
+				});
+
+				const result = await actions.updateColumn({
+					request,
+					params: { id: "test-id" },
+				} as any);
+				expect(result).toEqual({ error: "Column name cannot be empty" });
+			});
+
+			it("updateColumn with valid data updates the column (DB unavailable)", async () => {
+				const formData = new FormData();
+				formData.append("columnId", "clx12345");
+				formData.append("name", "In Progress");
+
+				const request = new Request("http://localhost:5173/kanban/test-id", {
+					method: "POST",
+					body: formData,
+				});
+
+				// Will fail because no DB is available in unit tests
+				await expect(async () => {
+					await actions.updateColumn({
+						request,
+						params: { id: "test-id" },
+					} as any);
+				}).rejects.toThrow();
 			});
 		});
 	});

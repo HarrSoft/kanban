@@ -147,6 +147,18 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	updateColumn: async ({ request }) => {
+		const data = await request.formData();
+		const columnId = data.get("columnId") as ColumnId;
+		const name = (data.get("name") as string || "").trim();
+
+		if (!columnId) return { error: "Column ID is required" };
+		if (!name) return { error: "Column name cannot be empty" };
+
+		await db.update(columns).set({ name }).where(eq(columns.id, columnId));
+		return { success: true };
+	},
+
 	deleteColumn: async ({ request }) => {
 		const data = await request.formData();
 		const columnId = data.get("columnId") as ColumnId;
