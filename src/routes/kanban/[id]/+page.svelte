@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData } from "./$types";
 	import { enhance } from "$app/forms";
-	import { resolve } from "$app/paths";
+	// import { resolve } from "$app/paths";  // not needed
 	import { dndzone } from "svelte-dnd-action";
 	import QuillEditor from "$lib/components/QuillEditor.svelte";
 	import type { CardId, ColumnId } from "$types/ids";
@@ -64,6 +64,44 @@
 			method: "POST",
 			body: formData,
 		});
+	}
+
+	// Editing state
+	let editingCardId: CardId | null = null;
+	let editingCardContent: string = "";
+
+	function startEdit(cardId: CardId, content: string) {
+		editingCardId = cardId;
+		editingCardContent = content;
+	}
+
+	function cancelEdit() {
+		editingCardId = null;
+		editingCardContent = "";
+	}
+
+	async function saveEdit(cardId: CardId) {
+		const trimmed = editingCardContent.trim();
+		if (!trimmed) {
+			alert("Card content cannot be empty.");
+			return;
+		}
+
+		const formData = new FormData();
+		formData.append("cardId", cardId);
+		formData.append("content", editingCardContent);
+
+		const response = await fetch("?/updateCard", {
+			method: "POST",
+			body: formData,
+		});
+
+		if (response.ok) {
+			editingCardId = null;
+			window.location.reload();
+		} else {
+			alert("Failed to update card. Please try again.");
+		}
 	}
 
 	function toggleNewCardForm(columnId: string) {
@@ -145,7 +183,7 @@
 	<div class="mb-6 flex items-center justify-between">
 		<div>
 			<h1 class="mb-2 text-2xl font-bold">{data.board.name}</h1>
-			<a href={resolve("/kanban")} class="text-blue-600 hover:underline"
+			<a href="/kanban" class="text-blue-600 hover:underline"
 				>← Back to Boards</a
 			>
 		</div>
@@ -225,17 +263,49 @@
 						{#each column.items as card (card.id)}
 							<div
 								class="group relative cursor-move rounded-md border border-gray-200 bg-white p-3 shadow-sm"
+								class:editing={editingCardId === card.id}
 							>
-								<button
-									onclick={() => deleteCard(card.id)}
-									class="absolute top-2 right-2 text-sm text-red-500 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-700"
-									title="Delete card"
-								>
-									✕
-								</button>
-								<div class="prose prose-sm max-w-none">
-									{card.content}
-								</div>
+								{#if editingCardId === card.id}
+									<textarea
+										bind:value={editingCardContent}
+										class="mb-2 min-h-[80px] w-full rounded border border-indigo-300 p-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+										placeholder="Edit card content..."
+									></textarea>
+									<div class="flex gap-2">
+										<button
+											onclick={() => saveEdit(card.id)}
+											class="rounded bg-indigo-600 px-3 py-1 text-xs text-white hover:bg-indigo-700"
+										>
+											Save
+										</button>
+										<button
+											onclick={cancelEdit}
+											class="rounded bg-gray-300 px-3 py-1 text-xs text-gray-700 hover:bg-gray-400"
+										>
+											Cancel
+										</button>
+									</div>
+								{:else}
+									<div class="absolute top-2 right-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+										<button
+											onclick={() => startEdit(card.id, card.content)}
+											class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-gray-200"
+											title="Edit card"
+										>
+											✏️
+										</button>
+										<button
+											onclick={() => deleteCard(card.id)}
+											class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-red-500 hover:bg-red-100"
+											title="Delete card"
+										>
+											🗑️
+										</button>
+									</div>
+									<div class="prose prose-sm max-w-none">
+										{card.content}
+									</div>
+								{/if}
 							</div>
 						{/each}
 					</div>
@@ -303,5 +373,10 @@
 	:global(.prose a) {
 		color: #2563eb;
 		text-decoration: underline;
+	}
+
+	:global(.editing) {
+		border-color: #6366f1 !important;
+		box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 	}
 </style>

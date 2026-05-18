@@ -1,17 +1,18 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import Quill from "quill";
 	import "quill/dist/quill.snow.css";
+	import type QuillType from "quill";
 
 	export let card: { id: string; content: string };
 	export let onDelete: (id: string) => void;
 
 	let editorContainer: HTMLDivElement;
-	let quill: Quill;
+	let quill: QuillType | null = null;
 
-	onMount(() => {
+	onMount(async () => {
 		if (editorContainer) {
-			quill = new Quill(editorContainer, {
+			const QuillModule: any = await import("quill");
+			quill = new QuillModule.default(editorContainer, {
 				theme: "bubble",
 				readOnly: true,
 				modules: { toolbar: false },

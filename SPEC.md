@@ -141,16 +141,6 @@ DATABASE_URL="postgres://harrsoft:harrsoft-dev@localhost:5432/kanban_dev"
 6. Push to GitHub (pending credentials)
 7. PR `alpha/kanban-merge` → `main`
 
-## Next priorities
-
-1. [ ] Execute merge strategy (step 1 above)
-2. [ ] Add auth guards to kanban routes
-3. [ ] Wire up navigation (main nav → kanban link)
-4. [ ] Write unit tests for kanban server actions
-5. [ ] Wire up timeclock features to projects
-6. [ ] Add project settings page (rename, change image, manage members)
-7. [ ] Migrate `project/` root dir into `src/routes/project/`
-
 ## Agent-friendly API design
 
 The kanban app is designed to be consumed by both human users and autonomous agents (e.g., Harrsoft Alpha). Agents interact with the app programmatically through lightweight endpoints that return structured data with minimal rendering overhead.

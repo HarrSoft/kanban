@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
 	import { page } from "$app/state";
-	import { resolve } from "$app/paths";
+	// resolve not needed — no base path configured
+// import { resolve } from "$app/paths";
 	import { ProjectPicker } from "$com";
 	import { Logo } from "$com/icons";
 	import favicon from "$lib/assets/harrsoft_border.svg";
@@ -132,7 +133,7 @@
 
 {#snippet navLink(name: string, path: NavLinkPath)}
 	<a
-		href={resolve(path)}
+		href={path}
 		class={[
 			"w-full px-4 py-2 text-center",
 			page.url.pathname === path ?

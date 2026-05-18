@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { resolve } from "$app/paths";
+	// import { resolve } from "$app/paths";  // not needed
 	import { ProjectInfo } from "$types";
 
 	const {
@@ -14,7 +14,7 @@
 </script>
 
 {#if link}
-	<a href={resolve(`/project/${project.id}`)} class="flex items-center gap-2">
+	<a href={`/project/${project.id}`} class="flex items-center gap-2">
 		{@render content()}
 	</a>
 {:else}

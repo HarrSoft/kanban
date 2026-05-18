@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as df from "date-fns";
 	import { onDestroy } from "svelte";
-	import { resolve } from "$app/paths";
+	// import { resolve } from "$app/paths";  // not needed
 	import {
 		EditIcon,
 		LockIcon,
@@ -207,7 +207,7 @@
 							</button>
 						{/if}
 						<!-- Edit button -->
-						<a href={resolve(`/time/${clock.id}`)}>
+						<a href={`/time/${clock.id}`}>
 							<EditIcon className="h-6" />
 						</a>
 						<!-- Delete button -->

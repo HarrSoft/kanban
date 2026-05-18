@@ -17,7 +17,7 @@ describe("id generator", () => {
 	it("returns a column factory that produces text columns", () => {
 		const column = id("test_id");
 		expect(column).toBeDefined();
-		expect(column.config.name).toBe("test_id");
+		expect((column as any).config.name).toBe("test_id");
 	});
 });
 
@@ -25,7 +25,7 @@ describe("seconds helper", () => {
 	it("returns a function that produces integer columns", () => {
 		const column = seconds("duration");
 		expect(column).toBeDefined();
-		expect(column.config.name).toBe("duration");
+		expect((column as any).config.name).toBe("duration");
 	});
 });
 
@@ -33,7 +33,7 @@ describe("unix helper", () => {
 	it("returns a function that produces bigint columns", () => {
 		const column = unix("created_at");
 		expect(column).toBeDefined();
-		expect(column.config.name).toBe("created_at");
+		expect((column as any).config.name).toBe("created_at");
 	});
 });
 
@@ -60,32 +60,33 @@ describe("timestamps schema", () => {
 	});
 
 	it("createdAt column config name is created_at", () => {
-		expect(timestamps.createdAt.config.name).toBe("created_at");
+		expect((timestamps.createdAt as any).config.name).toBe("created_at");
 	});
 
 	it("updatedAt column config name is updated_at", () => {
-		expect(timestamps.updatedAt.config.name).toBe("updated_at");
+		expect((timestamps.updatedAt as any).config.name).toBe("updated_at");
 	});
 
 	it("deletedAt column config name is deleted_at", () => {
-		expect(timestamps.deletedAt.config.name).toBe("deleted_at");
+		expect((timestamps.deletedAt as any).config.name).toBe("deleted_at");
 	});
 
 	it("createdAt is notNull and has a default", () => {
-		expect(timestamps.createdAt.config.notNull).toBe(true);
-		expect(timestamps.createdAt.config.hasDefault).toBe(true);
+		const cfg = (timestamps.createdAt as any).config;
+		expect(cfg.notNull).toBe(true);
+		expect(cfg.hasDefault).toBe(true);
 	});
 
 	it("updatedAt is notNull and has onUpdate", () => {
-		expect(timestamps.updatedAt.config.notNull).toBe(true);
-		expect(timestamps.updatedAt.$onUpdate).toBeDefined();
+		expect((timestamps.updatedAt as any).config.notNull).toBe(true);
+		expect((timestamps.updatedAt as any).$onUpdate).toBeDefined();
 	});
 
 	it("deletedAt is nullable (no value constraints)", () => {
-		expect(timestamps.deletedAt.config.notNull).toBe(false);
+		expect((timestamps.deletedAt as any).config.notNull).toBe(false);
 	});
 
 	it("createdAt dataType is number (bigint mode)", () => {
-		expect(timestamps.createdAt.config.dataType).toBe("number");
+		expect((timestamps.createdAt as any).config.dataType).toBe("number");
 	});
 });

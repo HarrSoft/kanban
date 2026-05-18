@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { dndzone, type DndEvent } from "svelte-dnd-action";
 	import { flip } from "svelte/animate";
-	import Column from "./Column.svelte";
+	import ColumnComponent from "./Column.svelte";
 	import { enhance } from "$app/forms";
 	import type { Board, Column, Card } from "$types/frontend/kanban";
 
@@ -145,7 +145,7 @@
 				class="inline-block h-full align-top"
 				animate:flip={{ duration: flipDurationMs }}
 			>
-				<Column
+				<ColumnComponent
 					{column}
 					onDrop={handleCardDrop}
 					onDeleteCard={handleDeleteCard}

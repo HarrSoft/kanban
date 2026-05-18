@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { browser } from "$app/environment";
+	import type QuillType from "quill";
 
 	let editorContainer: HTMLDivElement;
-	let quill: Quill | null = null;
-	let QuillClass: typeof Quill | null = null;
+	let quill: QuillType | null = null;
+	let QuillClass: typeof QuillType | null = null;
 
 	export let placeholder = "Enter text...";
 	export let initialContent = "";
@@ -36,7 +37,7 @@
 		if (!browser) return;
 
 		// Dynamically import Quill only on the client
-		const QuillModule = await import("quill");
+		const QuillModule: any = await import("quill");
 		QuillClass = QuillModule.default;
 
 		// Also import the CSS

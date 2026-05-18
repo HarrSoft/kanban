@@ -167,4 +167,16 @@ export const actions: Actions = {
 		await db.delete(cards).where(eq(cards.id, cardId));
 		return { success: true };
 	},
+
+	updateCard: async ({ request }) => {
+		const data = await request.formData();
+		const cardId = data.get("cardId") as CardId;
+		const content = (data.get("content") as string || "").trim();
+
+		if (!cardId) return { error: "Card ID is required" };
+		if (!content) return { error: "Content cannot be empty" };
+
+		await db.update(cards).set({ content }).where(eq(cards.id, cardId));
+		return { success: true };
+	},
 };

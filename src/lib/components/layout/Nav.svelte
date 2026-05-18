@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { ClassValue } from "svelte/elements";
 	import { page } from "$app/state";
-	import { resolve } from "$app/paths";
+	// resolve is not needed when there is no base path
+// import { resolve } from "$app/paths";
 
 	const {
 		className,
@@ -13,7 +14,7 @@
 	type Tab = (typeof tabs)[number];
 	const tab: Tab | null = $derived.by(() => {
 		const [_root, tab] = page.url.pathname.split("/");
-		if (tabs.includes(tab as string)) {
+		if (tabs.includes(tab as Tab)) {
 			return tab as Tab;
 		} else {
 			return "projects";
@@ -30,12 +31,12 @@
 		className,
 	]}
 >
-	<a href={resolve("/")} class:selected={tab === "projects"}> Projects </a>
-	<a href={resolve("/time")} class:selected={tab === "time"}>
+	<a href="/" class:selected={tab === "projects"}> Projects </a>
+	<a href="/time" class:selected={tab === "time"}>
 		Time&nbsp;Clock
 	</a>
-	<a href={resolve("/kanban")} class:selected={tab === "kanban"}> Kanban </a>
-	<a href={resolve("/settings")} class:selected={tab === "settings"}>
+	<a href="/kanban" class:selected={tab === "kanban"}> Kanban </a>
+	<a href="/settings" class:selected={tab === "settings"}>
 		Settings
 	</a>
 </nav>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { resolve } from "$app/paths";
+	// import { resolve } from "$app/paths";  // not needed
 	import * as df from "date-fns";
 	import { TrashIcon } from "$com/icons";
 	import { deleteInvite, fetchAllInvites } from "$lib/remote";
@@ -14,7 +14,7 @@
 <div class="flex flex-col gap-2">
 	<div class="flex w-full justify-between">
 		<h1 class="text-xl font-bold">Pending Invites</h1>
-		<a href={resolve("/admin/invites/create")} class="button solid">
+		<a href="/admin/invites/create" class="button solid">
 			+ Create new invite
 		</a>
 	</div>
@@ -31,7 +31,7 @@
 
 			<span class="flex gap-10">
 				<a
-					href={resolve(`/invite/${invite.code}`)}
+					href={`/invite/${invite.code}`}
 					class="font-bold text-accent"
 				>
 					invite link

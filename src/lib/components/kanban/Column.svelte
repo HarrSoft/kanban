@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { dndzone, type DndEvent } from "svelte-dnd-action";
 	import { flip } from "svelte/animate";
-	import Card from "./Card.svelte";
+	import CardComponent from "./Card.svelte";
 	import { enhance } from "$app/forms";
 	import type { Column, Card } from "$types/frontend/kanban";
 
@@ -24,24 +24,28 @@
 	// New card form
 	let isAddingCard = false;
 	let newCardContent = "";
-	let quillEditor: HTMLDivElement;
-	let quill: Quill | null;
-
-	import Quill from "quill";
 	import "quill/dist/quill.snow.css";
+	import type QuillType from "quill";
+
+	let quillEditor: HTMLDivElement;
+	let quill: QuillType | null = null;
+
+	async function initQuill() {
+		if (quillEditor && !quill) {
+			const QuillModule: any = await import("quill");
+			quill = new QuillModule.default(quillEditor, {
+				theme: "snow",
+				modules: {
+					toolbar: [["bold", "italic", "underline"], ["clean"]],
+				},
+			});
+		}
+	}
+
 	function toggleAddCard() {
 		isAddingCard = !isAddingCard;
 		if (isAddingCard) {
-			setTimeout(() => {
-				if (quillEditor && !quill) {
-					quill = new Quill(quillEditor, {
-						theme: "snow",
-						modules: {
-							toolbar: [["bold", "italic", "underline"], ["clean"]],
-						},
-					});
-				}
-			}, 0);
+			setTimeout(initQuill, 0);
 		}
 	}
 
@@ -91,7 +95,7 @@
 	>
 		{#each column.cards as card (card.id)}
 			<div animate:flip={{ duration: flipDurationMs }}>
-				<Card {card} onDelete={onDeleteCard} />
+				<CardComponent {card} onDelete={onDeleteCard} />
 			</div>
 		{/each}
 	</div>

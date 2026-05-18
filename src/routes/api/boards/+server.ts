@@ -14,7 +14,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: "Missing projectId or name" }, { status: 400 });
 	}
 
-	let parsedProjectId: string;
+	let parsedProjectId: ProjectId;
 	try {
 		parsedProjectId = v.parse(ProjectId, projectId);
 	} catch {
@@ -39,7 +39,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		return json({ error: "Missing projectId" }, { status: 400 });
 	}
 
-	let parsedProjectId: string;
+	let parsedProjectId: ProjectId;
 	try {
 		parsedProjectId = v.parse(ProjectId, rawProjectId);
 	} catch {
