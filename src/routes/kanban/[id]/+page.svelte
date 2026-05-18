@@ -44,18 +44,84 @@
 
 	function handleColumnDndConsider(e: CustomEvent, columnId: ColumnId) {
 		lockColumns();
+		// The source event detail contains the items for the zone that was dragged over
+		// We need to find which column the items belong to by matching the payload
+		// svelte-dnd-action gives us the items in the order they are in the target zone
+		const { items: newItems, info } = e.detail;
+		// info.trigger === "dragged" means items were moved from another zone
+		// We update the column that received the items
+		if (info && info.trigger === "dragged" && newItems) {
+			// Update the target column with the new items
+			columns = columns.map(col =>
+				col.id === columnId ? { ...col, items: newItems } : col,
+			);
+			// If info.source.items exists, update the source column (items that were removed)
+			if (info.source && info.source.items) {
+				// Rebuild source column items by removing moved items
+				const sourceColumnId = (info.source.el as HTMLElement)?.dataset?.columnId;
+				if (sourceColumnId && sourceColumnId !== columnId) {
+					columns = columns.map(col =>
+						col.id === sourceColumnId
+							? { ...col, items: info.source.items }
+							: col.id === columnId
+								? { ...col, items: newItems }
+								: col,
+					);
+					return;
+				}
+			}
+		}
+		// Fallback: intra-column reorder
 		columns = columns.map(col =>
 			col.id === columnId ? { ...col, items: e.detail.items } : col,
 		);
 	}
 
 	async function handleColumnDndFinalize(e: CustomEvent, columnId: ColumnId) {
+		const { items: finalItems, info } = e.detail;
+		unlockColumns();
+
+		if (info && info.trigger === "dragged" && finalItems) {
+			// Cross-column drag: update both source and target columns
+			columns = columns.map(col =>
+				col.id === columnId ? { ...col, items: finalItems } : col,
+			);
+
+			if (info.source && info.source.items) {
+				const sourceColumnId = (info.source.el as HTMLElement)?.dataset?.columnId;
+				if (sourceColumnId && sourceColumnId !== columnId) {
+					columns = columns.map(col =>
+						col.id === sourceColumnId
+							? { ...col, items: info.source.items }
+							: col.id === columnId
+								? { ...col, items: finalItems }
+								: col,
+					);
+				}
+			}
+
+			// Send updates for ALL columns that changed
+			const promises: Promise<Response>[] = [];
+			for (const col of columns) {
+				const formData = new FormData();
+				formData.append("items", JSON.stringify(col.items));
+				formData.append("columnId", col.id);
+				promises.push(
+					fetch("?/updateCardOrder", {
+						method: "POST",
+						body: formData,
+					}),
+				);
+			}
+			await Promise.all(promises);
+			return;
+		}
+
+		// Intra-column drag: update just this column
 		columns = columns.map(col =>
 			col.id === columnId ? { ...col, items: e.detail.items } : col,
 		);
-		unlockColumns();
 
-		// Update card order on server
 		const formData = new FormData();
 		formData.append("items", JSON.stringify(e.detail.items));
 		formData.append("columnId", columnId);
@@ -401,6 +467,7 @@
 					</div>
 
 					<div
+						data-column-id={column.id}
 						use:dndzone={{ items: column.items, flipDurationMs, type: "card" }}
 						onconsider={e => handleColumnDndConsider(e, column.id)}
 						onfinalize={e => handleColumnDndFinalize(e, column.id)}
@@ -460,7 +527,7 @@
 										</button>
 									</div>
 									<div class="prose prose-sm max-w-none">
-										{card.content}
+										{@html card.content}
 									</div>
 								{/if}
 							</div>
