@@ -202,4 +202,22 @@ export const actions: Actions = {
 		await db.update(cards).set({ content }).where(eq(cards.id, cardId));
 		return { success: true };
 	},
+
+	updateBoard: async ({ request, params }) => {
+		const data = await request.formData();
+		const boardId = params.id as BoardId;
+		const name = (data.get("name") as string || "").trim();
+		const description = (data.get("description") as string || "").trim();
+
+		if (!boardId) return { error: "Board ID is required" };
+
+		const updateData: Record<string, string> = {};
+		if (name) updateData.name = name;
+		if (description !== undefined) updateData.description = description || null;
+
+		if (Object.keys(updateData).length === 0) return { error: "Nothing to update" };
+
+		await db.update(boards).set(updateData).where(eq(boards.id, boardId));
+		return { success: true };
+	},
 };

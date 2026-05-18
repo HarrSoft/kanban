@@ -9,6 +9,7 @@ export const load: PageServerLoad = async () => {
 		.select({
 			id: boards.id,
 			name: boards.name,
+			description: boards.description,
 			projectId: boards.projectId,
 			createdAt: boards.createdAt,
 			columnCount: sql<number>`count(distinct ${columns.id})`,
@@ -17,7 +18,7 @@ export const load: PageServerLoad = async () => {
 		.from(boards)
 		.leftJoin(columns, eq(columns.boardId, boards.id))
 		.leftJoin(cards, eq(cards.columnId, columns.id))
-		.groupBy(boards.id, boards.name, boards.projectId, boards.createdAt);
+		.groupBy(boards.id, boards.name, boards.description, boards.projectId, boards.createdAt);
 
 	const allProjects = await db.select().from(projects);
 

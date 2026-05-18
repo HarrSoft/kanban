@@ -12,6 +12,7 @@ export const boards = t.pgTable("boards", {
 		.references(() => projects.id)
 		.$type<ProjectId>(),
 	name: t.text("name").notNull(),
+	description: t.text("description"),
 	...timestamps,
 });
 

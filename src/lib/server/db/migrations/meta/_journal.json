@@ -28,6 +28,13 @@
       "when": 1778721489524,
       "tag": "0003_gray_frog_thor",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779137620765,
+      "tag": "0004_smiling_shooting_star",
+      "breakpoints": true
     }
   ],
   "version": "7"

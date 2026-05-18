@@ -70,6 +70,35 @@
 	let editingCardId: CardId | null = null;
 	let editingCardContent: string = "";
 
+	// Editing state — board description
+	let editingDescription = false;
+	let editingDescriptionText: string = "";
+
+	function startEditDescription() {
+		editingDescriptionText = data.board.description || "";
+		editingDescription = true;
+	}
+
+	function cancelEditDescription() {
+		editingDescription = false;
+		editingDescriptionText = "";
+	}
+
+	async function saveEditDescription() {
+		const formData = new FormData();
+		formData.append("description", editingDescriptionText);
+
+		const response = await fetch("?/updateBoard", {
+			method: "POST",
+			body: formData,
+		});
+
+		if (response.ok) {
+			editingDescription = false;
+			window.location.reload();
+		}
+	}
+
 	// Editing state — columns
 	let editingColumnId: ColumnId | null = null;
 	let editingColumnName: string = "";
@@ -233,7 +262,44 @@
 <div class="max-w-full p-8">
 	<div class="mb-6 flex items-center justify-between">
 		<div>
-			<h1 class="mb-2 text-2xl font-bold">{data.board.name}</h1>
+			<h1 class="mb-1 text-2xl font-bold">{data.board.name}</h1>
+			{#if editingDescription}
+				<div class="mb-2 flex items-start gap-2">
+					<textarea
+						bind:value={editingDescriptionText}
+						class="w-full max-w-md rounded border border-indigo-300 p-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+						placeholder="Add a description…"
+						rows="2"
+					></textarea>
+					<div class="flex flex-col gap-1">
+						<button
+							onclick={saveEditDescription}
+							class="rounded bg-indigo-600 px-2 py-1 text-xs text-white hover:bg-indigo-700"
+							title="Save"
+						>💾</button>
+						<button
+							onclick={cancelEditDescription}
+							class="rounded bg-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-400"
+							title="Cancel"
+						>✕</button>
+					</div>
+				</div>
+			{:else if data.board.description}
+				<p
+					class="mb-2 cursor-pointer text-sm text-gray-500 hover:text-indigo-600"
+					onclick={startEditDescription}
+					title="Edit description"
+				>
+					{data.board.description}
+				</p>
+			{:else}
+				<button
+					onclick={startEditDescription}
+					class="mb-2 cursor-pointer text-sm text-gray-400 hover:text-indigo-600"
+				>
+					+ Add description
+				</button>
+			{/if}
 			<a href="/kanban" class="text-blue-600 hover:underline"
 				>← Back to Boards</a
 			>
