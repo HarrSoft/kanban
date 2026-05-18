@@ -196,6 +196,19 @@
 		}
 	}
 
+	async function deleteBoard() {
+		if (!confirm(`Delete the board "${data.board.name}" and all its columns and cards?`)) return;
+
+		const response = await fetch("?/deleteBoard", {
+			method: "POST",
+		});
+
+		if (response.ok) {
+			// Redirect to board list
+			window.location.href = "/kanban";
+		}
+	}
+
 	async function deleteColumn(columnId: ColumnId) {
 		if (!confirm("Delete this column and all its cards?")) return;
 
@@ -225,12 +238,21 @@
 				>← Back to Boards</a
 			>
 		</div>
-		<button
-			onclick={() => (showNewColumnForm = !showNewColumnForm)}
-			class="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
-		>
-			+ New Column
-		</button>
+		<div class="flex items-center gap-3">
+			<button
+				onclick={() => (showNewColumnForm = !showNewColumnForm)}
+				class="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+			>
+				+ New Column
+			</button>
+			<button
+				onclick={deleteBoard}
+				class="rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700"
+				title="Delete this board"
+			>
+				🗑️ Delete Board
+			</button>
+		</div>
 	</div>
 
 	{#if showNewColumnForm}

@@ -180,6 +180,15 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	deleteBoard: async ({ params }) => {
+		const boardId = params.id as BoardId;
+
+		// DB cascades handle columns and cards deletion
+		await db.delete(boards).where(eq(boards.id, boardId));
+
+		return { success: true, deleted: true };
+	},
+
 	updateCard: async ({ request }) => {
 		const data = await request.formData();
 		const cardId = data.get("cardId") as CardId;
