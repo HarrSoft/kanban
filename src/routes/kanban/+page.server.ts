@@ -1,10 +1,24 @@
 import db from "$db";
-import { boards, projects } from "$db/schema";
+import { boards, projects, columns, cards } from "$db/schema";
+import { eq, sql } from "drizzle-orm";
 import type { PageServerLoad, Actions } from "./$types";
 
 export const load: PageServerLoad = async () => {
-	// Fetch all boards and projects for the creation form
-	const allBoards = await db.select().from(boards);
+	// Fetch all boards with column & card counts
+	const allBoards = await db
+		.select({
+			id: boards.id,
+			name: boards.name,
+			projectId: boards.projectId,
+			createdAt: boards.createdAt,
+			columnCount: sql<number>`count(distinct ${columns.id})`,
+			cardCount: sql<number>`count(distinct ${cards.id})`,
+		})
+		.from(boards)
+		.leftJoin(columns, eq(columns.boardId, boards.id))
+		.leftJoin(cards, eq(cards.columnId, columns.id))
+		.groupBy(boards.id, boards.name, boards.projectId, boards.createdAt);
+
 	const allProjects = await db.select().from(projects);
 
 	return { boards: allBoards, projects: allProjects };

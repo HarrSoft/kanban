@@ -1,29 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockBoards = [
-	{ id: "board1", projectId: "proj1", name: "Test Board 1" },
-	{ id: "board2", projectId: "proj1", name: "Test Board 2" },
-	{ id: "board3", projectId: "proj2", name: "Solo Board" },
+	{ id: "board1", projectId: "proj1", name: "Test Board 1", columnCount: 2, cardCount: 5 },
+	{ id: "board2", projectId: "proj1", name: "Test Board 2", columnCount: 1, cardCount: 0 },
+	{ id: "board3", projectId: "proj2", name: "Solo Board", columnCount: 0, cardCount: 0 },
 ];
 
-// Mock $db to return both boards and projects from select
-// The load function does two selects: boards and projects
-let selectCallCount = 0;
-const mockFrom = vi.fn().mockImplementation(() => {
-	const call = selectCallCount++;
-	// First select().from(boards) call returns boards, second select().from(projects) returns projects
-	if (call === 0) return Promise.resolve(mockBoards);
-	return Promise.resolve([
-		{ id: "proj1", name: "Project Alpha" },
-		{ id: "proj2", name: "Project Beta" },
-	]);
-});
-const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+// Build a shared ref allow-advancing the select mock on each call.
+// First call: db.select({...}).from(boards).leftJoin(...).leftJoin(...).groupBy(...) → mockBoards
+// Second call: db.select().from(projects) → mockProjects
+let selectReturnIndex = 0;
+
+const mockGroupBy = vi.fn().mockResolvedValue(mockBoards);
+const mockSecondLeftJoin = vi.fn().mockReturnValue({ groupBy: mockGroupBy });
+const mockFirstLeftJoin = vi.fn().mockReturnValue({ leftJoin: mockSecondLeftJoin });
+const mockFrom = vi.fn().mockReturnValue({ leftJoin: mockFirstLeftJoin });
+
+const mockProjectsFrom = vi.fn().mockResolvedValue([
+	{ id: "proj1", name: "Project Alpha" },
+	{ id: "proj2", name: "Project Beta" },
+]);
+const mockSelectBare = vi.fn().mockReturnValue({ from: mockProjectsFrom });
 
 vi.mock("$db", () => {
+	const selectFn = vi.fn().mockImplementation(() => {
+		// First invocation → return the chainable query builder (select({...}))
+		// Subsequent invocations → return select().from(projects)
+		return selectReturnIndex++ === 0
+			? { from: mockFrom }
+			: { from: mockProjectsFrom };
+	});
+
 	return {
 		default: {
-			select: mockSelect,
+			select: selectFn,
 		},
 	};
 });
@@ -31,6 +41,8 @@ vi.mock("$db", () => {
 vi.mock("$db/schema", () => ({
 	boards: {},
 	projects: {},
+	columns: {},
+	cards: {},
 }));
 
 // TypeScript is strict about dynamic imports with .ts extension in svelte-check,
@@ -56,7 +68,7 @@ const mockEvent = {
 
 describe("kanban list page server load", () => {
 	beforeEach(() => {
-		selectCallCount = 0;
+		selectReturnIndex = 0;
 	});
 
 	it("returns an array of boards", async () => {
