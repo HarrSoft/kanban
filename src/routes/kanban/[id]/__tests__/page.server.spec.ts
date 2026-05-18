@@ -388,7 +388,7 @@ describe("kanban board server actions", () => {
 		});
 
 		describe("additional edge cases", () => {
-			it("createColumn with very long name (>500 chars) -- not blocked by action yet (DB unavailable)", async () => {
+			it("createColumn with very long name (>500 chars) returns validation error", async () => {
 				const formData = new FormData();
 				formData.append("name", "A".repeat(1000));
 
@@ -397,15 +397,11 @@ describe("kanban board server actions", () => {
 					body: formData,
 				});
 
-				// Name passes validation (no length check); the action will
-				// fail on DB queries (unavailable in unit tests). This documents
-				// the gap — a max length check on name could be added.
-				await expect(async () => {
-					await actions.createColumn({
-						request,
-						params: { id: "test-id" },
-					} as any);
-				}).rejects.toThrow();
+				const result = await actions.createColumn({
+					request,
+					params: { id: "test-id" },
+				} as any);
+				expect(result).toEqual({ error: "Name must be 255 characters or less" });
 			});
 
 			it("updateColumnOrder rejects items with missing items field entirely", async () => {

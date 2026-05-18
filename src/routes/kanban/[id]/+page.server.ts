@@ -37,6 +37,8 @@ export const actions: Actions = {
 
 		if (!name) return { error: "Name is required" };
 
+		if (name.length > 255) return { error: "Name must be 255 characters or less" };
+
 		// Get max order
 		const existingColumns = await db.query.columns.findMany({
 			where: eq(columns.boardId, boardId),
