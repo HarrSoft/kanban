@@ -116,12 +116,12 @@ describe("kanban board server actions", () => {
 
 			// Content validation passes; then action hits DB which is unavailable.
 			// We verify the action rejects (from DB error), not a content parsing error.
-			await expect(async () => {
-				await actions.createCard({
+			await expect(
+				actions.createCard({
 					request,
 					params: { id: "test-id" },
-				} as any);
-			}).rejects.toThrow();
+				} as any),
+			).rejects.toThrow();
 		});
 	});
 
@@ -145,12 +145,12 @@ describe("kanban board server actions", () => {
 
 				// The JSON parse succeeds; the action will then fail on DB queries.
 				// We only verify the action rejects (due to missing DB), not the details.
-				await expect(async () => {
-					await actions.updateColumnOrder({
+				await expect(
+					actions.updateColumnOrder({
 						request,
 						params: { id: "test-id" },
-					} as any);
-				}).rejects.toThrow();
+					} as any),
+				).rejects.toThrow();
 			},
 		);
 
@@ -173,12 +173,12 @@ describe("kanban board server actions", () => {
 				});
 
 				// Same story: JSON parse succeeds, then DB queries fail.
-				await expect(async () => {
-					await actions.updateCardOrder({
+				await expect(
+					actions.updateCardOrder({
 						request,
 						params: { id: "test-id" },
-					} as any);
-				}).rejects.toThrow();
+					} as any),
+				).rejects.toThrow();
 			},
 		);
 	});
@@ -523,12 +523,12 @@ describe("kanban board server actions", () => {
 				});
 
 				// Will fail because no DB is available in unit tests
-				await expect(async () => {
-					await actions.updateColumn({
+				await expect(
+					actions.updateColumn({
 						request,
 						params: { id: "test-id" },
-					} as any);
-				}).rejects.toThrow();
+					} as any),
+				).rejects.toThrow();
 			});
 		});
 	});
