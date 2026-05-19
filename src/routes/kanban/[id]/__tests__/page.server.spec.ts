@@ -27,6 +27,8 @@ describe("kanban board server actions", () => {
 			expect(actions.deleteCard).toBeDefined();
 			expect(actions.updateColumn).toBeDefined();
 			expect(actions.updateCard).toBeDefined();
+			expect(actions.updateBoard).toBeDefined();
+			expect(actions.setDueDate).toBeDefined();
 		});
 	});
 
@@ -530,6 +532,84 @@ describe("kanban board server actions", () => {
 					} as any),
 				).rejects.toThrow();
 			});
+		});
+	});
+
+	describe("setDueDate action", () => {
+		it("returns fail(400) when cardId is missing", async () => {
+			const formData = new FormData();
+			formData.append("dueDate", "2026-06-01");
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			const result = await actions.setDueDate({
+				request,
+				params: { id: "test-id" },
+			} as any);
+
+			// SvelteKit fail() returns { status, data: { error } }
+			expect(result).toHaveProperty("status", 400);
+			expect(result).toHaveProperty("data");
+			expect((result as any).data).toHaveProperty("error", "Card ID is required");
+		});
+
+		it("parses valid date string into a unix timestamp (DB unavailable)", async () => {
+			const formData = new FormData();
+			formData.append("cardId", "clxcard12345");
+			formData.append("dueDate", "2026-06-15");
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			// Date parsing succeeds, then DB query fails (no DB in unit tests)
+			await expect(
+				actions.setDueDate({
+					request,
+					params: { id: "test-id" },
+				} as any),
+			).rejects.toThrow();
+		});
+
+		it("accepts empty dueDate to clear existing date (DB unavailable)", async () => {
+			const formData = new FormData();
+			formData.append("cardId", "clxcard12345");
+			formData.append("dueDate", "");
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			// Empty date parses to null, then DB query fails
+			await expect(
+				actions.setDueDate({
+					request,
+					params: { id: "test-id" },
+				} as any),
+			).rejects.toThrow();
+		});
+
+		it("accepts missing dueDate field to clear existing date (DB unavailable)", async () => {
+			const formData = new FormData();
+			formData.append("cardId", "clxcard12345");
+			// no dueDate field appended
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			await expect(
+				actions.setDueDate({
+					request,
+					params: { id: "test-id" },
+				} as any),
+			).rejects.toThrow();
 		});
 	});
 });

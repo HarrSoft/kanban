@@ -70,11 +70,12 @@ describe("cards table", () => {
 		expect(cards).toBeDefined();
 	});
 
-	it("has id, columnId, content, and order columns", () => {
+	it("has id, columnId, content, order, and dueDate columns", () => {
 		expect(cards.id).toBeDefined();
 		expect(cards.columnId).toBeDefined();
 		expect(cards.content).toBeDefined();
 		expect(cards.order).toBeDefined();
+		expect(cards.dueDate).toBeDefined();
 	});
 
 	it("content column has columnType text", () => {
@@ -85,6 +86,13 @@ describe("cards table", () => {
 	it("order column has columnType number", () => {
 		expect(cards.order).toBeDefined();
 		expect((cards.order as any).columnType).toBe("PgInteger");
+	});
+
+	it("dueDate column has columnType bigint (unix timestamp)", () => {
+		expect(cards.dueDate).toBeDefined();
+		const columnType = (cards.dueDate as any).columnType;
+		// Bun's Drizzle uses PgBigInt53, Node may use PgBigInt
+		expect(["PgBigInt", "PgBigInt53"]).toContain(columnType);
 	});
 
 	it("columnId column exists", () => {

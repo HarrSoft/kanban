@@ -1,7 +1,7 @@
 import * as t from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { projects } from "./projects";
-import { id, timestamps } from "./util";
+import { id, timestamps, unix } from "./util";
 import { BoardId, ColumnId, CardId, ProjectId } from "../../../types"; // drizzle-kit can't handle path aliases
 
 export const boards = t.pgTable("boards", {
@@ -37,6 +37,7 @@ export const cards = t.pgTable("cards", {
 		.$type<ColumnId>(),
 	content: t.text("content").notNull(),
 	order: t.integer("order").notNull().default(0),
+	dueDate: unix("due_date"),
 	...timestamps,
 });
 

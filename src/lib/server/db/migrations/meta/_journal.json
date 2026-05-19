@@ -35,6 +35,13 @@
       "when": 1779137620765,
       "tag": "0004_smiling_shooting_star",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1779180867748,
+      "tag": "0005_last_felicia_hardy",
+      "breakpoints": true
     }
   ],
   "version": "7"

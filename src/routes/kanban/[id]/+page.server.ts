@@ -1,4 +1,4 @@
-import { error } from "@sveltejs/kit";
+import { error, fail } from "@sveltejs/kit";
 import db from "$db";
 import { boards, columns, cards } from "$db/schema";
 import { eq, asc } from "drizzle-orm";
@@ -218,6 +218,25 @@ export const actions: Actions = {
 		if (Object.keys(updateData).length === 0) return { error: "Nothing to update" };
 
 		await db.update(boards).set(updateData).where(eq(boards.id, boardId));
+		return { success: true };
+	},
+
+	setDueDate: async ({ request }) => {
+		const data = await request.formData();
+		const cardId = data.get("cardId") as CardId;
+		const dueDateRaw = data.get("dueDate") as string | null;
+
+		if (!cardId) {
+			return fail(400, { error: "Card ID is required" });
+		}
+
+		// Parse date: empty string or null means clear the due date
+		const dueDate: number | null =
+			dueDateRaw && dueDateRaw.trim() !== ""
+				? Math.floor(new Date(dueDateRaw).getTime() / 1000)
+				: null;
+
+		await db.update(cards).set({ dueDate }).where(eq(cards.id, cardId));
 		return { success: true };
 	},
 };

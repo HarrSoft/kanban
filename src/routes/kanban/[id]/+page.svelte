@@ -6,6 +6,36 @@
 	import QuillEditor from "$lib/components/QuillEditor.svelte";
 	import type { CardId, ColumnId } from "$types/ids";
 
+	// Helper: format a unix timestamp (seconds) as YYYY-MM-DD for date input
+	function unixToDateInput(ts: number | null | undefined): string {
+		if (!ts) return "";
+		const d = new Date(ts * 1000);
+		return d.getFullYear() + "-" +
+			String(d.getMonth() + 1).padStart(2, "0") + "-" +
+			String(d.getDate()).padStart(2, "0");
+	}
+
+	function formatDueDate(ts: number | null | undefined): string {
+		if (!ts) return "";
+		const now = Math.floor(Date.now() / 1000);
+		const d = new Date(ts * 1000);
+		const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+		// If due date is today or in the past, add emphasis
+		if (ts < now) {
+			// Past due
+			return "🔴 " + dateStr;
+		}
+		const oneDay = 86400;
+		if (ts < now + oneDay) {
+			// Due tomorrow
+			return "🟡 " + dateStr;
+		}
+		return "📅 " + dateStr;
+	}
+
+	// Editing state — due dates
+	let editingDueDate: Record<string, string> = {};
+
 	export let data: PageData;
 
 	let showNewColumnForm = false;
@@ -254,6 +284,60 @@
 
 		if (response.ok) {
 			window.location.reload();
+		}
+	}
+
+	// Due date editing — toggles a date picker inline
+	function toggleDueDatePicker(cardId: CardId, currentTs: number | null | undefined) {
+		const key = cardId;
+		if (editingDueDate[key] !== undefined) {
+			// Already editing — close it
+			const newState = { ...editingDueDate };
+			delete newState[key];
+			editingDueDate = newState;
+		} else {
+			editingDueDate = { ...editingDueDate, [key]: unixToDateInput(currentTs) };
+		}
+	}
+
+	async function saveDueDate(cardId: CardId) {
+		const val = editingDueDate[cardId] || "";
+		const formData = new FormData();
+		formData.append("cardId", cardId);
+		formData.append("dueDate", val);
+
+		const response = await fetch("?/setDueDate", {
+			method: "POST",
+			body: formData,
+		});
+
+		if (response.ok) {
+			const newState = { ...editingDueDate };
+			delete newState[cardId];
+			editingDueDate = newState;
+			window.location.reload();
+		} else {
+			alert("Failed to set due date.");
+		}
+	}
+
+	async function clearDueDate(cardId: CardId) {
+		const formData = new FormData();
+		formData.append("cardId", cardId);
+		formData.append("dueDate", "");
+
+		const response = await fetch("?/setDueDate", {
+			method: "POST",
+			body: formData,
+		});
+
+		if (response.ok) {
+			const newState = { ...editingDueDate };
+			delete newState[cardId];
+			editingDueDate = newState;
+			window.location.reload();
+		} else {
+			alert("Failed to clear due date.");
 		}
 	}
 
@@ -519,6 +603,13 @@
 											✏️
 										</button>
 										<button
+											onclick={() => toggleDueDatePicker(card.id, card.dueDate)}
+											class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-gray-200"
+											title="Set or edit due date"
+										>
+											📅
+										</button>
+										<button
 											onclick={() => deleteCard(card.id)}
 											class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-red-500 hover:bg-red-100"
 											title="Delete card"
@@ -529,6 +620,33 @@
 									<div class="prose prose-sm max-w-none">
 										{@html card.content}
 									</div>
+									{#if editingDueDate[card.id] !== undefined}
+										<div class="mt-2 flex items-center gap-1">
+											<input
+												type="date"
+												bind:value={editingDueDate[card.id]}
+												class="w-full rounded border border-indigo-300 px-2 py-1 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+											/>
+											<button
+												onclick={() => saveDueDate(card.id)}
+												class="rounded bg-indigo-600 px-1.5 py-1 text-xs text-white hover:bg-indigo-700"
+												title="Save due date"
+											>💾</button>
+											<button
+												onclick={() => clearDueDate(card.id)}
+												class="rounded bg-red-100 px-1.5 py-1 text-xs text-red-600 hover:bg-red-200"
+												title="Clear due date"
+											>✕</button>
+										</div>
+									{:else if card.dueDate}
+										<button
+											onclick={() => toggleDueDatePicker(card.id, card.dueDate)}
+											class="mt-1 cursor-pointer text-xs hover:text-indigo-600"
+											title="Edit due date"
+										>
+											{formatDueDate(card.dueDate)}
+										</button>
+									{/if}
 								{/if}
 							</div>
 						{/each}
