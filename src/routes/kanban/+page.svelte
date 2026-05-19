@@ -5,6 +5,17 @@
 	export let data: PageData;
 
 	let showForm = false;
+
+	function timeAgo(unixTs: number | null | undefined): string {
+		if (!unixTs) return "";
+		const now = Math.floor(Date.now() / 1000);
+		const diff = now - unixTs;
+		if (diff < 60) return "just now";
+		if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+		if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+		if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+		return new Date(unixTs * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+	}
 </script>
 
 <div class="p-8">
@@ -92,6 +103,9 @@
 							<span>📋 {board.columnCount} column{board.columnCount !== 1 ? 's' : ''}</span>
 							<span>📝 {board.cardCount} card{board.cardCount !== 1 ? 's' : ''}</span>
 						</div>
+						{#if board.lastActivity}
+							<p class="mt-2 text-xs text-gray-400">Updated {timeAgo(board.lastActivity)}</p>
+						{/if}
 					</a>
 					<form
 						method="POST"

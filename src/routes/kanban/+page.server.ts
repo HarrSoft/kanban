@@ -5,7 +5,7 @@ import { BoardId, ProjectId } from "$types/ids";
 import type { PageServerLoad, Actions } from "./$types";
 
 export const load: PageServerLoad = async () => {
-	// Fetch all boards with column & card counts
+	// Fetch all boards with column & card counts, plus last activity time
 	const allBoards = await db
 		.select({
 			id: boards.id,
@@ -15,11 +15,16 @@ export const load: PageServerLoad = async () => {
 			createdAt: boards.createdAt,
 			columnCount: sql<number>`count(distinct ${columns.id})`,
 			cardCount: sql<number>`count(distinct ${cards.id})`,
+			lastActivity: sql<number | null>`greatest(
+				${boards.updatedAt},
+				coalesce(max(${columns.updatedAt}), 0),
+				coalesce(max(${cards.updatedAt}), 0)
+			)`,
 		})
 		.from(boards)
 		.leftJoin(columns, eq(columns.boardId, boards.id))
 		.leftJoin(cards, eq(cards.columnId, columns.id))
-		.groupBy(boards.id, boards.name, boards.description, boards.projectId, boards.createdAt);
+		.groupBy(boards.id, boards.name, boards.description, boards.projectId, boards.createdAt, boards.updatedAt);
 
 	const allProjects = await db.select().from(projects);
 
