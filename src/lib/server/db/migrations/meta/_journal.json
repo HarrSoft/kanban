@@ -42,6 +42,13 @@
       "when": 1779180867748,
       "tag": "0005_last_felicia_hardy",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779202425648,
+      "tag": "0006_card_archived",
+      "breakpoints": true
     }
   ],
   "version": "7"

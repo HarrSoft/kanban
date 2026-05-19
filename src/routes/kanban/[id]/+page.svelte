@@ -40,6 +40,31 @@
 
 	let showNewColumnForm = false;
 	let showNewCardForm: Record<string, boolean> = {};
+	let showArchivedCards = false;
+	let archivedCards: Array<{ id: CardId; content: string; columnId: ColumnId; dueDate: number | null; column: { name: string } }> | null = null;
+	let loadingArchived = false;
+
+	async function loadArchivedCards() {
+		if (archivedCards !== null) {
+			// Already loaded, just toggle
+			showArchivedCards = !showArchivedCards;
+			return;
+		}
+
+		loadingArchived = true;
+		const response = await fetch("?/getArchivedCards", { method: "POST" });
+		if (response.ok) {
+			const data = await response.json();
+			// Cast IDs to branded types from the server response
+			archivedCards = data.archivedCards.map((c: { id: string; content: string; columnId: string; dueDate: number | null; column: { name: string } }) => ({
+				...c,
+				id: c.id as CardId,
+				columnId: c.columnId as ColumnId,
+			}));
+			showArchivedCards = true;
+		}
+		loadingArchived = false;
+	}
 	let quillEditors: Record<string, QuillEditor> = {};
 
 	// Locking state for drag-handling — prevents reorder during animation
@@ -284,6 +309,36 @@
 
 		if (response.ok) {
 			window.location.reload();
+		}
+	}
+
+	async function archiveCard(cardId: CardId) {
+		const formData = new FormData();
+		formData.append("cardId", cardId);
+
+		const response = await fetch("?/archiveCard", {
+			method: "POST",
+			body: formData,
+		});
+
+		if (response.ok) {
+			window.location.reload();
+		}
+	}
+
+	async function unarchiveCard(cardId: CardId) {
+		const formData = new FormData();
+		formData.append("cardId", cardId);
+
+		const response = await fetch("?/unarchiveCard", {
+			method: "POST",
+			body: formData,
+		});
+
+		if (response.ok) {
+			// Refresh archived list
+			archivedCards = null;
+			loadArchivedCards();
 		}
 	}
 
@@ -610,6 +665,13 @@
 											📅
 										</button>
 										<button
+											onclick={() => archiveCard(card.id)}
+											class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-yellow-100"
+											title="Archive card"
+										>
+											📦
+										</button>
+										<button
 											onclick={() => deleteCard(card.id)}
 											class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-red-500 hover:bg-red-100"
 											title="Delete card"
@@ -685,6 +747,48 @@
 			{/each}
 		{:else}
 			<p class="text-gray-500">No columns found. Create one to get started!</p>
+		{/if}
+	</div>
+
+	<!-- Archived cards section -->
+	<div class="mt-8 border-t border-gray-200 pt-4">
+		<button
+			onclick={loadArchivedCards}
+			class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100"
+		>
+			{showArchivedCards ? "▼" : "▶"} 📦 Archived Cards
+			{#if loadingArchived}
+				<span class="text-xs text-gray-400">Loading...</span>
+			{/if}
+		</button>
+
+		{#if showArchivedCards && archivedCards && archivedCards.length > 0}
+			<div class="mt-3 space-y-2">
+				{#each archivedCards as card (card.id)}
+					<div class="flex items-center justify-between rounded-md border border-gray-200 bg-yellow-50 p-3">
+						<div class="flex-1">
+							<div class="prose prose-sm max-w-none">
+								{@html card.content}
+							</div>
+							<p class="mt-1 text-xs text-gray-500">
+								From column: <span class="font-medium">{card.column.name}</span>
+								{#if card.dueDate}
+									· {formatDueDate(card.dueDate)}
+								{/if}
+							</p>
+						</div>
+						<button
+							onclick={() => unarchiveCard(card.id)}
+							class="rounded bg-green-100 px-2 py-1 text-xs text-green-700 hover:bg-green-200"
+							title="Restore card to board"
+						>
+							↩️ Restore
+						</button>
+					</div>
+				{/each}
+			</div>
+		{:else if showArchivedCards}
+			<p class="mt-3 text-sm text-gray-400">No archived cards.</p>
 		{/if}
 	</div>
 </div>

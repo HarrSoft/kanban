@@ -38,6 +38,7 @@ export const cards = t.pgTable("cards", {
 	content: t.text("content").notNull(),
 	order: t.integer("order").notNull().default(0),
 	dueDate: unix("due_date"),
+	archived: t.boolean("archived").notNull().default(false),
 	...timestamps,
 });
 

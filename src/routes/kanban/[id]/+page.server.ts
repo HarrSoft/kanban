@@ -1,7 +1,7 @@
 import { error, fail } from "@sveltejs/kit";
 import db from "$db";
 import { boards, columns, cards } from "$db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and, inArray } from "drizzle-orm";
 import type { PageServerLoad, Actions } from "./$types";
 import { BoardId, ColumnId, CardId } from "$types/ids";
 
@@ -16,6 +16,7 @@ export const load: PageServerLoad = async ({ params }) => {
 				with: {
 					cards: {
 						orderBy: asc(cards.order),
+						where: eq(cards.archived, false),
 					},
 				},
 			},
@@ -211,7 +212,7 @@ export const actions: Actions = {
 
 		if (!boardId) return { error: "Board ID is required" };
 
-		const updateData: Record<string, string> = {};
+		const updateData: Record<string, string | null> = {};
 		if (name) updateData.name = name;
 		if (description !== undefined) updateData.description = description || null;
 
@@ -238,5 +239,55 @@ export const actions: Actions = {
 
 		await db.update(cards).set({ dueDate }).where(eq(cards.id, cardId));
 		return { success: true };
+	},
+
+	archiveCard: async ({ request }) => {
+		const data = await request.formData();
+		const cardId = data.get("cardId") as CardId;
+
+		if (!cardId) return { error: "Card ID is required" };
+
+		await db.update(cards).set({ archived: true }).where(eq(cards.id, cardId));
+		return { success: true };
+	},
+
+	unarchiveCard: async ({ request }) => {
+		const data = await request.formData();
+		const cardId = data.get("cardId") as CardId;
+
+		if (!cardId) return { error: "Card ID is required" };
+
+		await db.update(cards).set({ archived: false }).where(eq(cards.id, cardId));
+		return { success: true };
+	},
+
+	getArchivedCards: async ({ params }) => {
+		const boardId = params.id as BoardId;
+
+		// Get column IDs for this board
+		const boardColumns = await db.query.columns.findMany({
+			where: eq(columns.boardId, boardId),
+			columns: { id: true },
+		});
+		const columnIds = boardColumns.map(c => c.id);
+
+		if (columnIds.length === 0) {
+			return { archivedCards: [] };
+		}
+
+		const archivedCards = await db.query.cards.findMany({
+			where: and(
+				eq(cards.archived, true),
+				inArray(cards.columnId, columnIds),
+			),
+			orderBy: asc(cards.order),
+			with: {
+				column: {
+					columns: { name: true },
+				},
+			},
+		});
+
+		return { archivedCards };
 	},
 };

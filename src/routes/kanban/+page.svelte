@@ -12,7 +12,7 @@
 		<h1 class="text-2xl font-bold">Projects & Boards</h1>
 		<button
 			class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-			on:click={() => (showForm = !showForm)}
+			onclick={() => (showForm = !showForm)}
 		>
 			{showForm ? "Cancel" : "+ New Board"}
 		</button>
@@ -98,7 +98,7 @@
 						action="?/deleteBoard"
 						use:enhance
 						class="absolute top-3 right-3 opacity-0 transition-opacity group-hover:opacity-100"
-						onsubmit="return confirm('Delete the board \"{board.name}\" and all its columns and cards?')"
+						onsubmit={() => confirm(`Delete the board "{board.name}" and all its columns and cards?`)}
 					>
 						<input type="hidden" name="boardId" value={board.id} />
 						<button

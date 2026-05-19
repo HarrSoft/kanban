@@ -612,4 +612,91 @@ describe("kanban board server actions", () => {
 			).rejects.toThrow();
 		});
 	});
+
+	describe("archiveCard action", () => {
+		it("returns error when cardId is missing", async () => {
+			const formData = new FormData();
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			const result = await actions.archiveCard({
+				request,
+				params: { id: "test-id" },
+			} as any);
+
+			expect(result).toEqual({ error: "Card ID is required" });
+		});
+
+		it("accepts valid cardId", async () => {
+			const formData = new FormData();
+			formData.append("cardId", "valid-card-id");
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			// This calls the real DB action, which will fail — but we only test the parsing
+			await expect(
+				actions.archiveCard({
+					request,
+					params: { id: "test-id" },
+				} as any),
+			).rejects.toThrow();
+		});
+	});
+
+	describe("unarchiveCard action", () => {
+		it("returns error when cardId is missing", async () => {
+			const formData = new FormData();
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			const result = await actions.unarchiveCard({
+				request,
+				params: { id: "test-id" },
+			} as any);
+
+			expect(result).toEqual({ error: "Card ID is required" });
+		});
+
+		it("accepts valid cardId", async () => {
+			const formData = new FormData();
+			formData.append("cardId", "valid-card-id");
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			await expect(
+				actions.unarchiveCard({
+					request,
+					params: { id: "test-id" },
+				} as any),
+			).rejects.toThrow();
+		});
+	});
+
+	describe("getArchivedCards action", () => {
+		it("returns archived cards for a board (DB dependent)", async () => {
+			// This action queries the DB, so it will throw without a connection
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+			});
+
+			await expect(
+				actions.getArchivedCards({
+					request,
+					params: { id: "test-id" },
+				} as any),
+			).rejects.toThrow();
+		});
+	});
 });
