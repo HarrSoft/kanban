@@ -97,7 +97,27 @@
 
 	const flipDurationMs = 200;
 
-	function handleColumnDndConsider(e: CustomEvent, columnId: ColumnId) {
+	// Column-level drag-and-drop
+	function handleColumnDndConsider(e: CustomEvent) {
+		columns = e.detail.items;
+	}
+
+	async function handleColumnDndFinalize(e: CustomEvent) {
+		const finalItems = e.detail.items;
+		columns = finalItems;
+
+		// Send only IDs to the server
+		const columnIds = finalItems.map((col: { id: string }) => ({ id: col.id }));
+		const formData = new FormData();
+		formData.append("items", JSON.stringify(columnIds));
+
+		await fetch("?/updateColumnOrder", {
+			method: "POST",
+			body: formData,
+		});
+	}
+
+	function handleCardDndConsider(e: CustomEvent, columnId: ColumnId) {
 		lockColumns();
 		// The source event detail contains the items for the zone that was dragged over
 		// We need to find which column the items belong to by matching the payload
@@ -132,7 +152,7 @@
 		);
 	}
 
-	async function handleColumnDndFinalize(e: CustomEvent, columnId: ColumnId) {
+	async function handleCardDndFinalize(e: CustomEvent, columnId: ColumnId) {
 		const { items: finalItems, info } = e.detail;
 		unlockColumns();
 
@@ -559,10 +579,18 @@
 		</form>
 	{/if}
 
-	<div class="flex gap-4 overflow-x-auto pb-4">
+	<div
+		use:dndzone={{ items: columns, flipDurationMs, type: "column" }}
+		onconsider={handleColumnDndConsider}
+		onfinalize={handleColumnDndFinalize}
+		class="flex gap-4 overflow-x-auto pb-4"
+	>
 		{#if columns.length > 0}
 			{#each columns as column (column.id)}
-				<div class="w-80 flex-shrink-0 rounded-lg bg-gray-100 p-4">
+				<div
+					data-column-id={column.id}
+					class="w-80 flex-shrink-0 rounded-lg bg-gray-100 p-4"
+				>
 					<div class="mb-4 flex items-center justify-between">
 						{#if editingColumnId === column.id}
 							<div class="flex flex-1 items-center gap-2">
@@ -608,8 +636,8 @@
 					<div
 						data-column-id={column.id}
 						use:dndzone={{ items: column.items, flipDurationMs, type: "card" }}
-						onconsider={e => handleColumnDndConsider(e, column.id)}
-						onfinalize={e => handleColumnDndFinalize(e, column.id)}
+						onconsider={e => handleCardDndConsider(e, column.id)}
+						onfinalize={e => handleCardDndFinalize(e, column.id)}
 						class="mb-3 min-h-[100px] space-y-2 rounded-md transition-colors {(
 							column.items.length === 0
 						) ?
