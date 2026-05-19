@@ -30,6 +30,7 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const name = (data.get("name") as string || "").trim();
 		const projectId = data.get("projectId") as string;
+		const description = (data.get("description") as string || "").trim();
 
 		if (!name) return { error: "Board name is required" };
 		if (!projectId) return { error: "Project is required" };
@@ -37,6 +38,7 @@ export const actions: Actions = {
 		await db.insert(boards).values({
 			name,
 			projectId,
+			description: description || null,
 		});
 
 		return { success: true };

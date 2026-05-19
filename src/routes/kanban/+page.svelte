@@ -46,13 +46,24 @@
 				id="projectId"
 				name="projectId"
 				required
-				class="mb-6 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+				class="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
 			>
 				<option value="" disabled selected>Select a project…</option>
 				{#each data.projects as project (project.id)}
 					<option value={project.id}>{project.name}</option>
 				{/each}
 			</select>
+
+			<label class="mb-2 block text-sm font-medium text-gray-700" for="description">
+				Description <span class="text-gray-400">(optional)</span>
+			</label>
+			<textarea
+				id="description"
+				name="description"
+				placeholder="e.g. Sprint planning board for the auth module"
+				class="mb-6 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+				rows="2"
+			></textarea>
 
 			<button
 				type="submit"
