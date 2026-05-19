@@ -1,6 +1,7 @@
 import db from "$db";
 import { boards, projects, columns, cards } from "$db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, inArray } from "drizzle-orm";
+import { BoardId, ProjectId } from "$types/ids";
 import type { PageServerLoad, Actions } from "./$types";
 
 export const load: PageServerLoad = async () => {
@@ -29,7 +30,7 @@ export const actions: Actions = {
 	createBoard: async ({ request }) => {
 		const data = await request.formData();
 		const name = (data.get("name") as string || "").trim();
-		const projectId = data.get("projectId") as string;
+		const projectId = data.get("projectId") as ProjectId;
 		const description = (data.get("description") as string || "").trim();
 
 		if (!name) return { error: "Board name is required" };
@@ -40,6 +41,30 @@ export const actions: Actions = {
 			projectId,
 			description: description || null,
 		});
+
+		return { success: true };
+	},
+
+	deleteBoard: async ({ request }) => {
+		const data = await request.formData();
+		const boardId = data.get("boardId") as BoardId;
+
+		if (!boardId) return { error: "Board ID is required" };
+
+		// Delete all cards in the board's columns, then columns, then the board
+		const boardColumns = await db
+			.select({ id: columns.id })
+			.from(columns)
+			.where(eq(columns.boardId, boardId));
+
+		const columnIds = boardColumns.map(c => c.id);
+
+		if (columnIds.length > 0) {
+			await db.delete(cards).where(inArray(cards.columnId, columnIds));
+			await db.delete(columns).where(eq(columns.boardId, boardId));
+		}
+
+		await db.delete(boards).where(eq(boards.id, boardId));
 
 		return { success: true };
 	},
