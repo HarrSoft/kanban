@@ -5,6 +5,16 @@
 	export let data: PageData;
 
 	let showForm = false;
+	let boardSearch = "";
+
+	$: filteredBoards = data.boards.filter((board) => {
+		if (!boardSearch) return true;
+		const q = boardSearch.toLowerCase();
+		return (
+			board.name.toLowerCase().includes(q) ||
+			(board.description && board.description.toLowerCase().includes(q))
+		);
+	});
 
 	function timeAgo(unixTs: number | null | undefined): string {
 		if (!unixTs) return "";
@@ -85,11 +95,22 @@
 		</form>
 	{/if}
 
-	{#if data.boards.length === 0}
+	<div class="mb-4">
+			<input
+				type="text"
+				placeholder="Search boards…"
+				bind:value={boardSearch}
+				class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+			/>
+		</div>
+
+	{#if filteredBoards.length === 0 && data.boards.length === 0}
 		<p class="text-gray-500">No boards yet. Create one above!</p>
+	{:else if filteredBoards.length === 0}
+		<p class="text-gray-500">No boards match your search.</p>
 	{:else}
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-			{#each data.boards as board (board.id)}
+			{#each filteredBoards as board (board.id)}
 				<div class="group relative block">
 					<a
 						href={`/kanban/${board.id}`}
