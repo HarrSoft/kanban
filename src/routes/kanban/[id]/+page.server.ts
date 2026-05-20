@@ -1,9 +1,9 @@
 import { error, fail } from "@sveltejs/kit";
 import db from "$db";
-import { boards, columns, cards } from "$db/schema";
+import { boards, columns, cards, cardAssignees, projectMembers, users } from "$db/schema";
 import { eq, asc, and, inArray } from "drizzle-orm";
 import type { PageServerLoad, Actions } from "./$types";
-import { BoardId, ColumnId, CardId } from "$types/ids";
+import { BoardId, CardAssigneeId, CardId, ColumnId, UserId } from "$types/ids";
 
 export const load: PageServerLoad = async ({ params }) => {
 	const boardId = params.id as BoardId;
@@ -17,6 +17,15 @@ export const load: PageServerLoad = async ({ params }) => {
 					cards: {
 						orderBy: asc(cards.order),
 						where: eq(cards.archived, false),
+						with: {
+							assignees: {
+								with: {
+									user: {
+										columns: { id: true, name: true, imageUrl: true },
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -27,7 +36,18 @@ export const load: PageServerLoad = async ({ params }) => {
 		error(404, "Board not found");
 	}
 
-	return { board };
+	// Fetch project members for the assignee picker
+	const members = await db
+		.select({
+			id: users.id,
+			name: users.name,
+			imageUrl: users.imageUrl,
+		})
+		.from(projectMembers)
+		.innerJoin(users, eq(users.id, projectMembers.userId))
+		.where(eq(projectMembers.projectId, board.projectId));
+
+	return { board, members };
 };
 
 export const actions: Actions = {
@@ -248,6 +268,45 @@ export const actions: Actions = {
 		if (!cardId) return { error: "Card ID is required" };
 
 		await db.update(cards).set({ archived: true }).where(eq(cards.id, cardId));
+		return { success: true };
+	},
+
+	assignUser: async ({ request }) => {
+		const data = await request.formData();
+		const cardId = data.get("cardId") as CardId;
+		const userId = data.get("userId") as UserId;
+
+		if (!cardId || !userId) {
+			return fail(400, { error: "Card ID and User ID are required" });
+		}
+
+		// Check if already assigned
+		const existing = await db.query.cardAssignees.findFirst({
+			where: and(
+				eq(cardAssignees.cardId, cardId),
+				eq(cardAssignees.userId, userId),
+			),
+		});
+
+		if (!existing) {
+			await db.insert(cardAssignees).values({ cardId, userId });
+		}
+
+		return { success: true };
+	},
+
+	unassignUser: async ({ request }) => {
+		const data = await request.formData();
+		const assigneeId = data.get("assigneeId") as CardAssigneeId;
+
+		if (!assigneeId) {
+			return fail(400, { error: "Assignee ID is required" });
+		}
+
+		await db
+			.delete(cardAssignees)
+			.where(eq(cardAssignees.id, assigneeId));
+
 		return { success: true };
 	},
 

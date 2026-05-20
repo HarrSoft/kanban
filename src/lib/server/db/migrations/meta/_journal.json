@@ -49,6 +49,13 @@
       "when": 1779202425648,
       "tag": "0006_card_archived",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1779287041074,
+      "tag": "0007_smart_harpoon",
+      "breakpoints": true
     }
   ],
   "version": "7"

@@ -4,7 +4,7 @@
 	// import { resolve } from "$app/paths";  // not needed
 	import { dndzone } from "svelte-dnd-action";
 	import QuillEditor from "$lib/components/QuillEditor.svelte";
-	import type { CardId, ColumnId } from "$types/ids";
+	import type { CardAssigneeId, CardId, ColumnId, UserId } from "$types/ids";
 
 	// Helper: format a unix timestamp (seconds) as YYYY-MM-DD for date input
 	function unixToDateInput(ts: number | null | undefined): string {
@@ -37,6 +37,43 @@
 	let editingDueDate: Record<string, string> = {};
 
 	export let data: PageData;
+
+	// Assignee state
+	let assigningCardId: CardId | null = null;
+
+	function toggleAssignPicker(cardId: CardId) {
+		assigningCardId = assigningCardId === cardId ? null : cardId;
+	}
+
+	async function assignUser(cardId: CardId, userId: UserId) {
+		const formData = new FormData();
+		formData.append("cardId", cardId);
+		formData.append("userId", userId);
+
+		const response = await fetch("?/assignUser", {
+			method: "POST",
+			body: formData,
+		});
+
+		if (response.ok) {
+			assigningCardId = null;
+			window.location.reload();
+		}
+	}
+
+	async function unassignUser(assigneeId: CardAssigneeId) {
+		const formData = new FormData();
+		formData.append("assigneeId", assigneeId);
+
+		const response = await fetch("?/unassignUser", {
+			method: "POST",
+			body: formData,
+		});
+
+		if (response.ok) {
+			window.location.reload();
+		}
+	}
 
 	let showNewColumnForm = false;
 	let showNewCardForm: Record<string, boolean> = {};
@@ -720,6 +757,13 @@
 											📅
 										</button>
 										<button
+											onclick={() => toggleAssignPicker(card.id)}
+											class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-indigo-100"
+											title="Assign to user"
+										>
+											👤
+										</button>
+										<button
 											onclick={() => archiveCard(card.id)}
 											class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-yellow-100"
 											title="Archive card"
@@ -805,7 +849,59 @@
 		{/if}
 	</div>
 
-	<!-- Archived cards section -->
+										<!-- Assignees -->
+									{#if card.assignees && card.assignees.length > 0}
+										<div class="mt-2 flex flex-wrap items-center gap-1">
+											{#each card.assignees as assignee (assignee.id)}
+												<div class="group relative">
+													<span
+														class="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700"
+														title={assignee.user.name || assignee.user.id}
+													>
+														{assignee.user.name || '👤'}
+														<button
+															onclick={(e) => { e.stopPropagation(); unassignUser(assignee.id); }}
+															class="text-indigo-400 hover:text-red-500"
+															title="Remove assignee"
+														>✕</button>
+													</span>
+												</div>
+											{/each}
+										</div>
+									{/if}
+									{#if assigningCardId === card.id}
+										<div class="mt-2 rounded border border-gray-200 bg-white p-2 shadow-sm">
+											<p class="mb-1 text-xs font-medium text-gray-600">Assign to:</p>
+											<div class="flex flex-wrap gap-1">
+												{#each data.members as member (member.id)}
+													{@const alreadyAssigned = card.assignees?.some(a => a.user.id === member.id)}
+													{#if !alreadyAssigned}
+														<button
+															onclick={(e) => { e.stopPropagation(); assignUser(card.id, member.id); }}
+															class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 hover:bg-indigo-100 hover:text-indigo-700"
+														>
+															{member.name || '👤'}
+														</button>
+													{:else}
+														<span class="rounded bg-indigo-100 px-2 py-1 text-xs text-indigo-400">
+															{member.name || '👤'} ✓
+														</span>
+													{/if}
+												{/each}
+											</div>
+											{#if data.members.length === 0}
+												<p class="text-xs text-gray-400">No project members available. Add members to the project.</p>
+											{/if}
+											<div class="mt-2 flex justify-end">
+												<button
+													onclick={(e) => { e.stopPropagation(); assigningCardId = null; }}
+													class="text-xs text-gray-500 hover:text-gray-700"
+												>Close</button>
+											</div>
+										</div>
+									{/if}
+
+									<!-- Archived cards section -->
 	<div class="mt-8 border-t border-gray-200 pt-4">
 		<button
 			onclick={loadArchivedCards}

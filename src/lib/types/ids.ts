@@ -64,3 +64,10 @@ export type ColumnId = v.InferOutput<typeof ColumnId>;
 
 export const CardId = v.pipe(v.string(), v.cuid2(), v.brand("CardId"));
 export type CardId = v.InferOutput<typeof CardId>;
+
+export const CardAssigneeId = v.pipe(
+	v.string(),
+	v.cuid2(),
+	v.brand("CardAssigneeId"),
+);
+export type CardAssigneeId = v.InferOutput<typeof CardAssigneeId>;
