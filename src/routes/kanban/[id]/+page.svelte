@@ -91,6 +91,17 @@
 
 	let columns = transformColumns();
 
+	// Card search/filter
+	let searchQuery = "";
+	$: filteredColumns = columns.map(col => ({
+		...col,
+		items: searchQuery
+			? col.items.filter(card =>
+					card.content.toLowerCase().includes(searchQuery.toLowerCase())
+			  )
+			: col.items,
+	}));
+
 	$: if (data) {
 		columns = transformColumns();
 	}
@@ -485,6 +496,22 @@
 </svelte:head>
 
 <div class="max-w-full p-8">
+	<!-- Card search/filter bar -->
+	<div class="mb-4">
+		<input
+			type="search"
+			bind:value={searchQuery}
+			placeholder="🔍 Search cards across all columns…"
+			class="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+		/>
+		{#if searchQuery}
+			<span class="ml-2 text-xs text-gray-400">
+				Filtering by "{searchQuery}"
+				<button onclick={() => (searchQuery = "")} class="ml-1 text-indigo-600 hover:text-indigo-800">✕</button>
+			</span>
+		{/if}
+	</div>
+
 	<div class="mb-6 flex items-center justify-between">
 		<div>
 			<h1 class="mb-1 text-2xl font-bold">{data.board.name}</h1>
@@ -580,13 +607,13 @@
 	{/if}
 
 	<div
-		use:dndzone={{ items: columns, flipDurationMs, type: "column" }}
-		onconsider={handleColumnDndConsider}
-		onfinalize={handleColumnDndFinalize}
+		use:dndzone={{ items: searchQuery ? [] : columns, flipDurationMs, type: "column" }}
+		onconsider={searchQuery ? () => {} : handleColumnDndConsider}
+		onfinalize={searchQuery ? () => {} : handleColumnDndFinalize}
 		class="flex gap-4 overflow-x-auto pb-4"
 	>
-		{#if columns.length > 0}
-			{#each columns as column (column.id)}
+		{#if (searchQuery ? filteredColumns : columns).length > 0}
+			{#each (searchQuery ? filteredColumns : columns) as column (column.id)}
 				<div
 					data-column-id={column.id}
 					class="w-80 flex-shrink-0 rounded-lg bg-gray-100 p-4"
