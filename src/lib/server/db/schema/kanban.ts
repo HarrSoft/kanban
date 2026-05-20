@@ -3,7 +3,7 @@ import { relations } from "drizzle-orm";
 import { projects } from "./projects";
 import { users } from "./users";
 import { id, timestamps, unix } from "./util";
-import { BoardId, CardAssigneeId, CardId, ColumnId, ProjectId, UserId } from "../../../types"; // drizzle-kit can't handle path aliases
+import { BoardId, CardAssigneeId, CardId, ColumnId, LabelId, CardLabelId, ProjectId, UserId } from "../../../types"; // drizzle-kit can't handle path aliases
 
 export const boards = t.pgTable("boards", {
 	id: id().primaryKey().$type<BoardId>(),
@@ -92,5 +92,53 @@ export const cardsRelations = relations(cards, ({ one, many }) => ({
 		references: [columns.id],
 	}),
 	assignees: many(cardAssignees),
+	labels: many(cardLabels),
+}));
+
+// Card labels/tags
+export const labels = t.pgTable("labels", {
+	id: id().primaryKey().$type<LabelId>(),
+	boardId: t
+		.text("board_id")
+		.notNull()
+		.references(() => boards.id, { onDelete: "cascade" })
+		.$type<BoardId>(),
+	name: t.text("name").notNull(),
+	color: t.text("color").notNull().default("#6366f1"), // default indigo
+	...timestamps,
+});
+
+export const labelsRelations = relations(labels, ({ one, many }) => ({
+	board: one(boards, {
+		fields: [labels.boardId],
+		references: [boards.id],
+	}),
+	cardAssignments: many(cardLabels),
+}));
+
+export const cardLabels = t.pgTable("card_labels", {
+	id: id().primaryKey().$type<CardLabelId>(),
+	cardId: t
+		.text("card_id")
+		.notNull()
+		.references(() => cards.id, { onDelete: "cascade" })
+		.$type<CardId>(),
+	labelId: t
+		.text("label_id")
+		.notNull()
+		.references(() => labels.id, { onDelete: "cascade" })
+		.$type<LabelId>(),
+	...timestamps,
+});
+
+export const cardLabelsRelations = relations(cardLabels, ({ one }) => ({
+	card: one(cards, {
+		fields: [cardLabels.cardId],
+		references: [cards.id],
+	}),
+	label: one(labels, {
+		fields: [cardLabels.labelId],
+		references: [labels.id],
+	}),
 }));
 

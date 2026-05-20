@@ -1,9 +1,10 @@
 import { error, fail } from "@sveltejs/kit";
 import db from "$db";
-import { boards, columns, cards, cardAssignees, projectMembers, users } from "$db/schema";
+import { boards, columns, cards, cardAssignees, cardLabels, labels, projectMembers, users } from "$db/schema";
 import { eq, asc, and, inArray } from "drizzle-orm";
 import type { PageServerLoad, Actions } from "./$types";
-import { BoardId, CardAssigneeId, CardId, ColumnId, UserId } from "$types/ids";
+import { BoardId, CardAssigneeId, CardId, CardLabelId, ColumnId, LabelId, UserId } from "$types/ids";
+import type { BoardId as BoardIdType, LabelId as LabelIdType, CardId as CardIdType, UserId as UserIdType } from "$types";
 
 export const load: PageServerLoad = async ({ params }) => {
 	const boardId = params.id as BoardId;
@@ -23,6 +24,11 @@ export const load: PageServerLoad = async ({ params }) => {
 									user: {
 										columns: { id: true, name: true, imageUrl: true },
 									},
+								},
+							},
+							labels: {
+								with: {
+									label: true,
 								},
 							},
 						},
@@ -47,7 +53,10 @@ export const load: PageServerLoad = async ({ params }) => {
 		.innerJoin(users, eq(users.id, projectMembers.userId))
 		.where(eq(projectMembers.projectId, board.projectId));
 
-	return { board, members };
+	// Fetch labels for this board
+	const boardLabels = await db.select().from(labels).where(eq(labels.boardId, boardId));
+
+	return { board, members, labels: boardLabels };
 };
 
 export const actions: Actions = {
@@ -317,6 +326,60 @@ export const actions: Actions = {
 		if (!cardId) return { error: "Card ID is required" };
 
 		await db.update(cards).set({ archived: false }).where(eq(cards.id, cardId));
+		return { success: true };
+	},
+
+	createLabel: async ({ request, params }) => {
+		const data = await request.formData();
+		const name = (data.get("name") as string || "").trim();
+		const color = (data.get("color") as string || "#6366f1").trim();
+		const boardId = params.id as BoardId;
+
+		if (!name) return { error: "Label name is required" };
+
+		await db.insert(labels).values({ boardId, name, color });
+		return { success: true };
+	},
+
+	deleteLabel: async ({ request }) => {
+		const data = await request.formData();
+		const labelId = data.get("labelId") as LabelId;
+
+		if (!labelId) return { error: "Label ID is required" };
+
+		await db.delete(labels).where(eq(labels.id, labelId));
+		return { success: true };
+	},
+
+	assignLabel: async ({ request }) => {
+		const data = await request.formData();
+		const cardId = data.get("cardId") as CardId;
+		const labelId = data.get("labelId") as LabelId;
+
+		if (!cardId || !labelId) return { error: "Card ID and Label ID are required" };
+
+		// Check if already assigned
+		const existing = await db.query.cardLabels.findFirst({
+			where: and(
+				eq(cardLabels.cardId, cardId),
+				eq(cardLabels.labelId, labelId),
+			),
+		});
+
+		if (!existing) {
+			await db.insert(cardLabels).values({ cardId, labelId });
+		}
+
+		return { success: true };
+	},
+
+	removeLabel: async ({ request }) => {
+		const data = await request.formData();
+		const cardLabelId = data.get("cardLabelId") as CardLabelId;
+
+		if (!cardLabelId) return { error: "Card label assignment ID is required" };
+
+		await db.delete(cardLabels).where(eq(cardLabels.id, cardLabelId));
 		return { success: true };
 	},
 

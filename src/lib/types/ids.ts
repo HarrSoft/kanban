@@ -71,3 +71,13 @@ export const CardAssigneeId = v.pipe(
 	v.brand("CardAssigneeId"),
 );
 export type CardAssigneeId = v.InferOutput<typeof CardAssigneeId>;
+
+export const LabelId = v.pipe(v.string(), v.cuid2(), v.brand("LabelId"));
+export type LabelId = v.InferOutput<typeof LabelId>;
+
+export const CardLabelId = v.pipe(
+	v.string(),
+	v.cuid2(),
+	v.brand("CardLabelId"),
+);
+export type CardLabelId = v.InferOutput<typeof CardLabelId>;

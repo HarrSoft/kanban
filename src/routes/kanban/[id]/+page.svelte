@@ -41,6 +41,53 @@
 	// Assignee state
 	let assigningCardId: CardId | null = null;
 
+	// Label state
+	let showLabelManager = false;
+	let newLabelName = "";
+	let newLabelColor = "#6366f1";
+	let assigningLabelCardId: CardId | null = null;
+	let labelColors = [
+		"#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
+		"#f97316", "#eab308", "#22c55e", "#06b6d4",
+		"#3b82f6", "#6b7280",
+	];
+
+	async function createLabel() {
+		const trimmed = newLabelName.trim();
+		if (!trimmed) return;
+		const formData = new FormData();
+		formData.append("name", trimmed);
+		formData.append("color", newLabelColor);
+		const response = await fetch("?/createLabel", { method: "POST", body: formData });
+		if (response.ok) {
+			newLabelName = "";
+			window.location.reload();
+		}
+	}
+
+	async function deleteLabel(labelId: string) {
+		if (!confirm("Delete this label? It will be removed from all cards.")) return;
+		const formData = new FormData();
+		formData.append("labelId", labelId);
+		const response = await fetch("?/deleteLabel", { method: "POST", body: formData });
+		if (response.ok) window.location.reload();
+	}
+
+	async function assignLabel(cardId: CardId, labelId: string) {
+		const formData = new FormData();
+		formData.append("cardId", cardId);
+		formData.append("labelId", labelId);
+		const response = await fetch("?/assignLabel", { method: "POST", body: formData });
+		if (response.ok) window.location.reload();
+	}
+
+	async function removeCardLabel(cardLabelId: string) {
+		const formData = new FormData();
+		formData.append("cardLabelId", cardLabelId);
+		const response = await fetch("?/removeLabel", { method: "POST", body: formData });
+		if (response.ok) window.location.reload();
+	}
+
 	function toggleAssignPicker(cardId: CardId) {
 		assigningCardId = assigningCardId === cardId ? null : cardId;
 	}
@@ -601,6 +648,13 @@
 				+ New Column
 			</button>
 			<button
+				onclick={() => (showLabelManager = !showLabelManager)}
+				class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
+				title="Manage labels"
+			>
+				🏷️ Labels
+			</button>
+			<button
 				onclick={deleteBoard}
 				class="rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700"
 				title="Delete this board"
@@ -641,6 +695,62 @@
 				</button>
 			</div>
 		</form>
+	{/if}
+
+	{#if showLabelManager}
+		<div class="mb-6 max-w-md rounded-lg border border-gray-200 bg-white p-4">
+			<h3 class="mb-3 font-semibold">Manage Labels</h3>
+
+			<!-- Existing labels -->
+			{#if data.labels.length > 0}
+				<div class="mb-3 flex flex-wrap gap-2">
+					{#each data.labels as label (label.id)}
+						<div class="group flex items-center gap-1 rounded-full px-3 py-1 text-xs text-white" style="background-color: {label.color}">
+							{label.name}
+							<button
+								onclick={() => deleteLabel(label.id)}
+								class="ml-1 opacity-60 hover:opacity-100"
+								title="Delete label"
+							>✕</button>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p class="mb-3 text-sm text-gray-400">No labels yet. Create one below.</p>
+			{/if}
+
+			<!-- New label form -->
+			<div class="flex items-end gap-2">
+				<div class="flex-1">
+					<label class="mb-1 block text-xs font-medium text-gray-600" for="newLabelName">Label name</label>
+					<input
+						type="text"
+						id="newLabelName"
+						bind:value={newLabelName}
+						placeholder="e.g. Bug"
+						class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none"
+						onkeydown={(e) => e.key === 'Enter' && (e.preventDefault(), createLabel())}
+					/>
+				</div>
+				<div>
+					<label class="mb-1 block text-xs font-medium text-gray-600">Color</label>
+					<div class="flex gap-1">
+						{#each labelColors as color (color)}
+							<button
+								onclick={() => newLabelColor = color}
+								class="h-6 w-6 rounded-full border-2 transition-all"
+								style="background-color: {color}; {newLabelColor === color ? 'border-color: #374151; transform: scale(1.15);' : 'border-color: transparent'}"
+								title={color}
+							></button>
+						{/each}
+					</div>
+				</div>
+				<button
+					onclick={createLabel}
+					class="rounded bg-indigo-600 px-3 py-1.5 text-sm text-white hover:bg-indigo-700"
+				>Add</button>
+			</div>
+		</div>
 	{/if}
 
 	<div
@@ -764,6 +874,13 @@
 											👤
 										</button>
 										<button
+											onclick={() => (assigningLabelCardId = assigningLabelCardId === card.id ? null : card.id)}
+											class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-yellow-100"
+											title="Add/remove labels"
+										>
+											🏷️
+										</button>
+										<button
 											onclick={() => archiveCard(card.id)}
 											class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-yellow-100"
 											title="Archive card"
@@ -781,6 +898,25 @@
 									<div class="prose prose-sm max-w-none">
 										{@html card.content}
 									</div>
+									<!-- Labels -->
+									{#if card.labels && card.labels.length > 0}
+										<div class="mt-1.5 flex flex-wrap gap-1">
+											{#each card.labels as cl (cl.id)}
+												<span
+													class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs text-white"
+													style="background-color: {cl.label.color}"
+													title={cl.label.name}
+												>
+													{cl.label.name}
+													<button
+														onclick={(e) => { e.stopPropagation(); removeCardLabel(cl.id); }}
+														class="ml-0.5 opacity-60 hover:opacity-100"
+														title="Remove label"
+													>✕</button>
+												</span>
+											{/each}
+										</div>
+									{/if}
 									{#if editingDueDate[card.id] !== undefined}
 										<div class="mt-2 flex items-center gap-1">
 											<input
@@ -900,6 +1036,40 @@
 											</div>
 										</div>
 									{/if}
+								{#if assigningLabelCardId === card.id}
+									<div class="mt-2 rounded border border-gray-200 bg-white p-2 shadow-sm">
+										<p class="mb-1 text-xs font-medium text-gray-600">Labels:</p>
+										<div class="flex flex-wrap gap-1">
+											{#each data.labels as label (label.id)}
+												{@const alreadyAssigned = card.labels?.some((cl: { labelId: string }) => cl.labelId === label.id)}
+												<button
+													onclick={(e: MouseEvent) => {
+														e.stopPropagation();
+														if (alreadyAssigned) {
+															const cl = card.labels?.find((l: { labelId: string }) => l.labelId === label.id);
+															if (cl) removeCardLabel(cl.id);
+														} else {
+															assignLabel(card.id, label.id);
+														}
+													}}
+													class="rounded px-2 py-1 text-xs text-white transition-opacity hover:opacity-80"
+													style="background-color: {label.color}; {alreadyAssigned ? 'outline: 2px solid #374151; outline-offset: 1px;' : 'opacity: 0.7;'}"
+												>
+													{label.name} {alreadyAssigned ? '✓' : '+'}
+												</button>
+											{/each}
+										</div>
+										{#if data.labels.length === 0}
+											<p class="text-xs text-gray-400">No labels defined. Create some in the board's label manager.</p>
+										{/if}
+										<div class="mt-2 flex justify-end">
+											<button
+												onclick={(e) => { e.stopPropagation(); assigningLabelCardId = null; }}
+												class="text-xs text-gray-500 hover:text-gray-700"
+											>Close</button>
+										</div>
+									</div>
+								{/if}
 
 									<!-- Archived cards section -->
 	<div class="mt-8 border-t border-gray-200 pt-4">
