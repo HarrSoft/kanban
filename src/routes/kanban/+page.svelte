@@ -119,6 +119,8 @@
 						<h2 class="mb-2 text-xl font-semibold text-gray-800">{board.name}</h2>
 						{#if board.description}
 							<p class="mb-3 line-clamp-2 text-sm text-gray-600">{board.description}</p>
+						{:else}
+							<p class="mb-3 text-sm italic text-gray-400">No description</p>
 						{/if}
 						<div class="flex gap-4 text-sm text-gray-500">
 							<span>📋 {board.columnCount} column{board.columnCount !== 1 ? 's' : ''}</span>
