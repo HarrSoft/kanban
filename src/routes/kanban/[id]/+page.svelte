@@ -790,13 +790,18 @@
 								</button>
 							</div>
 						{:else}
-							<h2
-								class="cursor-pointer text-lg font-semibold hover:text-indigo-600"
-								onclick={() => startEditColumn(column.id, column.name)}
-								title="Rename column"
-							>
-								{column.name}
-							</h2>
+							<div class="flex items-center gap-2">
+								<h2
+									class="cursor-pointer text-lg font-semibold hover:text-indigo-600"
+									onclick={() => startEditColumn(column.id, column.name)}
+									title="Rename column"
+								>
+									{column.name}
+								</h2>
+								<span class="inline-flex items-center justify-center rounded-full bg-gray-300 px-2 py-0.5 text-xs font-medium text-gray-700" title="Card count">
+									{column.items.length}
+								</span>
+							</div>
 							<button
 								onclick={() => deleteColumn(column.id)}
 								class="text-sm text-red-500 hover:text-red-700"
