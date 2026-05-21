@@ -636,6 +636,33 @@
 					+ Add description
 				</button>
 			{/if}
+			{#if data.boardStats}
+				<div class="mt-2 flex flex-wrap items-center gap-3 text-sm">
+					<span class="text-gray-500">
+						{data.boardStats.totalCards} card{data.boardStats.totalCards === 1 ? '' : 's'}
+					</span>
+					{#if data.boardStats.overdueCards > 0}
+						<span class="font-medium text-red-600">
+							🔴 {data.boardStats.overdueCards} overdue
+						</span>
+					{/if}
+					{#if data.boardStats.dueToday > 0}
+						<span class="font-medium text-amber-600">
+							🟡 {data.boardStats.dueToday} due today
+						</span>
+					{/if}
+					{#if data.boardStats.dueSoon > 0}
+						<span class="text-amber-500">
+							📅 {data.boardStats.dueSoon} due soon
+						</span>
+					{/if}
+					{#if data.boardStats.unassignedCards > 0}
+						<span class="text-gray-400">
+							👤 {data.boardStats.unassignedCards} unassigned
+						</span>
+					{/if}
+				</div>
+			{/if}
 			<a href="/kanban" class="text-blue-600 hover:underline"
 				>← Back to Boards</a
 			>

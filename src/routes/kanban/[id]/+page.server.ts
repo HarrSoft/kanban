@@ -56,7 +56,19 @@ export const load: PageServerLoad = async ({ params }) => {
 	// Fetch labels for this board
 	const boardLabels = await db.select().from(labels).where(eq(labels.boardId, boardId));
 
-	return { board, members, labels: boardLabels };
+	// Compute board overview stats from loaded card data
+	const allCards = board.columns.flatMap(col => col.cards);
+	const now = Math.floor(Date.now() / 1000);
+	const oneDay = 86400;
+	const boardStats = {
+		totalCards: allCards.length,
+		overdueCards: allCards.filter(c => c.dueDate !== null && c.dueDate < now).length,
+		dueToday: allCards.filter(c => c.dueDate !== null && c.dueDate >= now && c.dueDate < now + oneDay).length,
+		dueSoon: allCards.filter(c => c.dueDate !== null && c.dueDate >= now + oneDay && c.dueDate < now + 3 * oneDay).length,
+		unassignedCards: allCards.filter(c => c.assignees.length === 0).length,
+	};
+
+	return { board, members, labels: boardLabels, boardStats };
 };
 
 export const actions: Actions = {
