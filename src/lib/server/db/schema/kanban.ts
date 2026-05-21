@@ -14,6 +14,7 @@ export const boards = t.pgTable("boards", {
 		.$type<ProjectId>(),
 	name: t.text("name").notNull(),
 	description: t.text("description"),
+	archived: t.boolean("archived").notNull().default(false),
 	...timestamps,
 });
 

@@ -1,0 +1,1 @@
+ALTER TABLE "boards" ADD COLUMN "archived" boolean DEFAULT false NOT NULL;

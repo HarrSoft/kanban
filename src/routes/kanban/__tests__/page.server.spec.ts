@@ -6,16 +6,29 @@ const mockBoards = [
 	{ id: "board3", projectId: "proj2", name: "Solo Board", columnCount: 0, cardCount: 0 },
 ];
 
-// Build a shared ref allow-advancing the select mock on each call.
-// First call: db.select({...}).from(boards).leftJoin(...).leftJoin(...).groupBy(...) → mockBoards
-// Second call: db.select().from(projects) → mockProjects
+const mockArchivedBoards = [
+	{ id: "board4", projectId: "proj1", name: "Old Board", columnCount: 1, cardCount: 3 },
+];
+
+// We mock the chain:
+// select({...}).from(...).leftJoin(...).leftJoin(...).where(...).groupBy(...)
+// First call → active boards, second call → archived boards, third call → projects
 let selectReturnIndex = 0;
 
 const mockGroupBy = vi.fn().mockResolvedValue(mockBoards);
-const mockSecondLeftJoin = vi.fn().mockReturnValue({ groupBy: mockGroupBy });
+const mockWhere = vi.fn().mockReturnValue({ groupBy: mockGroupBy });
+const mockSecondLeftJoin = vi.fn().mockReturnValue({ where: mockWhere });
 const mockFirstLeftJoin = vi.fn().mockReturnValue({ leftJoin: mockSecondLeftJoin });
 const mockFrom = vi.fn().mockReturnValue({ leftJoin: mockFirstLeftJoin });
 
+// Second select call → archived boards
+const mockArchivedGroupBy = vi.fn().mockResolvedValue(mockArchivedBoards);
+const mockArchivedWhere = vi.fn().mockReturnValue({ groupBy: mockArchivedGroupBy });
+const mockArchivedSecondLeftJoin = vi.fn().mockReturnValue({ where: mockArchivedWhere });
+const mockArchivedFirstLeftJoin = vi.fn().mockReturnValue({ leftJoin: mockArchivedSecondLeftJoin });
+const mockArchivedFrom = vi.fn().mockReturnValue({ leftJoin: mockArchivedFirstLeftJoin });
+
+// Third select call → projects (bare)
 const mockProjectsFrom = vi.fn().mockResolvedValue([
 	{ id: "proj1", name: "Project Alpha" },
 	{ id: "proj2", name: "Project Beta" },
@@ -24,11 +37,13 @@ const mockSelectBare = vi.fn().mockReturnValue({ from: mockProjectsFrom });
 
 vi.mock("$db", () => {
 	const selectFn = vi.fn().mockImplementation(() => {
-		// First invocation → return the chainable query builder (select({...}))
-		// Subsequent invocations → return select().from(projects)
-		return selectReturnIndex++ === 0
-			? { from: mockFrom }
-			: { from: mockProjectsFrom };
+		// First call → active boards query chain
+		// Second call → archived boards query chain
+		// Third call → projects query
+		const idx = selectReturnIndex++;
+		if (idx === 0) return { from: mockFrom };
+		if (idx === 1) return { from: mockArchivedFrom };
+		return { from: mockProjectsFrom };
 	});
 
 	return {
@@ -96,5 +111,12 @@ describe("kanban list page server load", () => {
 		expect(result).toHaveProperty("projects");
 		expect(Array.isArray(result.projects)).toBe(true);
 		expect(result.projects).toHaveLength(2);
+	});
+
+	it("returns archived boards separately", async () => {
+		const result = await load(mockEvent);
+		expect(result).toHaveProperty("archivedBoards");
+		expect(Array.isArray(result.archivedBoards)).toBe(true);
+		expect(result.archivedBoards).toHaveLength(1);
 	});
 });
