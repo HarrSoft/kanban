@@ -133,7 +133,7 @@
 						action="?/deleteBoard"
 						use:enhance
 						class="absolute top-3 right-3 opacity-0 transition-opacity group-hover:opacity-100"
-						onsubmit={() => confirm(`Delete the board "{board.name}" and all its columns and cards?`)}
+						onsubmit={() => confirm(`Delete the board "${board.name}" and all its columns and cards?`)}
 					>
 						<input type="hidden" name="boardId" value={board.id} />
 						<button
