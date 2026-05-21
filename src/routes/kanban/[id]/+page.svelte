@@ -644,6 +644,7 @@
 			<button
 				onclick={() => (showNewColumnForm = !showNewColumnForm)}
 				class="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+				title="Add a new column to the board"
 			>
 				+ New Column
 			</button>
@@ -664,38 +665,7 @@
 		</div>
 	</div>
 
-	{#if showNewColumnForm}
-		<form
-			method="POST"
-			action="?/createColumn"
-			use:enhance
-			class="mb-6 max-w-md rounded-lg border border-gray-200 bg-white p-4"
-		>
-			<h3 class="mb-3 font-semibold">Create New Column</h3>
-			<input
-				type="text"
-				name="name"
-				placeholder="Column name"
-				required
-				class="mb-3 w-full rounded-md border border-gray-300 px-3 py-2"
-			/>
-			<div class="flex gap-2">
-				<button
-					type="submit"
-					class="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-				>
-					Create
-				</button>
-				<button
-					type="button"
-					onclick={() => (showNewColumnForm = false)}
-					class="rounded-md bg-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-400"
-				>
-					Cancel
-				</button>
-			</div>
-		</form>
-	{/if}
+
 
 	{#if showLabelManager}
 		<div class="mb-6 max-w-md rounded-lg border border-gray-200 bg-white p-4">
@@ -985,8 +955,65 @@
 					{/if}
 				</div>
 			{/each}
+
+			<!-- Quick-add column button at end of column list -->
+			<div class="w-80 flex-shrink-0">
+				{#if showNewColumnForm}
+					<form
+						method="POST"
+						action="?/createColumn"
+						use:enhance
+						class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4"
+					>
+						<h3 class="mb-2 text-sm font-semibold text-gray-600">New Column</h3>
+						<input
+							type="text"
+							name="name"
+							placeholder="Column name"
+							required
+							class="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+						/>
+						<div class="flex gap-2">
+							<button
+								type="submit"
+								class="rounded-md bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700"
+							>
+								Create
+							</button>
+							<button
+								type="button"
+								onclick={() => (showNewColumnForm = false)}
+								class="rounded-md bg-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-400"
+							>
+								Cancel
+							</button>
+						</div>
+					</form>
+				{:else}
+					<button
+						onclick={() => (showNewColumnForm = true)}
+						class="flex h-full min-h-[120px] w-full items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500 transition-colors hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-600"
+					>
+						<span class="flex items-center gap-2">
+							<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+							Add Column
+						</span>
+					</button>
+				{/if}
+			</div>
 		{:else}
-			<p class="text-gray-500">No columns found. Create one to get started!</p>
+			<div class="flex w-full items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-12">
+				<div class="text-center">
+					<p class="mb-4 text-lg text-gray-500">This board has no columns yet.</p>
+					<p class="mb-6 text-sm text-gray-400">Create your first column to start organizing cards.</p>
+					<button
+						onclick={() => (showNewColumnForm = true)}
+						class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+					>
+						+ Add Your First Column
+					</button>
+				</div>
+			</div>
 		{/if}
 	</div>
 
