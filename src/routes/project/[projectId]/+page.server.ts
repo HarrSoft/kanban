@@ -2,7 +2,8 @@ import { error } from "@sveltejs/kit";
 import db from "$db";
 import { boards, columns, cards } from "$db/schema";
 import { eq, sql, asc, and } from "drizzle-orm";
-import type { PageServerLoad } from "./$types";
+import { BoardId } from "$types/ids";
+import type { PageServerLoad, Actions } from "./$types";
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const session = locals.session;
@@ -33,4 +34,33 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.orderBy(asc(boards.createdAt));
 
 	return { boards: projectBoards };
+};
+
+export const actions: Actions = {
+	createBoard: async ({ request, params }) => {
+		const data = await request.formData();
+		const name = (data.get("name") as string || "").trim();
+		const description = (data.get("description") as string || "").trim();
+
+		if (!name) return { error: "Board name is required" };
+
+		await db.insert(boards).values({
+			name,
+			projectId: params.projectId,
+			description: description || null,
+		});
+
+		return { success: true };
+	},
+
+	deleteBoard: async ({ request }) => {
+		const data = await request.formData();
+		const boardId = data.get("boardId") as BoardId;
+
+		if (!boardId) return { error: "Board ID is required" };
+
+		await db.delete(boards).where(eq(boards.id, boardId));
+
+		return { success: true };
+	},
 };
