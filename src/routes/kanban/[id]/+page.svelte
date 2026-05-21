@@ -127,6 +127,12 @@
 	let showArchivedCards = false;
 	let archivedCards: Array<{ id: CardId; content: string; columnId: ColumnId; dueDate: number | null; column: { name: string } }> | null = null;
 	let loadingArchived = false;
+	let expandedCards: Record<string, boolean> = {};
+
+	function toggleExpanded(cardId: CardId) {
+		expandedCards[cardId] = !expandedCards[cardId];
+		expandedCards = { ...expandedCards };
+	}
 
 	async function loadArchivedCards() {
 		if (archivedCards !== null) {
@@ -897,8 +903,16 @@
 											🗑️
 										</button>
 									</div>
-									<div class="prose prose-sm max-w-none">
-										{@html card.content}
+										<div class="prose prose-sm max-w-none" class:expanded={expandedCards[card.id]}>
+										<div class="line-clamp-6" class:line-clamp-none={expandedCards[card.id]}>
+											{@html card.content}
+										</div>
+										{#if !expandedCards[card.id]}
+											<button
+												onclick={() => toggleExpanded(card.id)}
+												class="mt-1 text-xs text-indigo-600 hover:text-indigo-800"
+											>... more</button>
+										{/if}
 									</div>
 									<!-- Labels -->
 									{#if card.labels && card.labels.length > 0}
