@@ -113,7 +113,7 @@
 							action="?/deleteBoard"
 							use:enhance
 							class="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100"
-							onsubmit="return confirm('Delete board \`{board.name}\` and all its cards? This cannot be undone.')"
+							onsubmit={() => confirm('Delete board \'' + board.name + '\' and all its cards? This cannot be undone.')}
 						>
 							<input type="hidden" name="boardId" value="{board.id}" />
 							<button
