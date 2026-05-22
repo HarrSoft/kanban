@@ -10,6 +10,16 @@
 	const project = $derived(await getProject(page.params.projectId!));
 
 	let showCreateForm = $state(false);
+
+	function timeAgo(unixTs: number): string {
+		const now = Math.floor(Date.now() / 1000);
+		const diff = now - unixTs;
+		if (diff < 60) return "just now";
+		if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+		if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+		if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+		return new Date(unixTs * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+	}
 </script>
 
 <div class="flex flex-col gap-6">
@@ -81,6 +91,7 @@
 		{#if data.boards.length > 0}
 			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 				{#each data.boards as board (board.id)}
+					{@const boardAge = board.lastActivity ? timeAgo(board.lastActivity) : null}
 					<div class="relative group">
 						<a
 							href="/kanban/{board.id}"
@@ -92,6 +103,9 @@
 							{/if}
 							<span class="mt-1 text-xs text-zinc-500">
 								{board.columnCount} column{board.columnCount === 1 ? '' : 's'} · {board.cardCount} card{board.cardCount === 1 ? '' : 's'}
+								{#if boardAge}
+									· {boardAge}
+								{/if}
 							</span>
 						</a>
 						<form
@@ -113,6 +127,11 @@
 			</div>
 		{:else}
 			<p class="text-sm text-zinc-500">No boards yet. Create one above.</p>
+		{/if}
+		{#if data.archivedBoardCount > 0}
+			<p class="mt-2 text-xs text-zinc-500">
+				📦 {data.archivedBoardCount} archived board{data.archivedBoardCount === 1 ? '' : 's'} — <a href="/kanban" class="text-blue-400 hover:underline">view all</a>
+			</p>
 		{/if}
 	</div>
 </div>

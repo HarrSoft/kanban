@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const projectId = params.projectId;
 
-	// Fetch non-archived boards for this project with column & card counts
+	// Fetch non-archived boards for this project with column & card counts, plus last activity
 	const projectBoards = await db
 		.select({
 			id: boards.id,
@@ -22,6 +22,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			createdAt: boards.createdAt,
 			columnCount: sql<number>`count(distinct ${columns.id})`,
 			cardCount: sql<number>`count(distinct ${cards.id})`,
+			lastActivity: sql<number | null>`greatest(
+				${boards.updatedAt},
+				coalesce(max(${columns.updatedAt}), 0),
+				coalesce(max(${cards.updatedAt}), 0)
+			)`,
 		})
 		.from(boards)
 		.leftJoin(columns, eq(columns.boardId, boards.id))
@@ -30,10 +35,22 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			eq(boards.projectId, projectId),
 			eq(boards.archived, false),
 		))
-		.groupBy(boards.id, boards.name, boards.description, boards.createdAt)
+		.groupBy(boards.id, boards.name, boards.description, boards.createdAt, boards.updatedAt)
 		.orderBy(asc(boards.createdAt));
 
-	return { boards: projectBoards };
+	// Fetch archived board count for this project
+	const archivedResult = await db
+		.select({ count: sql<number>`count(*)` })
+		.from(boards)
+		.where(and(
+			eq(boards.projectId, projectId),
+			eq(boards.archived, true),
+		));
+
+	return {
+		boards: projectBoards,
+		archivedBoardCount: archivedResult[0]?.count ?? 0,
+	};
 };
 
 export const actions: Actions = {
