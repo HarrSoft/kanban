@@ -1,5 +1,5 @@
 import { json } from "@sveltejs/kit";
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import db, { cards, columns, boards, cardAssignees, cardLabels, labels } from "$db";
 import { authenticateAgent } from "../auth";
 import type { RequestHandler } from "../$types";
@@ -17,9 +17,49 @@ import { BoardId, CardId, UserId } from "$types";
  *   label      — filter by label ID (repeatable: ?label=x&label=y)
  *   limit      — max results (default 50, max 200)
  *   offset     — pagination offset (default 0)
+ *   fields     — comma-separated subset of response fields to return
+ *               (e.g., ?fields=id,content,dueAt). Omitting returns all fields.
  *
  * Response: { tasks: Task[], total: number }
  */
+
+// All possible task response fields
+const ALL_TASK_FIELDS = new Set([
+	"id", "content", "order", "dueAt", "archived",
+	"createdAt", "updatedAt", "column", "board",
+	"assignees", "labels",
+]);
+
+type TaskField = string;
+
+function filterByFields(
+	task: Record<string, unknown>,
+	fields: Set<string> | null,
+): Record<string, unknown> {
+	if (!fields) return task;
+	const result: Record<string, unknown> = {};
+	for (const f of fields) {
+		if (f in task) result[f] = task[f];
+	}
+	return result;
+}
+
+/**
+ * Parse a field selector from a `fields` query param.
+ * Returns null if no fields specified (return all), or a Set of validated field names.
+ */
+function parseFields(param: string | null): Set<string> | null {
+	if (!param) return null;
+	const fields = new Set<string>();
+	for (const f of param.split(",")) {
+		const trimmed = f.trim();
+		if (ALL_TASK_FIELDS.has(trimmed)) {
+			fields.add(trimmed);
+		}
+	}
+	return fields.size > 0 ? fields : null;
+}
+
 export const GET: RequestHandler = async (event) => {
 	const { projectId } = await authenticateAgent(event);
 
@@ -35,6 +75,7 @@ export const GET: RequestHandler = async (event) => {
 		200,
 	);
 	const offset = Math.max(0, Number(url.searchParams.get("offset")) || 0);
+	const fields = parseFields(url.searchParams.get("fields"));
 
 	// Build WHERE conditions
 	const conditions = sql`${cards.id} is not null`; // always-true base
@@ -115,40 +156,49 @@ export const GET: RequestHandler = async (event) => {
 	// For each card, load assignees and labels
 	const tasks = await Promise.all(
 		rows.map(async (row) => {
-			const assigneeRows = await db
-				.select({ userId: cardAssignees.userId })
-				.from(cardAssignees)
-				.where(eq(cardAssignees.cardId, row.id));
+			// Only load assignees if requested or if fields is not specified
+			const needAssignees = !fields || fields.has("assignees");
+			const needLabels = !fields || fields.has("labels");
+			const assigneeRows = needAssignees
+				? await db
+						.select({ userId: cardAssignees.userId })
+						.from(cardAssignees)
+						.where(eq(cardAssignees.cardId, row.id))
+				: [];
+			const labelRows = needLabels
+				? await db
+						.select({ labelId: cardLabels.labelId, name: labels.name, color: labels.color })
+						.from(cardLabels)
+						.innerJoin(labels, eq(cardLabels.labelId, labels.id))
+						.where(eq(cardLabels.cardId, row.id))
+				: [];
 
-			const labelRows = await db
-				.select({ labelId: cardLabels.labelId, name: labels.name, color: labels.color })
-				.from(cardLabels)
-				.innerJoin(labels, eq(cardLabels.labelId, labels.id))
-				.where(eq(cardLabels.cardId, row.id));
-
-			return {
-				id: row.id,
-				content: row.content,
-				order: row.order,
-				dueAt: row.dueDate,
-				archived: row.archived,
-				createdAt: row.createdAt,
-				updatedAt: row.updatedAt,
-				column: {
-					id: row.columnId,
-					name: row.columnName,
+			return filterByFields(
+				{
+					id: row.id,
+					content: row.content,
+					order: row.order,
+					dueAt: row.dueDate,
+					archived: row.archived,
+					createdAt: row.createdAt,
+					updatedAt: row.updatedAt,
+					column: {
+						id: row.columnId,
+						name: row.columnName,
+					},
+					board: {
+						id: row.boardId,
+						name: row.boardName,
+					},
+					assignees: assigneeRows.map((a) => a.userId),
+					labels: labelRows.map((l) => ({
+						id: l.labelId,
+						name: l.name,
+						color: l.color,
+					})),
 				},
-				board: {
-					id: row.boardId,
-					name: row.boardName,
-				},
-				assignees: assigneeRows.map((a) => a.userId),
-				labels: labelRows.map((l) => ({
-					id: l.labelId,
-					name: l.name,
-					color: l.color,
-				})),
-			};
+				fields,
+			);
 		}),
 	);
 
