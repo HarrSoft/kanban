@@ -1,5 +1,5 @@
 import * as df from "date-fns";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { json, error } from "@sveltejs/kit";
 import db, { timeclocks, projectMembers } from "$db";
 import { authenticateAgent } from "../../auth";
@@ -9,6 +9,25 @@ import {
 	sendIdempotencyResponse,
 } from "../../idempotency";
 import type { RequestHandler } from "../../$types";
+
+/**
+ * Look up the first admin member of a project (for agent-scoped timeclock).
+ * Agent API keys are scoped to projects, not users, so we resolve the user
+ * from the project's admin membership.
+ */
+async function getAgentUserId(projectId: string): Promise<string | null> {
+	const [member] = await db
+		.select({ userId: projectMembers.userId })
+		.from(projectMembers)
+		.where(
+			and(
+				eq(projectMembers.projectId, projectId),
+				eq(projectMembers.role, "admin"),
+			),
+		)
+		.limit(1);
+	return member?.userId ?? null;
+}
 
 /**
  * POST /api/agent/time/log — log time against a project (start or stop a clock).
@@ -61,17 +80,30 @@ export const POST: RequestHandler = async (event) => {
 			.limit(1);
 
 		if (activeClock) {
-			const result = { error: "Active timeclock already exists for this project", code: "CLOCK_ALREADY_ACTIVE" };
+			const result = {
+				error: "Active timeclock already exists for this project",
+				code: "CLOCK_ALREADY_ACTIVE",
+			};
 			return json(result, { status: 409 });
 		}
 
-		const startedAt = typeof body.startedAt === "number" ? body.startedAt : now;
+		const startedAt =
+			typeof body.startedAt === "number" ? body.startedAt : now;
+
+		// Resolve user from project membership (agent keys are project-scoped)
+		const agentUserId = await getAgentUserId(auth.projectId);
+		if (!agentUserId) {
+			throw error(
+				400,
+				"No admin member found for this project. Ensure the project has at least one member with the admin role.",
+			);
+		}
 
 		const [tc] = await db
 			.insert(timeclocks)
 			.values({
 				projectId: auth.projectId,
-				userId: auth.projectId, // agent-key scoped to project, not user
+				userId: agentUserId,
 				start: startedAt,
 			})
 			.returning();
@@ -118,13 +150,17 @@ export const POST: RequestHandler = async (event) => {
 		.limit(1);
 
 	if (!activeClock) {
-		const result = { error: "No active timeclock found for this project", code: "NO_ACTIVE_CLOCK" };
+		const result = {
+			error: "No active timeclock found for this project",
+			code: "NO_ACTIVE_CLOCK",
+		};
 		return json(result, { status: 404 });
 	}
 
-	const duration = typeof body.duration === "number" && body.duration > 0
-		? body.duration
-		: now - activeClock.start;
+	const duration =
+		typeof body.duration === "number" && body.duration > 0
+			? body.duration
+			: now - activeClock.start;
 
 	const [updated] = await db
 		.update(timeclocks)
