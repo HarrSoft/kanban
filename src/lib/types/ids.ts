@@ -27,6 +27,17 @@ export type LogId = v.InferOutput<typeof LogId>;
 export const SessionId = v.pipe(v.string(), v.cuid2(), v.brand("SessionId"));
 export type SessionId = v.InferOutput<typeof SessionId>;
 
+//////////////////////
+// Idempotency Keys //
+//////////////////////
+
+export const IdempotencyKeyId = v.pipe(
+	v.string(),
+	v.cuid2(),
+	v.brand("IdempotencyKeyId"),
+);
+export type IdempotencyKeyId = v.InferOutput<typeof IdempotencyKeyId>;
+
 /////////////
 // Tickets //
 /////////////
