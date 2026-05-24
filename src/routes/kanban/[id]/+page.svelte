@@ -821,7 +821,7 @@
 								<div class="flex flex-wrap gap-1">
 									{#each labelColors as color (color)}
 										<button
-											onclick|stopPropagation={() => updateColumnColor(column.id, color)}
+											onclick={(e) => { e.stopPropagation(); updateColumnColor(column.id, color); }}
 											class="h-6 w-6 rounded-full border-2 transition-all hover:scale-110"
 											style="background-color: {color}; {column.color == color ? 'border-color: #374151; transform: scale(1.15);' : 'border-color: transparent'}"
 											title={color}
@@ -843,7 +843,7 @@
 								</span>
 								<!-- Color swatch button -->
 								<button
-									onclick|stopPropagation={() => toggleColumnColorSwatch(column)}
+									onclick={(e) => { e.stopPropagation(); toggleColumnColorSwatch(column); }}
 									class="h-5 w-5 rounded-full border-2 border-gray-300 transition-transform hover:scale-110 flex-shrink-0"
 									style="background-color: {column.color};"
 									title="Change column color"
@@ -862,12 +862,12 @@
 					</div>
 
 					{#if editingColumnColor?.columnId === column.id}
-						<div class="mb-3 rounded-md border border-gray-200 bg-white p-2 shadow-sm" onclick|stopPropagation={() => {}}>
+						<div class="mb-3 rounded-md border border-gray-200 bg-white p-2 shadow-sm" onclick={(e) => e.stopPropagation()}>
 							<p class="mb-1 text-xs font-medium text-gray-600">Color</p>
 							<div class="flex flex-wrap gap-1">
 								{#each labelColors as color (color)}
 									<button
-										onclick|stopPropagation={() => updateColumnColor(column.id, color)}
+										onclick={(e) => { e.stopPropagation(); updateColumnColor(column.id, color); }}
 										class="h-6 w-6 rounded-full border-2 transition-all hover:scale-110"
 										style="background-color: {color}; {column.color == color ? 'border-color: #374151; transform: scale(1.15);' : 'border-color: transparent'}"
 										title={color}
