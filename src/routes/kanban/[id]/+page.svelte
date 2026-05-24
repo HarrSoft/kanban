@@ -341,9 +341,32 @@
 		}
 	}
 
+	// Column color editing state
+	let editingColumnColor: { columnId: ColumnId; swatchOpen: boolean } | null = null;
+
+	function toggleColumnColorSwatch(col: { id: ColumnId }) {
+		if (editingColumnColor?.columnId === col.id) {
+			editingColumnColor = null;
+		} else {
+			editingColumnColor = { columnId: col.id, swatchOpen: true };
+		}
+	}
+
+	async function updateColumnColor(columnId: ColumnId, color: string) {
+		const formData = new FormData();
+		formData.append("columnId", columnId);
+		formData.append("color", color);
+		const response = await fetch("?/updateColumnColor", { method: "POST", body: formData });
+		if (response.ok) {
+			editingColumnColor = null;
+			window.location.reload();
+		}
+	}
+
 	// Editing state — columns
 	let editingColumnId: ColumnId | null = null;
 	let editingColumnName: string = "";
+	let editingColumnFormColor: string = "#6366f1";
 
 	function startEdit(cardId: CardId, content: string) {
 		editingCardId = cardId;
@@ -766,7 +789,8 @@
 			{#each (searchQuery ? filteredColumns : columns) as column (column.id)}
 				<div
 					data-column-id={column.id}
-					class="w-80 flex-shrink-0 rounded-lg bg-gray-100 p-4"
+					class="w-80 flex-shrink-0 rounded-lg bg-gray-100 p-4 border-l-4"
+					style="border-left-color: {column.color};"
 				>
 					<div class="mb-4 flex items-center justify-between">
 						{#if editingColumnId === column.id}
@@ -792,6 +816,19 @@
 									✕
 								</button>
 							</div>
+							<div class="mt-2">
+								<label class="mb-1 block text-xs font-medium text-gray-600">Color</label>
+								<div class="flex flex-wrap gap-1">
+									{#each labelColors as color (color)}
+										<button
+											onclick|stopPropagation={() => updateColumnColor(column.id, color)}
+											class="h-6 w-6 rounded-full border-2 transition-all hover:scale-110"
+											style="background-color: {color}; {column.color == color ? 'border-color: #374151; transform: scale(1.15);' : 'border-color: transparent'}"
+											title={color}
+										></button>
+									{/each}
+								</div>
+							</div>
 						{:else}
 							<div class="flex items-center gap-2">
 								<h2
@@ -804,16 +841,41 @@
 								<span class="inline-flex items-center justify-center rounded-full bg-gray-300 px-2 py-0.5 text-xs font-medium text-gray-700" title="Card count">
 									{column.items.length}
 								</span>
+								<!-- Color swatch button -->
+								<button
+									onclick|stopPropagation={() => toggleColumnColorSwatch(column)}
+									class="h-5 w-5 rounded-full border-2 border-gray-300 transition-transform hover:scale-110 flex-shrink-0"
+									style="background-color: {column.color};"
+									title="Change column color"
+								></button>
 							</div>
-							<button
-								onclick={() => deleteColumn(column.id)}
-								class="text-sm text-red-500 hover:text-red-700"
-								title="Delete column"
-							>
-								✕
-							</button>
+							<div class="flex items-center gap-1">
+								<button
+									onclick={() => deleteColumn(column.id)}
+									class="text-sm text-red-500 hover:text-red-700"
+									title="Delete column"
+								>
+									✕
+								</button>
+							</div>
 						{/if}
 					</div>
+
+					{#if editingColumnColor?.columnId === column.id}
+						<div class="mb-3 rounded-md border border-gray-200 bg-white p-2 shadow-sm" onclick|stopPropagation={() => {}}>
+							<p class="mb-1 text-xs font-medium text-gray-600">Color</p>
+							<div class="flex flex-wrap gap-1">
+								{#each labelColors as color (color)}
+									<button
+										onclick|stopPropagation={() => updateColumnColor(column.id, color)}
+										class="h-6 w-6 rounded-full border-2 transition-all hover:scale-110"
+										style="background-color: {color}; {column.color == color ? 'border-color: #374151; transform: scale(1.15);' : 'border-color: transparent'}"
+										title={color}
+									></button>
+								{/each}
+							</div>
+						</div>
+					{/if}
 
 					<div
 						data-column-id={column.id}
@@ -1014,6 +1076,20 @@
 							required
 							class="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
 						/>
+						<div class="mb-3">
+							<label class="mb-1 block text-xs font-medium text-gray-600">Column Color</label>
+							<div class="flex gap-1">
+								{#each labelColors as color (color)}
+									<label class="cursor-pointer">
+										<input type="radio" name="color" value="{color}" checked={color === '#6366f1'} class="sr-only" />
+										<div
+											class="h-6 w-6 rounded-full border-2 transition-all"
+											style="background-color: {color};"
+										></div>
+									</label>
+								{/each}
+							</div>
+						</div>
 						<div class="flex gap-2">
 							<button
 								type="submit"

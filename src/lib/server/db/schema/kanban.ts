@@ -27,6 +27,7 @@ export const columns = t.pgTable("columns", {
 		.$type<BoardId>(),
 	name: t.text("name").notNull(),
 	order: t.integer("order").notNull().default(0),
+	color: t.text("color").notNull().default("#6366f1"),
 	...timestamps,
 });
 

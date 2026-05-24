@@ -75,6 +75,7 @@ export const actions: Actions = {
 	createColumn: async ({ request, params }) => {
 		const data = await request.formData();
 		const name = data.get("name") as string;
+		const color = (data.get("color") as string) || "#6366f1";
 		const boardId = params.id as BoardId;
 
 		if (!name) return { error: "Name is required" };
@@ -93,6 +94,7 @@ export const actions: Actions = {
 		await db.insert(columns).values({
 			boardId,
 			name,
+			color,
 			order: maxOrder + 1,
 		});
 
@@ -188,6 +190,18 @@ export const actions: Actions = {
 			),
 		);
 
+		return { success: true };
+	},
+
+	updateColumnColor: async ({ request }) => {
+		const data = await request.formData();
+		const columnId = data.get("columnId") as ColumnId;
+		const color = data.get("color") as string;
+
+		if (!columnId) return { error: "Column ID is required" };
+		if (!color) return { error: "Color is required" };
+
+		await db.update(columns).set({ color }).where(eq(columns.id, columnId));
 		return { success: true };
 	},
 
