@@ -15,6 +15,18 @@
 			String(d.getDate()).padStart(2, "0");
 	}
 
+	function formatRelativeTime(ts: number | null | undefined): string {
+		if (!ts) return "";
+		const now = Math.floor(Date.now() / 1000);
+		const diff = now - ts;
+		if (diff < 60) return "just now";
+		if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+		if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+		if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+		const d = new Date(ts * 1000);
+		return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+	}
+
 	function formatDueDate(ts: number | null | undefined): string {
 		if (!ts) return "";
 		const now = Math.floor(Date.now() / 1000);
@@ -1021,6 +1033,12 @@
 										>
 											{formatDueDate(card.dueDate)}
 										</button>
+									{/if}
+									<!-- Last edited indicator -->
+									{#if card.updatedAt && !editingCardId}
+										<div class="mt-2 text-[10px] text-gray-400" title={new Date(card.updatedAt * 1000).toLocaleString()}>
+											Edited {formatRelativeTime(card.updatedAt)}
+										</div>
 									{/if}
 								{/if}
 							</div>

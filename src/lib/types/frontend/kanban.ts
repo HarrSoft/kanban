@@ -21,6 +21,7 @@ export interface Card {
 	order: number;
 	dueDate: number | null;
 	archived: boolean;
+	updatedAt: number | null;
 	assignees?: CardAssignee[];
 }
 
