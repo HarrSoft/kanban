@@ -10,6 +10,13 @@
 	const project = $derived(await getProject(page.params.projectId!));
 
 	let showCreateForm = $state(false);
+	let editingName = $state(false);
+	let editNameValue = $state("");
+
+	function startEditing() {
+		editNameValue = project.name;
+		editingName = true;
+	}
 
 	function timeAgo(unixTs: number): string {
 		const now = Math.floor(Date.now() / 1000);
@@ -24,7 +31,30 @@
 
 <div class="flex flex-col gap-6">
 	<div class="flex flex-col gap-2">
-		<Project {project} />
+		{#if editingName}
+			<form
+				method="POST"
+				action="?/updateProject"
+				use:enhance
+				onsubmit={() => { editingName = false; }}
+				class="flex items-center gap-2"
+			>
+				<span class="flex h-15 w-15 items-center justify-center text-[2rem]">🎁</span>
+				<input
+					type="text"
+					name="name"
+					bind:value={editNameValue}
+					class="rounded-md border border-zinc-500 bg-zinc-800 px-2 py-1 text-2xl font-bold text-white focus:border-blue-500 focus:outline-none"
+					required
+				/>
+				<button type="submit" class="rounded-md bg-blue-600 px-2 py-1 text-sm text-white hover:bg-blue-500">Save</button>
+				<button type="button" onclick={() => editingName = false} class="rounded-md px-2 py-1 text-sm text-zinc-400 hover:text-white">Cancel</button>
+			</form>
+		{:else}
+			<button onclick={startEditing} class="cursor-pointer text-left">
+				<Project {project} />
+			</button>
+		{/if}
 
 		<!-- Project members -->
 		{#if project.admins.length > 0}

@@ -1,8 +1,8 @@
 import { error } from "@sveltejs/kit";
 import db from "$db";
-import { boards, columns, cards } from "$db/schema";
+import { projects, boards, columns, cards } from "$db/schema";
 import { eq, sql, asc, and } from "drizzle-orm";
-import { BoardId } from "$types/ids";
+import { BoardId, ProjectId } from "$types/ids";
 import type { PageServerLoad, Actions } from "./$types";
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -54,6 +54,20 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 };
 
 export const actions: Actions = {
+	updateProject: async ({ request, params }) => {
+		const data = await request.formData();
+		const name = (data.get("name") as string || "").trim();
+
+		if (!name) return { error: "Project name is required" };
+
+		await db.update(projects).set({
+			name,
+			updatedAt: Math.floor(Date.now() / 1000),
+		}).where(eq(projects.id, params.projectId as ProjectId));
+
+		return { success: true };
+	},
+
 	createBoard: async ({ request, params }) => {
 		const data = await request.formData();
 		const name = (data.get("name") as string || "").trim();

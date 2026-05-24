@@ -1,7 +1,76 @@
 <script lang="ts">
+	import * as df from "date-fns";
+	import { onDestroy } from "svelte";
+	import { enhance } from "$app/forms";
 	import type { PageData } from "./$types";
+	import {
+		PlayIcon,
+		PauseIcon,
+	} from "$com/icons";
+	import { pingClock } from "$lib/remote";
 
 	const { data } = $props<{ data: PageData }>();
+
+	/////////////////
+	// Timeclock   //
+	/////////////////
+
+	interface ClockState {
+		id: string;
+		start: number;
+		duration: number;
+		lastUpdate: number;
+		updateTimer: ReturnType<typeof setInterval>;
+	}
+
+	let active = $state<ClockState | null>(
+		data.activeTimeclock
+			? (() => {
+					const startDuration = data.activeTimeclock!.duration;
+					const now = df.getUnixTime(new Date());
+					const updateTimer = setInterval(() => {
+						if (active) {
+							const elapsed = df.getUnixTime(new Date()) - active.lastUpdate;
+							const newDuration = active.duration + elapsed;
+							active = { ...active, duration: newDuration, lastUpdate: df.getUnixTime(new Date()) };
+							pingClock({ timeclockId: active.id, newDuration });
+						}
+					}, 30000);
+					return {
+						id: data.activeTimeclock!.id,
+						start: data.activeTimeclock!.start,
+						duration: startDuration,
+						lastUpdate: now,
+						updateTimer,
+					};
+				})()
+			: null,
+	);
+
+	function formatDuration(seconds: number): string {
+		const h = Math.floor(seconds / 3600);
+		const m = Math.floor((seconds % 3600) / 60);
+		const s = seconds % 60;
+		return [h > 0 ? h : [], String(m).padStart(2, "0"), String(s).padStart(2, "0")]
+			.flat()
+			.join(":");
+	}
+
+	const stopClock = () => {
+		if (active) {
+			const state = active;
+			clearInterval(state.updateTimer);
+			active = null;
+			// Fire-and-forget ping to persist final duration
+			pingClock({ timeclockId: state.id, newDuration: state.duration });
+		}
+	};
+
+	onDestroy(() => {
+		if (active) {
+			clearInterval(active.updateTimer);
+		}
+	});
 </script>
 
 {#if !data.session}
@@ -27,17 +96,17 @@
 			</div>
 		</div>
 
-		<!-- Active Project -->
+		<!-- Active Project + Timeclock -->
 		{#if data.activeProject}
 			<section class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">
 				<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">
 					Active Project
 				</h2>
-				<a
-					href="/project/{data.activeProject.id}"
-					class="flex items-center justify-between rounded-md bg-zinc-800 p-4 transition-colors hover:bg-zinc-700"
-				>
-					<div class="flex items-center gap-3">
+				<div class="flex items-center justify-between rounded-md bg-zinc-800 p-4">
+					<a
+						href="/project/{data.activeProject.id}"
+						class="flex items-center gap-3"
+					>
 						<span class="flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-700 text-xl">
 							🎁
 						</span>
@@ -47,9 +116,33 @@
 								{data.activeProject.boardCount} board{data.activeProject.boardCount === 1 ? "" : "s"}
 							</div>
 						</div>
+					</a>
+					<div class="flex items-center gap-3">
+						{#if active}
+							<span class="tabular-nums text-sm text-green-400">
+								{formatDuration(active.duration)}
+							</span>
+							<button
+								onclick={stopClock}
+								class="flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-500"
+							>
+								<PauseIcon className="h-4" />
+								Clock Out
+							</button>
+						{:else}
+							<form method="POST" action="?/createTimeclock" use:enhance class="inline-flex">
+								<input type="hidden" name="projectId" value={data.activeProject.id} />
+								<button
+									type="submit"
+									class="flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-green-500"
+								>
+									<PlayIcon className="h-4" />
+									Clock In
+								</button>
+							</form>
+						{/if}
 					</div>
-					<span class="text-sm text-blue-400">Open →</span>
-				</a>
+				</div>
 			</section>
 		{/if}
 
