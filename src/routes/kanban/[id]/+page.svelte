@@ -511,6 +511,20 @@
 
 		if (response.ok) {
 			window.location.reload();
+	async function duplicateCard(cardId: CardId) {
+		const formData = new FormData();
+		formData.append("cardId", cardId);
+
+		const response = await fetch("?/duplicateCard", {
+			method: "POST",
+			body: formData,
+		});
+
+		if (response.ok) {
+			window.location.reload();
+		}
+	}
+
 		}
 	}
 
@@ -994,6 +1008,13 @@
 											title="Add/remove labels"
 										>
 											🏷️
+										</button>
+										<button
+											onclick={() => duplicateCard(card.id)}
+											class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 hover:bg-indigo-100"
+											title="Duplicate card"
+										>
+											📋
 										</button>
 										<button
 											onclick={() => archiveCard(card.id)}

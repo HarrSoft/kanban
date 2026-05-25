@@ -438,4 +438,64 @@ export const actions: Actions = {
 
 		return { archivedCards };
 	},
+
+	duplicateCard: async ({ request }) => {
+		const data = await request.formData();
+		const cardId = data.get("cardId") as CardId;
+
+		if (!cardId) return { error: "Card ID is required" };
+
+		// Fetch the original card
+		const original = await db.query.cards.findFirst({
+			where: eq(cards.id, cardId),
+			with: {
+				labels: true,
+				assignees: true,
+			},
+		});
+
+		if (!original) return { error: "Card not found" };
+
+		// Get max order in the same column
+		const existingCards = await db.query.cards.findMany({
+			where: eq(cards.columnId, original.columnId),
+		});
+		const maxOrder = existingCards.reduce(
+			(max, c) => Math.max(max, c.order),
+			-1,
+		);
+
+		// Insert the duplicate card
+		const [newCard] = await db
+			.insert(cards)
+			.values({
+				columnId: original.columnId,
+				content: original.content,
+				order: maxOrder + 1,
+				dueDate: original.dueDate,
+			})
+			.returning({ id: cards.id });
+
+		// Copy labels
+		if (original.labels && original.labels.length > 0) {
+			await db.insert(cardLabels).values(
+				original.labels.map((cl) => ({
+					cardId: newCard.id,
+					labelId: cl.labelId,
+				})),
+			);
+		}
+
+		// Copy assignees
+		if (original.assignees && original.assignees.length > 0) {
+			await db.insert(cardAssignees).values(
+				original.assignees.map((a) => ({
+					cardId: newCard.id,
+					userId: a.userId,
+				})),
+			);
+		}
+
+		return { success: true };
+	},
 };
