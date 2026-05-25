@@ -51,9 +51,18 @@
 				<button type="button" onclick={() => editingName = false} class="rounded-md px-2 py-1 text-sm text-zinc-400 hover:text-white">Cancel</button>
 			</form>
 		{:else}
-			<button onclick={startEditing} class="cursor-pointer text-left">
-				<Project {project} />
-			</button>
+			<div class="flex items-center gap-2">
+				<button onclick={startEditing} class="cursor-pointer text-left">
+					<Project {project} />
+				</button>
+				<a
+					href="/project/{page.params.projectId}/settings"
+					class="rounded-md px-2 py-1 text-sm text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+					title="Project settings"
+				>
+					⚙️
+				</a>
+			</div>
 		{/if}
 
 		<!-- Project members -->
