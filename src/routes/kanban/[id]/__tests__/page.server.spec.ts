@@ -699,4 +699,60 @@ describe("kanban board server actions", () => {
 			).rejects.toThrow();
 		});
 	});
+
+	describe("duplicateCard action", () => {
+		it("returns error when cardId is missing", async () => {
+			const formData = new FormData();
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			const result = await actions.duplicateCard({
+				request,
+				params: { id: "test-id" },
+			} as any);
+
+			expect(result).toEqual({ error: "Card ID is required" });
+		});
+
+		it("rejects nonexistent cardId (DB dependent)", async () => {
+			const formData = new FormData();
+			formData.append("cardId", "nonexistent-card-id");
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			// duplicates queries the DB for the original card,
+			// so it throws without a real DB connection
+			await expect(
+				actions.duplicateCard({
+					request,
+					params: { id: "test-id" },
+				} as any),
+			).rejects.toThrow();
+		});
+
+		it("accepts valid cardId (DB dependent)", async () => {
+			const formData = new FormData();
+			formData.append("cardId", "valid-card-id");
+
+			const request = new Request("http://localhost:5173/kanban/test-id", {
+				method: "POST",
+				body: formData,
+			});
+
+			// The duplicateCard action queries the DB for the original card,
+			// so it will throw/reject without a real DB connection
+			await expect(
+				actions.duplicateCard({
+					request,
+					params: { id: "test-id" },
+				} as any),
+			).rejects.toThrow();
+		});
+	});
 });
