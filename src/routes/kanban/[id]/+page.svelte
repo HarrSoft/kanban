@@ -1088,10 +1088,16 @@
 											{formatDueDate(card.dueDate)}
 										</button>
 									{/if}
-									<!-- Last edited indicator -->
-									{#if card.updatedAt && !editingCardId}
-										<div class="mt-2 text-[10px] text-gray-400" title={new Date(card.updatedAt * 1000).toLocaleString()}>
-											Edited {formatRelativeTime(card.updatedAt)}
+									<!-- Creation and last-edited timestamps -->
+									{#if !editingCardId}
+										<div class="mt-2 text-[10px] text-gray-400">
+											{#if card.createdAt}
+												<span title={new Date(card.createdAt * 1000).toLocaleString()}>Created {formatRelativeTime(card.createdAt)}</span>
+											{/if}
+											{#if card.updatedAt && card.createdAt && Math.abs(card.updatedAt - card.createdAt) > 60}
+												<span class="mx-1">·</span>
+												<span title={new Date(card.updatedAt * 1000).toLocaleString()}>Edited {formatRelativeTime(card.updatedAt)}</span>
+											{/if}
 										</div>
 									{/if}
 								{/if}
