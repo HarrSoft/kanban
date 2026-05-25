@@ -195,6 +195,38 @@
 
 	// Card search/filter
 	let searchQuery = "";
+	let searchInput: HTMLInputElement | undefined = $state();
+
+	// Keyboard shortcuts
+	function handleKeydown(e: KeyboardEvent) {
+		// Don't intercept when typing in an input/textarea or inside Quill
+		const tag = (e.target as HTMLElement).tagName;
+		if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).closest(".ql-editor")) {
+			// Allow Esc to blur even when in input
+			if (e.key === "Escape") {
+				(e.target as HTMLElement)?.blur();
+			}
+			return;
+		}
+		switch (e.key) {
+			case "/":
+				e.preventDefault();
+				searchInput?.focus();
+				break;
+			case "n":
+			case "N":
+				e.preventDefault();
+				if (columns.length > 0) {
+					const firstColumnId = columns[0].id;
+					showNewCardForm = { ...showNewCardForm, [firstColumnId]: true };
+				}
+				break;
+			case "Escape":
+				searchQuery = "";
+				searchInput?.blur();
+				break;
+		}
+	}
 	$: filteredColumns = columns.map(col => ({
 		...col,
 		items: searchQuery
@@ -620,13 +652,14 @@
 	<title>{data.board.name} - Kanban Board</title>
 </svelte:head>
 
-<div class="max-w-full p-8">
+<div class="max-w-full p-8" onkeydown={handleKeydown}>
 	<!-- Card search/filter bar -->
 	<div class="mb-4">
 		<input
 			type="search"
 			bind:value={searchQuery}
-			placeholder="🔍 Search cards across all columns…"
+			bind:this={searchInput}
+			placeholder="🔍 Search cards across all columns…  (press / to focus)"
 			class="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
 		/>
 		{#if searchQuery}
