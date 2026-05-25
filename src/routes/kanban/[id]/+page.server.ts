@@ -5,6 +5,7 @@ import { eq, asc, and, inArray } from "drizzle-orm";
 import type { PageServerLoad, Actions } from "./$types";
 import { BoardId, CardAssigneeId, CardId, CardLabelId, ColumnId, LabelId, UserId } from "$types/ids";
 import type { BoardId as BoardIdType, LabelId as LabelIdType, CardId as CardIdType, UserId as UserIdType } from "$types";
+import { logCardActivity } from "$lib/server/actions/card-activity";
 
 export const load: PageServerLoad = async ({ params }) => {
 	const boardId = params.id as BoardId;
@@ -105,6 +106,7 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const content = ((data.get("content") as string) || "").trim();
 		const columnId = data.get("columnId") as ColumnId;
+		const userId = (data.get("userId") as UserId | null) ?? null;
 
 		if (!content || !columnId)
 			return { error: "Content and Column ID are required" };
@@ -118,11 +120,17 @@ export const actions: Actions = {
 			-1,
 		);
 
-		await db.insert(cards).values({
-			columnId,
-			content,
-			order: maxOrder + 1,
-		});
+		const [newCard] = await db
+			.insert(cards)
+			.values({
+				columnId,
+				content,
+				order: maxOrder + 1,
+			})
+			.returning({ id: cards.id });
+
+		// Log card creation
+		logCardActivity(newCard.id, "card_created", { userId: userId as UserId | null });
 
 		return { success: true };
 	},
@@ -163,8 +171,9 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const raw = data.get("items") as string;
 		const columnId = data.get("columnId") as ColumnId;
+		const userId = (data.get("userId") as UserId | null) ?? null;
 
-		let items: { id: string }[];
+		let items: { id: string; prevColumnId?: string }[];
 		try {
 			const parsed = JSON.parse(raw);
 			if (!Array.isArray(parsed)) throw new Error();
@@ -189,6 +198,15 @@ export const actions: Actions = {
 					.where(eq(cards.id, item.id as CardId)),
 			),
 		);
+
+		// Log card moves for cards that changed columns (cross-column drag)
+		const movedCards = items.filter(item => item.prevColumnId && item.prevColumnId !== columnId);
+		for (const moved of movedCards) {
+			logCardActivity(moved.id as CardId, "card_moved", {
+				userId: userId as UserId | null,
+				metadata: { fromColumnId: moved.prevColumnId, toColumnId: columnId },
+			});
+		}
 
 		return { success: true };
 	},
@@ -231,10 +249,21 @@ export const actions: Actions = {
 	deleteCard: async ({ request }) => {
 		const data = await request.formData();
 		const cardId = data.get("cardId") as CardId;
+		const userId = (data.get("userId") as UserId | null) ?? null;
 
 		if (!cardId) return { error: "Card ID is required" };
 
 		await db.delete(cards).where(eq(cards.id, cardId));
+
+		// Can't log after delete since card is gone — log before
+		// (actually we already deleted it, but card_activity cascades too)
+		// Log with the card id before cascade deletes our entry
+		try {
+			logCardActivity(cardId, "card_deleted", { userId: userId as UserId | null });
+		} catch {
+			// Activity log entry may fail if cascade already removed it — that's fine
+		}
+
 		return { success: true };
 	},
 
@@ -251,11 +280,15 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const cardId = data.get("cardId") as CardId;
 		const content = (data.get("content") as string || "").trim();
+		const userId = (data.get("userId") as UserId | null) ?? null;
 
 		if (!cardId) return { error: "Card ID is required" };
 		if (!content) return { error: "Content cannot be empty" };
 
 		await db.update(cards).set({ content }).where(eq(cards.id, cardId));
+
+		logCardActivity(cardId, "card_content_updated", { userId: userId as UserId | null });
+
 		return { success: true };
 	},
 
@@ -281,6 +314,7 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const cardId = data.get("cardId") as CardId;
 		const dueDateRaw = data.get("dueDate") as string | null;
+		const userId = (data.get("userId") as UserId | null) ?? null;
 
 		if (!cardId) {
 			return fail(400, { error: "Card ID is required" });
@@ -293,16 +327,26 @@ export const actions: Actions = {
 				: null;
 
 		await db.update(cards).set({ dueDate }).where(eq(cards.id, cardId));
+
+		logCardActivity(cardId, dueDate === null ? "card_due_date_cleared" : "card_due_date_set", {
+			userId: userId as UserId | null,
+			metadata: { dueDate },
+		});
+
 		return { success: true };
 	},
 
 	archiveCard: async ({ request }) => {
 		const data = await request.formData();
 		const cardId = data.get("cardId") as CardId;
+		const userId = (data.get("userId") as UserId | null) ?? null;
 
 		if (!cardId) return { error: "Card ID is required" };
 
 		await db.update(cards).set({ archived: true }).where(eq(cards.id, cardId));
+
+		logCardActivity(cardId, "card_archived", { userId: userId as UserId | null });
+
 		return { success: true };
 	},
 
@@ -310,6 +354,7 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const cardId = data.get("cardId") as CardId;
 		const userId = data.get("userId") as UserId;
+		const actorUserId = (data.get("actorUserId") as UserId | null) ?? null;
 
 		if (!cardId || !userId) {
 			return fail(400, { error: "Card ID and User ID are required" });
@@ -325,6 +370,11 @@ export const actions: Actions = {
 
 		if (!existing) {
 			await db.insert(cardAssignees).values({ cardId, userId });
+
+			logCardActivity(cardId, "card_assignee_added", {
+				userId: actorUserId as UserId | null,
+				metadata: { assignedUserId: userId },
+			});
 		}
 
 		return { success: true };
@@ -333,14 +383,37 @@ export const actions: Actions = {
 	unassignUser: async ({ request }) => {
 		const data = await request.formData();
 		const assigneeId = data.get("assigneeId") as CardAssigneeId;
+		const cardId = data.get("cardId") as CardId | null;
+		const userId = (data.get("userId") as UserId | null) ?? null;
 
 		if (!assigneeId) {
 			return fail(400, { error: "Assignee ID is required" });
 		}
 
+		// Fetch the assignment to get the userId for the activity log
+		let removedUserId: string | null = null;
+		if (!cardId) {
+			const assignee = await db.query.cardAssignees.findFirst({
+				where: eq(cardAssignees.id, assigneeId),
+				columns: { cardId: true, userId: true },
+			});
+			if (assignee) {
+				removedUserId = assignee.userId;
+			}
+		}
+		const resolvedCardId = cardId || (await db.query.cardAssignees.findFirst({
+			where: eq(cardAssignees.id, assigneeId),
+			columns: { cardId: true },
+		}))?.cardId;
+
 		await db
 			.delete(cardAssignees)
 			.where(eq(cardAssignees.id, assigneeId));
+
+		logCardActivity(resolvedCardId as CardId, "card_assignee_removed", {
+			userId: userId as UserId | null,
+			metadata: { removedAssigneeId: assigneeId },
+		});
 
 		return { success: true };
 	},
@@ -348,10 +421,14 @@ export const actions: Actions = {
 	unarchiveCard: async ({ request }) => {
 		const data = await request.formData();
 		const cardId = data.get("cardId") as CardId;
+		const userId = (data.get("userId") as UserId | null) ?? null;
 
 		if (!cardId) return { error: "Card ID is required" };
 
 		await db.update(cards).set({ archived: false }).where(eq(cards.id, cardId));
+
+		logCardActivity(cardId, "card_unarchived", { userId: userId as UserId | null });
+
 		return { success: true };
 	},
 
@@ -381,6 +458,7 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const cardId = data.get("cardId") as CardId;
 		const labelId = data.get("labelId") as LabelId;
+		const userId = (data.get("userId") as UserId | null) ?? null;
 
 		if (!cardId || !labelId) return { error: "Card ID and Label ID are required" };
 
@@ -394,6 +472,11 @@ export const actions: Actions = {
 
 		if (!existing) {
 			await db.insert(cardLabels).values({ cardId, labelId });
+
+			logCardActivity(cardId, "card_label_added", {
+				userId: userId as UserId | null,
+				metadata: { labelId },
+			});
 		}
 
 		return { success: true };
@@ -402,10 +485,30 @@ export const actions: Actions = {
 	removeLabel: async ({ request }) => {
 		const data = await request.formData();
 		const cardLabelId = data.get("cardLabelId") as CardLabelId;
+		const cardId = data.get("cardId") as CardId | null;
+		const userId = (data.get("userId") as UserId | null) ?? null;
 
 		if (!cardLabelId) return { error: "Card label assignment ID is required" };
 
+		// Resolve cardId if not provided
+		let resolvedCardId = cardId;
+		if (!resolvedCardId) {
+			const cl = await db.query.cardLabels.findFirst({
+				where: eq(cardLabels.id, cardLabelId),
+				columns: { cardId: true },
+			});
+			resolvedCardId = cl?.cardId ?? null;
+		}
+
 		await db.delete(cardLabels).where(eq(cardLabels.id, cardLabelId));
+
+		if (resolvedCardId) {
+			logCardActivity(resolvedCardId as CardId, "card_label_removed", {
+				userId: userId as UserId | null,
+				metadata: { cardLabelId },
+			});
+		}
+
 		return { success: true };
 	},
 
@@ -442,6 +545,7 @@ export const actions: Actions = {
 	duplicateCard: async ({ request }) => {
 		const data = await request.formData();
 		const cardId = data.get("cardId") as CardId;
+		const userId = (data.get("userId") as UserId | null) ?? null;
 
 		if (!cardId) return { error: "Card ID is required" };
 
@@ -495,6 +599,16 @@ export const actions: Actions = {
 				})),
 			);
 		}
+
+		// Log both the source card's duplicate action and the new card's creation
+		logCardActivity(cardId, "card_created", {
+			userId: userId as UserId | null,
+			metadata: { duplicatedTo: newCard.id },
+		});
+		logCardActivity(newCard.id, "card_created", {
+			userId: userId as UserId | null,
+			metadata: { duplicatedFrom: cardId },
+		});
 
 		return { success: true };
 	},

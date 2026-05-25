@@ -92,3 +92,10 @@ export const CardLabelId = v.pipe(
 	v.brand("CardLabelId"),
 );
 export type CardLabelId = v.InferOutput<typeof CardLabelId>;
+
+export const CardActivityId = v.pipe(
+	v.string(),
+	v.cuid2(),
+	v.brand("CardActivityId"),
+);
+export type CardActivityId = v.InferOutput<typeof CardActivityId>;

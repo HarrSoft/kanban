@@ -77,6 +77,13 @@
       "when": 1779497718507,
       "tag": "0010_salty_vulcan",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1779751445286,
+      "tag": "0011_thick_shocker",
+      "breakpoints": true
     }
   ],
   "version": "7"
