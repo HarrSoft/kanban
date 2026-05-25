@@ -9,5 +9,6 @@ export const Timeclock = v.object({
 	start: Unix,
 	duration: Seconds,
 	locked: v.boolean(),
+	createdAt: Unix,
 });
 export type Timeclock = v.InferOutput<typeof Timeclock>;

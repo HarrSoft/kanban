@@ -48,7 +48,7 @@
 	// Editing state — due dates
 	let editingDueDate: Record<string, string> = {};
 
-	export let data: PageData;
+	let { data }: { data: PageData } = $props();
 
 	// Assignee state
 	let assigningCardId: CardId | null = null;
@@ -227,7 +227,7 @@
 				break;
 		}
 	}
-	$: filteredColumns = columns.map(col => ({
+	let filteredColumns = $derived(columns.map(col => ({
 		...col,
 		items: searchQuery
 			? col.items.filter(card =>
@@ -1185,91 +1185,6 @@
 		{/if}
 	</div>
 
-										<!-- Assignees -->
-									{#if card.assignees && card.assignees.length > 0}
-										<div class="mt-2 flex flex-wrap items-center gap-1">
-											{#each card.assignees as assignee (assignee.id)}
-												<div class="group relative">
-													<span
-														class="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700"
-														title={assignee.user.name || assignee.user.id}
-													>
-														{assignee.user.name || '👤'}
-														<button
-															onclick={(e) => { e.stopPropagation(); unassignUser(assignee.id); }}
-															class="text-indigo-400 hover:text-red-500"
-															title="Remove assignee"
-														>✕</button>
-													</span>
-												</div>
-											{/each}
-										</div>
-									{/if}
-									{#if assigningCardId === card.id}
-										<div class="mt-2 rounded border border-gray-200 bg-white p-2 shadow-sm">
-											<p class="mb-1 text-xs font-medium text-gray-600">Assign to:</p>
-											<div class="flex flex-wrap gap-1">
-												{#each data.members as member (member.id)}
-													{@const alreadyAssigned = card.assignees?.some(a => a.user.id === member.id)}
-													{#if !alreadyAssigned}
-														<button
-															onclick={(e) => { e.stopPropagation(); assignUser(card.id, member.id); }}
-															class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 hover:bg-indigo-100 hover:text-indigo-700"
-														>
-															{member.name || '👤'}
-														</button>
-													{:else}
-														<span class="rounded bg-indigo-100 px-2 py-1 text-xs text-indigo-400">
-															{member.name || '👤'} ✓
-														</span>
-													{/if}
-												{/each}
-											</div>
-											{#if data.members.length === 0}
-												<p class="text-xs text-gray-400">No project members available. Add members to the project.</p>
-											{/if}
-											<div class="mt-2 flex justify-end">
-												<button
-													onclick={(e) => { e.stopPropagation(); assigningCardId = null; }}
-													class="text-xs text-gray-500 hover:text-gray-700"
-												>Close</button>
-											</div>
-										</div>
-									{/if}
-								{#if assigningLabelCardId === card.id}
-									<div class="mt-2 rounded border border-gray-200 bg-white p-2 shadow-sm">
-										<p class="mb-1 text-xs font-medium text-gray-600">Labels:</p>
-										<div class="flex flex-wrap gap-1">
-											{#each data.labels as label (label.id)}
-												{@const alreadyAssigned = card.labels?.some((cl: { labelId: string }) => cl.labelId === label.id)}
-												<button
-													onclick={(e: MouseEvent) => {
-														e.stopPropagation();
-														if (alreadyAssigned) {
-															const cl = card.labels?.find((l: { labelId: string }) => l.labelId === label.id);
-															if (cl) removeCardLabel(cl.id);
-														} else {
-															assignLabel(card.id, label.id);
-														}
-													}}
-													class="rounded px-2 py-1 text-xs text-white transition-opacity hover:opacity-80"
-													style="background-color: {label.color}; {alreadyAssigned ? 'outline: 2px solid #374151; outline-offset: 1px;' : 'opacity: 0.7;'}"
-												>
-													{label.name} {alreadyAssigned ? '✓' : '+'}
-												</button>
-											{/each}
-										</div>
-										{#if data.labels.length === 0}
-											<p class="text-xs text-gray-400">No labels defined. Create some in the board's label manager.</p>
-										{/if}
-										<div class="mt-2 flex justify-end">
-											<button
-												onclick={(e) => { e.stopPropagation(); assigningLabelCardId = null; }}
-												class="text-xs text-gray-500 hover:text-gray-700"
-											>Close</button>
-										</div>
-									</div>
-								{/if}
 
 									<!-- Archived cards section -->
 	<div class="mt-8 border-t border-gray-200 pt-4">

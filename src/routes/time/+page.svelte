@@ -224,7 +224,7 @@
 		<div class="flex justify-end">
 			<button
 				form="create"
-				{...createTimeclock.fields.projectId.as("submit", data.activeProject.id)}
+				{...createTimeclock.fields.projectId.as("submit", data.activeProject?.id ?? '')}
 				class="button solid"
 			>
 				+ New Entry

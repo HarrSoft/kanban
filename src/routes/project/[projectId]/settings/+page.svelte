@@ -115,7 +115,7 @@
 							<select
 								name="role"
 								class="rounded-md border border-zinc-600 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 focus:border-blue-500 focus:outline-none"
-								onchange="this.form.requestSubmit()"
+								onchange={(e) => (e.target as HTMLSelectElement).form?.requestSubmit()}
 							>
 								<option value="admin" selected={member.role === 'admin'}>Admin</option>
 								<option value="contributor" selected={member.role === 'contributor'}>Contributor</option>

@@ -8,11 +8,11 @@ import type { ProjectId, Timeclock, UserId } from "$types";
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const session = locals?.session;
-	if (!session?.user?.id) {
+	if (!session?.userId) {
 		redirect(302, "/login");
 	}
 
-	const userId = session.user.id as UserId;
+	const userId = session.userId as UserId;
 
 	// Get the user's active project (first project they're a member of)
 	const membership = await db.query.projectMembers.findFirst({

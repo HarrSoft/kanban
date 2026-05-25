@@ -59,7 +59,9 @@ export async function load(event) {
 
 	const memberCountMap: Record<string, number> = {};
 	for (const row of memberCounts) {
-		memberCountMap[row.projectId] = row.count;
+		if (row.projectId) {
+			memberCountMap[row.projectId] = row.count;
+		}
 	}
 
 	// Get active project from cookie
