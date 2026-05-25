@@ -146,6 +146,28 @@
 			</section>
 		{/if}
 
+		<!-- Recent Time Entries -->
+		{#if data.recentTimeEntries.length > 0}
+			<section>
+				<h2 class="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+					Recent Time Entries
+				</h2>
+				<div class="mt-3 flex flex-col gap-1">
+					{#each data.recentTimeEntries as entry (entry.id)}
+						<div class="flex items-center justify-between rounded-md bg-zinc-800/40 px-4 py-2.5">
+							<div class="flex items-center gap-3">
+								<span class="text-sm font-medium">{entry.projectName}</span>
+								<span class="text-xs text-zinc-500">{df.format(df.fromUnixTime(entry.start), "HH:mm")}</span>
+							</div>
+							<span class="tablenums text-sm text-zinc-400">
+								{formatDuration(entry.duration)}
+							</span>
+						</div>
+					{/each}
+				</div>
+			</section>
+		{/if}
+
 		<!-- All Projects -->
 		<section>
 			<div class="flex items-center justify-between">
