@@ -15,6 +15,7 @@ describe("Timeclock schema", () => {
 		start: 1700000000,
 		duration: 3600,
 		locked: false,
+		createdAt: 1700000000,
 	};
 
 	it("accepts a valid unlocked timeclock", () => {
