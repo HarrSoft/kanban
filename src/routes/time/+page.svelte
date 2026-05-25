@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as df from "date-fns";
 	import { onDestroy } from "svelte";
-	// import { resolve } from "$app/paths";  // not needed
+	import type { PageData } from "./$types";
 	import {
 		EditIcon,
 		LockIcon,
@@ -12,31 +12,13 @@
 	import {
 		createTimeclock,
 		deleteTimeclock,
-		getActiveProject,
-		getTimeclock,
-		listMyTimeclocks,
 		pingClock,
 	} from "$lib/remote";
 	import type { Seconds, Timeclock, Unix } from "$types";
 
-	//////////////////
-	// Loading Data //
-	//////////////////
+	let { data }: { data: PageData } = $props();
 
-	const activeProject = await getActiveProject();
-	const timeclocks = await getActiveProject()
-		.then(ap => {
-			if (ap) {
-				return listMyTimeclocks({
-					projectId: ap.id,
-				});
-			} else {
-				return [];
-			}
-		})
-		.then(ids => Promise.all(ids.map(getTimeclock)));
-
-	/////////////////////
+	//////////////////
 	// Clock Mechanism //
 	/////////////////////
 
@@ -50,6 +32,7 @@
 		updateTimer: ReturnType<typeof setInterval>;
 	}
 	let active: ClockState | null = $state(null);
+	let timeclocks: Timeclock[] = $state(data.timeclocks as Timeclock[]);
 
 	const stopClock = async () => {
 		if (active) {
@@ -58,7 +41,7 @@
 			clearInterval(state.displayTimer);
 			clearInterval(state.updateTimer);
 
-			pingClock({
+			await pingClock({
 				timeclockId: state.clock.id,
 				newDuration: getNewDuration(),
 			});
@@ -70,18 +53,15 @@
 			stopClock();
 		}
 
-		// this timer updates the duration display every fifth of a second
 		const displayTimer = setInterval(() => {
 			if (active) {
 				active.displayDuration = getNewDuration();
 			}
 		}, 200);
 
-		// this timer saves the timer to the server every minute
 		const updateTimer = setInterval(() => {
 			if (active) {
 				const newDuration = getNewDuration();
-
 				pingClock({
 					timeclockId: active.clock.id,
 					newDuration,
@@ -98,7 +78,6 @@
 		};
 	};
 
-	// defensive coding is good
 	onDestroy(() => {
 		if (active) {
 			clearInterval(active.displayTimer);
@@ -106,122 +85,150 @@
 		}
 	});
 
-	/////////////
-	// Helpers //
-	/////////////
-
 	const getNewDuration = () => {
 		if (active) {
 			const now = df.getUnixTime(new Date());
 			const diff = now - active.lastUpdate;
-			const newDuration = active.clock.duration + diff;
-			return newDuration;
-		} else {
-			return 0;
+			return active.clock.duration + diff;
 		}
+		return 0;
 	};
 
 	const formatDuration = (duration: Seconds) => {
 		const hours = Math.floor(duration / 3600);
 		const minutes = Math.floor((duration % 3600) / 60);
-		const seconds = duration % 60;
-		let fmt = [
-			hours || [],
-			(minutes + "").padStart(2, "0"),
-			(seconds + "").padStart(2, "0"),
-		]
-			.flat()
+		const secs = duration % 60;
+		return [hours > 0 ? hours : null, (minutes + "").padStart(2, "0"), (secs + "").padStart(2, "0")]
+			.filter((x) => x !== null)
 			.join(":");
+	};
 
-		return fmt;
+	const formatDurationLong = (duration: Seconds) => {
+		const hours = Math.floor(duration / 3600);
+		const minutes = Math.floor((duration % 3600) / 60);
+		if (hours > 0) return `${hours}h ${minutes}m`;
+		return `${minutes}m`;
 	};
 </script>
 
-{#if !activeProject}
-	<span class="text-red-500">Error: Select a project</span>
-{/if}
+<div class="space-y-6">
+	<!-- Header -->
+	<div class="flex items-center justify-between">
+		<h1 class="text-2xl font-bold">Time Tracking</h1>
+		{#if data.activeProject}
+			<span class="text-sm text-muted-foreground">
+				Project: <span class="font-semibold">{data.activeProject.name}</span>
+			</span>
+		{/if}
+	</div>
 
-<form id="create" {...createTimeclock}></form>
-<form id="delete" {...deleteTimeclock}></form>
+	<!-- Summary Cards -->
+	<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+		<div class="card p-4 rounded-lg shadow-sm border border-border">
+			<div class="text-sm text-muted-foreground">Today</div>
+			<div class="text-2xl font-bold">
+				{formatDurationLong(data.totalDurationToday)}
+			</div>
+		</div>
+		<div class="card p-4 rounded-lg shadow-sm border border-border">
+			<div class="text-sm text-muted-foreground">This Week (7 days)</div>
+			<div class="text-2xl font-bold">
+				{formatDurationLong(data.totalDurationThisWeek)}
+			</div>
+		</div>
+		<div class="card p-4 rounded-lg shadow-sm border border-border">
+			<div class="text-sm text-muted-foreground">Total Entries</div>
+			<div class="text-2xl font-bold">{data.timeclocks.length}</div>
+		</div>
+	</div>
 
-<span class="text-xl font-bold text-red-500">
-	don't expect these to work yet lol
-</span>
+	{#if !data.activeProject}
+		<div class="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground">
+			<p class="text-lg">No project selected.</p>
+			<p class="text-sm mt-1">Join or create a project to start tracking time.</p>
+		</div>
+	{:else}
+		<form id="create" {...createTimeclock}></form>
+		<form id="delete" {...deleteTimeclock}></form>
 
-<!-- List of Timeclocks -->
-<table class="table-auto">
-	<thead>
-		<tr>
-			<td colspan="3" class="text-xl font-bold">Timeclocks</td>
-			<td class="text-right">
-				{#if activeProject}
-					<button
-						form="create"
-						{...createTimeclock.fields.projectId.as("submit", activeProject.id)}
-						class="button solid p-0! px-1!"
-					>
-						+ New
-					</button>
-				{/if}
-			</td>
-		</tr>
+		<!-- Timeclock Table -->
+		<div class="rounded-lg border border-border overflow-hidden">
+			<table class="table-auto w-full">
+				<thead>
+					<tr class="bg-muted/50">
+						<th class="text-left px-4 py-2 font-semibold text-sm">Date</th>
+						<th class="text-left px-4 py-2 font-semibold text-sm">Start Time</th>
+						<th class="text-left px-4 py-2 font-semibold text-sm">Duration</th>
+						<th class="text-right px-4 py-2 font-semibold text-sm">Actions</th>
+					</tr>
+				</thead>
 
-		<tr class="bg-shadow">
-			<th>Date</th>
-			<th>Start Time</th>
-			<th>Duration</th>
-			<th>&nbsp;</th>
-		</tr>
-	</thead>
-
-	<tbody class="*:even:bg-shadow">
-		{#each timeclocks as clock (clock.id)}
-			{@const start = df.fromUnixTime(clock.start)}
-			{@const iAmActive = active?.clock.id === clock.id}
-			<tr class={["*:px-4 *:py-1", iAmActive ? "border-2 border-accent" : []]}>
-				<!-- Date -->
-				<td>{df.format(start, "d MMM, y")}</td>
-				<!-- Start time -->
-				<td>{df.format(start, "h:mm b")}</td>
-				<!-- Duration -->
-				<td>
-					{#if iAmActive}
-						{formatDuration(active!.displayDuration)}
+				<tbody class="*:even:bg-muted/20">
+					{#each timeclocks as clock (clock.id)}
+						{@const start = df.fromUnixTime(clock.start)}
+						{@const iAmActive = active?.clock.id === clock.id}
+						<tr class={["*:px-4 *:py-2", iAmActive ? "border-2 border-accent bg-accent/5" : "border-t border-border"]}>
+							<td>{df.format(start, "d MMM, y")}</td>
+							<td>{df.format(start, "h:mm b")}</td>
+							<td>
+								{#if iAmActive}
+									<span class="font-mono tabular-nums">{formatDuration(active!.displayDuration)}</span>
+								{:else}
+									<span class="font-mono tabular-nums">{formatDuration(clock.duration)}</span>
+								{/if}
+								{#if clock.locked}
+									<LockIcon className="inline h-4 ml-1 text-muted-foreground" />
+								{/if}
+							</td>
+							<td class="text-right">
+								<div class="flex justify-end gap-2">
+									{#if !clock.locked}
+										{#if iAmActive}
+											<button onclick={stopClock} class="button solid p-1" title="Stop">
+												<PauseIcon className="h-4" />
+											</button>
+										{:else}
+											<button onclick={startClock(clock)} class="button solid p-1" title="Start">
+												<PlayIcon className="h-4" />
+											</button>
+										{/if}
+										<a href={`/time/${clock.id}`} class="button solid p-1" title="Edit">
+											<EditIcon className="h-4" />
+										</a>
+										<button
+											form="delete"
+											{...deleteTimeclock.fields.timeclockId.as("submit", clock.id)}
+											class="button solid p-1 text-red-500"
+											title="Delete"
+										>
+											<TrashIcon className="h-4" />
+										</button>
+									{:else}
+										<span class="text-xs text-muted-foreground">Locked</span>
+									{/if}
+								</div>
+							</td>
+						</tr>
 					{:else}
-						{formatDuration(clock.duration)}
-					{/if}
-				</td>
-				<!-- Actions -->
-				<td class="flex gap-3">
-					{#if clock.locked}
-						<LockIcon />
-					{:else}
-						<!-- Start/Stop -->
-						{#if iAmActive}
-							<button onclick={stopClock}>
-								<PauseIcon className="h-5" />
-							</button>
-						{:else}
-							<button onclick={startClock(clock)}>
-								<PlayIcon className="h-5" />
-							</button>
-						{/if}
-						<!-- Edit button -->
-						<a href={`/time/${clock.id}`}>
-							<EditIcon className="h-6" />
-						</a>
-						<!-- Delete button -->
-						<button
-							form="delete"
-							{...deleteTimeclock.fields.timeclockId.as("submit", clock.id)}
-						>
-							<TrashIcon className="text-red-500" />
-						</button>
-					{/if}
-				</td>
-			</tr>
-		{:else}
-			<tr><td colspan="4">No timeclocks exist in the selected range</td></tr>
-		{/each}
-	</tbody>
-</table>
+						<tr>
+							<td colspan="4" class="text-center py-8 text-muted-foreground">
+								No time entries yet. Click "+ New" to start tracking.
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+
+		<!-- New Time Entry Button -->
+		<div class="flex justify-end">
+			<button
+				form="create"
+				{...createTimeclock.fields.projectId.as("submit", data.activeProject.id)}
+				class="button solid"
+			>
+				+ New Entry
+			</button>
+		</div>
+	{/if}
+</div>
