@@ -11,29 +11,29 @@ import { CardId } from "$types/ids";
  * Returns the last 50 activity entries for a card, with user info.
  */
 export const GET: RequestHandler = async ({ params }) => {
-	let cardId: string;
 	try {
-		cardId = v.parse(CardId, params.cardId);
-	} catch {
-		return json({ error: "Invalid cardId format" }, { status: 400 });
+		const cardId = v.parse(CardId, params.cardId);
+
+		const activities = await db
+			.select({
+				id: cardActivity.id,
+				cardId: cardActivity.cardId,
+				userId: cardActivity.userId,
+				activityType: cardActivity.activityType,
+				metadata: cardActivity.metadata,
+				actedAt: cardActivity.actedAt,
+				userName: users.name,
+				userImageUrl: users.imageUrl,
+			})
+			.from(cardActivity)
+			.leftJoin(users, eq(users.id, cardActivity.userId))
+			.where(eq(cardActivity.cardId, cardId))
+			.orderBy(desc(cardActivity.actedAt))
+			.limit(50);
+
+		return json(activities);
+	} catch (e) {
+		console.error("[Activity API] Error fetching card activity:", e);
+		return json({ error: "Failed to fetch activity" }, { status: 500 });
 	}
-
-	const activities = await db
-		.select({
-			id: cardActivity.id,
-			cardId: cardActivity.cardId,
-			userId: cardActivity.userId,
-			activityType: cardActivity.activityType,
-			metadata: cardActivity.metadata,
-			actedAt: cardActivity.actedAt,
-			userName: users.name,
-			userImageUrl: users.imageUrl,
-		})
-		.from(cardActivity)
-		.leftJoin(users, eq(users.id, cardActivity.userId))
-		.where(eq(cardActivity.cardId, cardId))
-		.orderBy(desc(cardActivity.actedAt))
-		.limit(50);
-
-	return json(activities);
 };
