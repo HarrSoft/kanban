@@ -53,6 +53,56 @@
 	// Assignee state
 	let assigningCardId: CardId | null = null;
 
+	// Activity state
+	let viewingActivity: Record<string, boolean> = {};
+	let activityData: Record<string, Array<{
+		id: string;
+		activityType: string;
+		userName: string | null;
+		userImageUrl: string | null;
+		actedAt: number;
+		metadata: Record<string, unknown>;
+	}>> = {};
+
+	const activityLabels: Record<string, string> = {
+		card_created: "Created",
+		card_content_updated: "Updated content",
+		card_moved: "Moved to column",
+		card_archived: "Archived",
+		card_unarchived: "Restored",
+		card_deleted: "Deleted",
+		card_due_date_set: "Set due date",
+		card_due_date_cleared: "Cleared due date",
+		card_assignee_added: "Assignee added",
+		card_assignee_removed: "Assignee removed",
+		card_label_added: "Label added",
+		card_label_removed: "Label removed",
+	};
+
+	async function toggleActivity(cardId: CardId) {
+		if (viewingActivity[cardId]) {
+			viewingActivity = { ...viewingActivity, [cardId]: false };
+			return;
+		}
+		// Fetch activity if not cached
+		if (!activityData[cardId]) {
+			try {
+				const response = await fetch(`/api/kanban/cards/${cardId}/activity`);
+				if (response.ok) {
+					const data = await response.json();
+					activityData = { ...activityData, [cardId]: data };
+				}
+			} catch {
+				// fail silently
+			}
+		}
+		viewingActivity = { ...viewingActivity, [cardId]: true };
+	}
+
+	function formatActivityType(type: string): string {
+		return activityLabels[type] || type.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+	}
+
 	// Label state
 	let showLabelManager = false;
 	let newLabelName = "";
@@ -191,7 +241,12 @@
 		);
 	}
 
-	let columns = transformColumns();
+	let columns = $state(transformColumns());
+	$effect(() => {
+		// Re-initialize when data changes
+		const _ = data;
+		columns = transformColumns();
+	});
 
 	// Card search/filter
 	let searchQuery = "";
@@ -234,11 +289,7 @@
 					card.content.toLowerCase().includes(searchQuery.toLowerCase())
 			  )
 			: col.items,
-	}));
-
-	$: if (data) {
-		columns = transformColumns();
-	}
+	})));
 
 	const flipDurationMs = 200;
 
@@ -1100,6 +1151,37 @@
 											{/if}
 										</div>
 									{/if}
+									<!-- Activity toggle and panel -->
+									<div class="mt-1">
+										<button
+											onclick={() => toggleActivity(card.id)}
+											class="text-xs text-gray-500 hover:text-indigo-600"
+											type="button"
+										>
+											{viewingActivity[card.id] ? "▲" : "▼"} Activity
+										</button>
+										{#if viewingActivity[card.id]}
+											<div class="mt-1 max-h-32 overflow-y-auto rounded border border-gray-200 bg-gray-50 p-2 text-xs">
+												{#if activityData[card.id] && activityData[card.id].length > 0}
+													{#each activityData[card.id] as entry (entry.id)}
+														<div class="mb-1 flex items-start gap-1.5">
+															<span class="min-w-0 shrink-0 rounded bg-indigo-100 px-1 py-0.5 text-[10px] font-medium text-indigo-700">
+																{formatActivityType(entry.activityType)}
+															</span>
+															<span class="text-gray-500">
+																{entry.userName ?? "system"}
+															</span>
+															<span class="ml-auto shrink-0 text-gray-400">
+																{formatRelativeTime(entry.actedAt)}
+															</span>
+														</div>
+													{/each}
+												{:else}
+													<span class="text-gray-400 italic">No activity recorded yet</span>
+												{/if}
+											</div>
+										{/if}
+									</div>
 								{/if}
 							</div>
 						{/each}
