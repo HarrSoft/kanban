@@ -84,6 +84,18 @@
       "when": 1779751445286,
       "tag": "0011_thick_shocker",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1748285580,
+      "tag": "0012_black_uma",
+      "breakpoints": [
+        {
+          "path": "0012_black_uma.sql",
+          "breakpoint": true
+        }
+      ]
     }
   ],
   "version": "7"

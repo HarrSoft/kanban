@@ -23,6 +23,7 @@ export const cardActivityType = t.pgEnum("card_activity_type", [
 	"card_assignee_removed",
 	"card_label_added",
 	"card_label_removed",
+	"card_description_updated",
 ]);
 
 export const cardActivity = t.pgTable("card_activity", {

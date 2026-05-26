@@ -18,6 +18,7 @@ export interface Card {
 	id: CardId;
 	columnId: ColumnId;
 	content: string;
+	description: string | null;
 	order: number;
 	dueDate: number | null;
 	archived: boolean;

@@ -267,6 +267,21 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	updateCardDescription: async ({ request }) => {
+		const data = await request.formData();
+		const cardId = data.get("cardId") as CardId;
+		const description = (data.get("description") as string | null) ?? null;
+		const userId = (data.get("userId") as UserId | null) ?? null;
+
+		if (!cardId) return { error: "Card ID is required" };
+
+		await db.update(cards).set({ description }).where(eq(cards.id, cardId));
+
+		logCardActivity(cardId, "card_description_updated", { userId: userId as UserId | null });
+
+		return { success: true };
+	},
+
 	deleteBoard: async ({ params }) => {
 		const boardId = params.id as BoardId;
 

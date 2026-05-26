@@ -191,6 +191,45 @@
 	let loadingArchived = false;
 	let expandedCards: Record<string, boolean> = {};
 
+	// Card description editing state
+	let editingCardDesc: CardId | null = null;
+	let editingCardDescText: string = "";
+
+	function startEditDesc(cardId: CardId, description: string | null) {
+		editingCardDesc = cardId;
+		editingCardDescText = description || "";
+	}
+
+	function cancelEditDesc() {
+		editingCardDesc = null;
+		editingCardDescText = "";
+	}
+
+	async function saveCardDescription(cardId: CardId) {
+		const formData = new FormData();
+		formData.append("cardId", cardId);
+		formData.append("description", editingCardDescText);
+
+		const response = await fetch("?/updateCardDescription", {
+			method: "POST",
+			body: formData,
+		});
+
+		if (response.ok) {
+			const result = await response.json();
+			if (!result.error) {
+				editingCardDesc = null;
+				// Update local state
+				columns = columns.map(col => ({
+					...col,
+					items: col.items.map(c =>
+						c.id === cardId ? { ...c, description: editingCardDescText || null } : c
+					)
+				}));
+			}
+		}
+	}
+
 	function toggleExpanded(cardId: CardId) {
 		expandedCards[cardId] = !expandedCards[cardId];
 		expandedCards = { ...expandedCards };
@@ -1093,6 +1132,35 @@
 											>... more</button>
 										{/if}
 									</div>
+									<!-- Card Description -->
+									{#if editingCardDesc === card.id}
+										<div class="mt-2 rounded border border-indigo-200 bg-indigo-50 p-2">
+											<textarea
+												bind:value={editingCardDescText}
+												class="mb-2 min-h-[60px] w-full rounded border border-indigo-300 p-2 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+												placeholder="Add a description..."
+											></textarea>
+											<div class="flex gap-1">
+												<button
+													onclick={() => saveCardDescription(card.id)}
+													class="rounded bg-indigo-600 px-2 py-0.5 text-xs text-white hover:bg-indigo-700"
+												>Save</button>
+												<button
+													onclick={cancelEditDesc}
+													class="rounded bg-gray-300 px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-400"
+												>Cancel</button>
+											</div>
+										</div>
+									{:else if card.description}
+										<div class="mt-1.5 cursor-pointer text-xs text-gray-500 italic hover:text-indigo-600"
+											onclick={() => startEditDesc(card.id, card.description)}
+										>📝 {card.description}</div>
+									{:else}
+										<button
+											onclick={() => startEditDesc(card.id, null)}
+											class="mt-1 cursor-pointer text-xs text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-indigo-600"
+										>+ Description</button>
+									{/if}
 									<!-- Labels -->
 									{#if card.labels && card.labels.length > 0}
 										<div class="mt-1.5 flex flex-wrap gap-1">

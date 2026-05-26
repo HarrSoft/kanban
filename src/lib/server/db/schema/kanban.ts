@@ -39,6 +39,7 @@ export const cards = t.pgTable("cards", {
 		.references(() => columns.id, { onDelete: "cascade" })
 		.$type<ColumnId>(),
 	content: t.text("content").notNull(),
+	description: t.text("description"),
 	order: t.integer("order").notNull().default(0),
 	dueDate: unix("due_date"),
 	archived: t.boolean("archived").notNull().default(false),
