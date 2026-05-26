@@ -250,8 +250,9 @@ async function main() {
 	const data = parseQuests(questsPath);
 	console.error(`  → ${data.domains.length} domains, ${data.domains.reduce((s, d) => s + d.boards.length, 0)} boards`);
 
+	const projectId = resolveProjectId();
+
 	if (!apply) {
-		// Print parsed JSON
 		console.log(JSON.stringify(data, null, 2));
 		console.error("\nTip: Use --apply to create boards in kanban, or --dry-run to preview API calls.");
 		return;
@@ -261,15 +262,19 @@ async function main() {
 
 	for (const p of payloads) {
 		if (dryRun) {
-			console.log(`[DRY RUN] Would create board "${p.name}" with ${p.cards.length} cards`);
+			console.log(`[DRY RUN] Would create board "${p.name}" in project ${projectId} with ${p.cards.length} cards`);
 			continue;
 		}
 		console.error(`Creating board: ${p.name}...`);
 		try {
 			const res = await fetch("http://localhost:5173/api/kanban/boards", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					"Authorization": `Bearer ${resolveApiKey()}`,
+				},
 				body: JSON.stringify({
+					projectId,
 					name: p.name,
 					description: p.description,
 					columns: p.columns,
@@ -281,13 +286,28 @@ async function main() {
 				console.error(`  ✗ ${res.status}: ${text}`);
 			} else {
 				const result = await res.json();
-				console.error(`  ✓ Created: ${result.id || "unknown"}`);
+				const name = result.board?.name ?? "unknown";
+				const id = result.board?.id ?? "unknown";
+				console.error(`  ✓ Board created: ${name} (id: ${id})`);
 			}
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : String(err);
 			console.error(`  ✗ Failed: ${msg}`);
 		}
 	}
+}
+
+function resolveProjectId(): string {
+	if (process.env.KANBAN_PROJECT_ID) return process.env.KANBAN_PROJECT_ID;
+	if (process.env.PROJECT_ID) return process.env.PROJECT_ID;
+	return "ccfnvx9jlkfnwmax9un58fda";
+}
+
+function resolveApiKey(): string {
+	if (process.env.KANBAN_API_KEY) return process.env.KANBAN_API_KEY;
+	if (process.env.API_KEY) return process.env.API_KEY;
+	console.error("⚠ KANBAN_API_KEY not set. Source: source ~/.openclaw/credentials/kanban-agent.sh");
+	return "";
 }
 
 main().catch((err: unknown) => {
