@@ -272,6 +272,7 @@ async function main() {
 				body: JSON.stringify({
 					name: p.name,
 					description: p.description,
+					columns: p.columns,
 					cardTitles: p.cards.map((c) => c.title),
 				}),
 			});
