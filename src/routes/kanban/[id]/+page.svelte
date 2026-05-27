@@ -291,6 +291,24 @@
 	let searchQuery = "";
 	let searchInput: HTMLInputElement | undefined = $state();
 
+	// Label filter — set of selected label IDs
+	let labelFilter: Set<string> = $state(new Set());
+
+	function toggleLabelFilter(labelId: string) {
+		const next = new Set(labelFilter);
+		if (next.has(labelId)) {
+			next.delete(labelId);
+		} else {
+			next.add(labelId);
+		}
+		labelFilter = next;
+	}
+
+	function clearFilters() {
+		searchQuery = "";
+		labelFilter = new Set();
+	}
+
 	// Keyboard shortcuts
 	function handleKeydown(e: KeyboardEvent) {
 		// Don't intercept when typing in an input/textarea or inside Quill
@@ -316,18 +334,28 @@
 				}
 				break;
 			case "Escape":
-				searchQuery = "";
+				clearFilters();
 				searchInput?.blur();
 				break;
 		}
 	}
 	let filteredColumns = $derived(columns.map(col => ({
 		...col,
-		items: searchQuery
-			? col.items.filter(card =>
-					card.content.toLowerCase().includes(searchQuery.toLowerCase())
-			  )
-			: col.items,
+		items: col.items.filter(card => {
+			// Text search filter
+			if (searchQuery && !card.content.toLowerCase().includes(searchQuery.toLowerCase())) {
+				return false;
+			}
+			// Label filter
+			if (labelFilter.size > 0) {
+				const cardLabelIds = new Set((card.labels ?? []).map(cl => cl.label.id));
+				for (const lid of labelFilter) {
+					if (cardLabelIds.has(lid)) return true;
+				}
+				return false;
+			}
+			return true;
+		}),
 	})));
 
 	const flipDurationMs = 200;
@@ -758,7 +786,7 @@
 
 <div class="max-w-full p-8" onkeydown={handleKeydown}>
 	<!-- Card search/filter bar -->
-	<div class="mb-4">
+	<div class="mb-4 flex flex-wrap items-center gap-2">
 		<input
 			type="search"
 			bind:value={searchQuery}
@@ -766,11 +794,29 @@
 			placeholder="🔍 Search cards across all columns…  (press / to focus)"
 			class="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
 		/>
-		{#if searchQuery}
-			<span class="ml-2 text-xs text-gray-400">
-				Filtering by "{searchQuery}"
-				<button onclick={() => (searchQuery = "")} class="ml-1 text-indigo-600 hover:text-indigo-800">✕</button>
-			</span>
+		{#if searchQuery || labelFilter.size > 0}
+			<div class="flex flex-wrap items-center gap-1.5">
+				{#if searchQuery}
+					<span class="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">
+						🔍 "{searchQuery}"
+						<button onclick={() => (searchQuery = "")} class="hover:text-indigo-900">✕</button>
+					</span>
+				{/if}
+				{#each data.labels as label (label.id)}
+					{#if labelFilter.has(label.id)}
+						<span
+							class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs text-white cursor-pointer hover:opacity-80"
+							style="background-color: {label.color};"
+							onclick={() => toggleLabelFilter(label.id)}
+							title="Remove filter"
+						>
+							{label.name}
+							<span class="text-white/80 hover:text-white">✕</span>
+						</span>
+					{/if}
+				{/each}
+				<button onclick={clearFilters} class="text-xs text-gray-400 hover:text-gray-600">Clear all</button>
+			</div>
 		{/if}
 	</div>
 
@@ -1166,9 +1212,10 @@
 										<div class="mt-1.5 flex flex-wrap gap-1">
 											{#each card.labels as cl (cl.id)}
 												<span
-													class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs text-white"
+													class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs text-white cursor-pointer {labelFilter.has(cl.label.id) ? 'ring-2 ring-offset-1 ring-gray-800' : 'hover:opacity-80'}"
 													style="background-color: {cl.label.color}"
-													title={cl.label.name}
+													title={labelFilter.has(cl.label.id) ? 'Click to remove filter' : 'Click to filter by this label'}
+													onclick={(e) => { e.stopPropagation(); toggleLabelFilter(cl.label.id); }}
 												>
 													{cl.label.name}
 													<button
