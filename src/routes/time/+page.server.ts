@@ -1,12 +1,12 @@
 import db from "$db";
-import { projectMembers } from "$db/schema";
+import { projectMembers, projects } from "$db/schema";
 import { timeclocks } from "$db/schema/timeclocks";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 import type { ProjectId, Timeclock, UserId } from "$types";
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const session = locals?.session;
 	if (!session?.userId) {
 		redirect(302, "/login");
@@ -14,30 +14,39 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const userId = session.userId as UserId;
 
-	// Get the user's active project (first project they're a member of)
-	const membership = await db.query.projectMembers.findFirst({
+	// Get all projects the user is a member of
+	const memberships = await db.query.projectMembers.findMany({
 		where: eq(projectMembers.userId, userId),
 		with: {
 			project: true,
 		},
 	});
 
-	if (!membership) {
+	const userProjects = memberships.map(m => m.project);
+
+	if (userProjects.length === 0) {
 		return {
-			activeProject: null,
+			userProjects: [],
+			selectedProjectId: null,
 			timeclocks: [],
 			totalDurationToday: 0,
 			totalDurationThisWeek: 0,
 		};
 	}
 
-	const activeProject = membership.project;
+	// Determine which project to show
+	const projectParam = url.searchParams.get("project");
+	const selectedProjectId = (projectParam && userProjects.some(p => p.id === projectParam))
+		? (projectParam as ProjectId)
+		: (userProjects[0].id as ProjectId);
 
-	// Fetch user's timeclocks for this project
+	const selectedProject = userProjects.find(p => p.id === selectedProjectId)!;
+
+	// Fetch user's timeclocks for the selected project
 	const userClocks = (await db.query.timeclocks.findMany({
 		where: and(
 			eq(timeclocks.userId, userId),
-			eq(timeclocks.projectId, activeProject.id as ProjectId),
+			eq(timeclocks.projectId, selectedProjectId),
 		),
 		orderBy: (clocks, { desc }) => [desc(clocks.start)],
 	})) as Timeclock[];
@@ -54,7 +63,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const totalDurationThisWeek = weekClocks.reduce((sum, c) => sum + c.duration, 0);
 
 	return {
-		activeProject,
+		userProjects,
+		selectedProjectId,
 		timeclocks: userClocks,
 		totalDurationToday,
 		totalDurationThisWeek,

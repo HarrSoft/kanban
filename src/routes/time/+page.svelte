@@ -1,6 +1,8 @@
 <script lang="ts">
 	import * as df from "date-fns";
 	import { onDestroy } from "svelte";
+	import { goto } from "$app/navigation";
+	import { page } from "$app/stores";
 	import type { PageData } from "./$types";
 	import {
 		EditIcon,
@@ -14,9 +16,19 @@
 		deleteTimeclock,
 		pingClock,
 	} from "$lib/remote";
-	import type { Seconds, Timeclock, Unix } from "$types";
+	import type { Project, Seconds, Timeclock, Unix } from "$types";
 
 	let { data }: { data: PageData } = $props();
+
+	let selectedProjectId = $state(data.selectedProjectId);
+	let timeclocks: Timeclock[] = $state(data.timeclocks as Timeclock[]);
+
+	function onProjectChange(event: Event) {
+		const target = event.target as HTMLSelectElement;
+		const newId = target.value;
+		selectedProjectId = newId;
+		goto(`/time?project=${newId}`, { replaceState: true });
+	}
 
 	//////////////////
 	// Clock Mechanism //
@@ -32,7 +44,6 @@
 		updateTimer: ReturnType<typeof setInterval>;
 	}
 	let active: ClockState | null = $state(null);
-	let timeclocks: Timeclock[] = $state(data.timeclocks as Timeclock[]);
 
 	const stopClock = async () => {
 		if (active) {
@@ -115,10 +126,20 @@
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<h1 class="text-2xl font-bold">Time Tracking</h1>
-		{#if data.activeProject}
-			<span class="text-sm text-muted-foreground">
-				Project: <span class="font-semibold">{data.activeProject.name}</span>
-			</span>
+		{#if data.userProjects.length > 0}
+			<div class="flex items-center gap-2">
+				<label for="project-select" class="text-sm text-muted-foreground sr-only">Project</label>
+				<select
+					id="project-select"
+					value={selectedProjectId}
+					onchange={onProjectChange}
+					class="rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent"
+				>
+					{#each data.userProjects as proj (proj.id)}
+						<option value={proj.id}>{proj.name}</option>
+					{/each}
+				</select>
+			</div>
 		{/if}
 	</div>
 
@@ -142,7 +163,7 @@
 		</div>
 	</div>
 
-	{#if !data.activeProject}
+	{#if data.userProjects.length === 0}
 		<div class="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground">
 			<p class="text-lg">No project selected.</p>
 			<p class="text-sm mt-1">Join or create a project to start tracking time.</p>
@@ -224,7 +245,7 @@
 		<div class="flex justify-end">
 			<button
 				form="create"
-				{...createTimeclock.fields.projectId.as("submit", data.activeProject?.id ?? '')}
+				{...createTimeclock.fields.projectId.as("submit", selectedProjectId ?? '')}
 				class="button solid"
 			>
 				+ New Entry
