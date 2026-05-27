@@ -3,7 +3,7 @@ import { relations } from "drizzle-orm";
 import { projects } from "./projects";
 import { users } from "./users";
 import { id, timestamps, unix } from "./util";
-import { BoardId, CardAssigneeId, CardId, ColumnId, LabelId, CardLabelId, ProjectId, UserId } from "../../../types"; // drizzle-kit can't handle path aliases
+import { BoardId, CardAssigneeId, CardCommentId, CardId, ColumnId, LabelId, CardLabelId, ProjectId, UserId } from "../../../types"; // drizzle-kit can't handle path aliases
 
 export const boards = t.pgTable("boards", {
 	id: id().primaryKey().$type<BoardId>(),
@@ -89,6 +89,33 @@ export const cardAssigneesRelations = relations(cardAssignees, ({ one }) => ({
 	}),
 }));
 
+export const cardComments = t.pgTable("card_comments", {
+	id: id().primaryKey().$type<CardCommentId>(),
+	cardId: t
+		.text("card_id")
+		.notNull()
+		.references(() => cards.id, { onDelete: "cascade" })
+		.$type<CardId>(),
+	authorId: t
+		.text("author_id")
+		.notNull()
+		.references(() => users.id)
+		.$type<UserId>(),
+	content: t.text("content").notNull(),
+	...timestamps,
+});
+
+export const cardCommentsRelations = relations(cardComments, ({ one }) => ({
+	card: one(cards, {
+		fields: [cardComments.cardId],
+		references: [cards.id],
+	}),
+	author: one(users, {
+		fields: [cardComments.authorId],
+		references: [users.id],
+	}),
+}));
+
 export const cardsRelations = relations(cards, ({ one, many }) => ({
 	column: one(columns, {
 		fields: [cards.columnId],
@@ -96,6 +123,7 @@ export const cardsRelations = relations(cards, ({ one, many }) => ({
 	}),
 	assignees: many(cardAssignees),
 	labels: many(cardLabels),
+	comments: many(cardComments),
 }));
 
 // Card labels/tags

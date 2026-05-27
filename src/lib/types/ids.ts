@@ -99,3 +99,10 @@ export const CardActivityId = v.pipe(
 	v.brand("CardActivityId"),
 );
 export type CardActivityId = v.InferOutput<typeof CardActivityId>;
+
+export const CardCommentId = v.pipe(
+	v.string(),
+	v.cuid2(),
+	v.brand("CardCommentId"),
+);
+export type CardCommentId = v.InferOutput<typeof CardCommentId>;

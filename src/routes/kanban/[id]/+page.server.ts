@@ -1,11 +1,12 @@
 import { error, fail } from "@sveltejs/kit";
 import db from "$db";
-import { boards, columns, cards, cardAssignees, cardLabels, labels, projectMembers, users } from "$db/schema";
+import { boards, columns, cards, cardAssignees, cardComments, cardLabels, labels, projectMembers, users } from "$db/schema";
 import { eq, asc, and, inArray } from "drizzle-orm";
 import type { PageServerLoad, Actions } from "./$types";
-import { BoardId, CardAssigneeId, CardId, CardLabelId, ColumnId, LabelId, UserId } from "$types/ids";
+import { BoardId, CardAssigneeId, CardCommentId, CardId, CardLabelId, ColumnId, LabelId, UserId } from "$types/ids";
 import type { BoardId as BoardIdType, LabelId as LabelIdType, CardId as CardIdType, UserId as UserIdType } from "$types";
 import { logCardActivity } from "$lib/server/actions/card-activity";
+import { unixNow } from "$db/schema/util";
 
 export const load: PageServerLoad = async ({ params }) => {
 	const boardId = params.id as BoardId;
@@ -626,5 +627,38 @@ export const actions: Actions = {
 		});
 
 		return { success: true };
+	},
+
+	addComment: async ({ request }) => {
+		const data = await request.formData();
+		const cardId = data.get("cardId") as CardId;
+		const content = data.get("content") as string;
+		const userId = (data.get("userId") as string | null) ?? null;
+
+		if (!cardId || !content?.trim()) {
+			return { error: "Card ID and content are required" };
+		}
+
+		// Verify card exists
+		const card = await db.query.cards.findFirst({
+			where: eq(cards.id, cardId),
+		});
+		if (!card) return { error: "Card not found" };
+
+		const [newComment] = await db
+			.insert(cardComments)
+			.values({
+				cardId,
+				authorId: userId as UserId,
+				content: content.trim(),
+			})
+			.returning();
+
+		await logCardActivity(cardId, "card_comment_added", {
+			userId: userId as UserId | null,
+			metadata: { commentId: newComment.id },
+		});
+
+		return { success: true, comment: newComment };
 	},
 };

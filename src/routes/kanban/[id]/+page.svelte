@@ -77,6 +77,7 @@
 		card_assignee_removed: "Assignee removed",
 		card_label_added: "Label added",
 		card_label_removed: "Label removed",
+		card_comment_added: "Comment added",
 	};
 
 	async function toggleActivity(cardId: CardId) {
@@ -101,6 +102,41 @@
 
 	function formatActivityType(type: string): string {
 		return activityLabels[type] || type.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+	}
+
+	// Comments state
+	let viewingComments: Record<string, boolean> = {};
+	let commentData: Record<string, Array<{
+		id: string;
+		content: string;
+		createdAt: number;
+		author: { id: string; name: string; avatar: string | null } | null;
+	}>> = {};
+	let commentCounts: Record<string, number> = {};
+
+	async function loadComments(cardId: CardId) {
+		try {
+			const response = await fetch(`/api/kanban/cards/${cardId}/comments`);
+			if (response.ok) {
+				const data = await response.json();
+				commentData = { ...commentData, [cardId]: data };
+				commentCounts = { ...commentCounts, [cardId]: data.length };
+			}
+		} catch {
+			// fail silently
+		}
+	}
+
+	async function toggleComments(cardId: CardId) {
+		if (viewingComments[cardId]) {
+			viewingComments = { ...viewingComments, [cardId]: false };
+			return;
+		}
+		// Fetch if not cached
+		if (!commentData[cardId]) {
+			await loadComments(cardId);
+		}
+		viewingComments = { ...viewingComments, [cardId]: true };
 	}
 
 	// Label state
@@ -1295,6 +1331,66 @@
 												{:else}
 													<span class="text-gray-400 italic">No activity recorded yet</span>
 												{/if}
+											</div>
+										{/if}
+									</div>
+
+									<!-- Comments toggle and panel -->
+									<div class="mt-1">
+										<button
+											onclick={() => toggleComments(card.id)}
+											class="text-xs text-gray-500 hover:text-indigo-600"
+											type="button"
+										>
+											{viewingComments[card.id] ? "▲" : "▼"} Comments
+											{#if commentCounts[card.id] > 0}
+												<span class="ml-1 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] text-gray-600">{commentCounts[card.id]}</span>
+											{/if}
+										</button>
+										{#if viewingComments[card.id]}
+											<div class="mt-1 max-h-48 overflow-y-auto rounded border border-gray-200 bg-white p-2 text-xs">
+												{#if commentData[card.id] && commentData[card.id].length > 0}
+													{#each commentData[card.id] as comment (comment.id)}
+														<div class="mb-2 rounded bg-gray-50 p-1.5">
+															<div class="flex items-center gap-1 text-gray-500">
+																<span class="font-medium text-gray-700">{comment.author?.name ?? "Unknown"}</span>
+																<span>{formatRelativeTime(comment.createdAt)}</span>
+															</div>
+															<div class="mt-0.5 text-gray-600">{comment.content}</div>
+														</div>
+													{/each}
+												{:else}
+													<p class="text-gray-400 italic">No comments yet</p>
+												{/if}
+												<!-- Add comment form -->
+												<form
+													method="POST"
+													action="?/addComment"
+													use:enhance={({ formData }) => {
+														formData.set("cardId", card.id);
+														formData.set("userId", data.user?.id ?? "");
+														return async ({ result }) => {
+															if (result.type === "success") {
+																const textarea = document.querySelector(`[data-comment-input="${card.id}"]`) as HTMLTextAreaElement;
+																if (textarea) textarea.value = "";
+																loadComments(card.id);
+															}
+														};
+													}}
+													class="mt-2 flex gap-1"
+												>
+													<textarea
+														data-comment-input={card.id}
+														name="content"
+														class="min-h-[32px] flex-1 resize-none rounded border border-gray-300 px-2 py-1 text-xs focus:border-indigo-500 focus:outline-none"
+														placeholder="Add a comment…"
+														rows="1"
+													></textarea>
+													<button
+														type="submit"
+														class="self-end rounded bg-indigo-600 px-2 py-1 text-xs text-white hover:bg-indigo-700"
+													>Post</button>
+												</form>
 											</div>
 										{/if}
 									</div>

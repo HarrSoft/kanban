@@ -96,6 +96,18 @@
           "breakpoint": true
         }
       ]
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1779909950334,
+      "tag": "0013_card_comments",
+      "breakpoints": [
+        {
+          "path": "0013_card_comments.sql",
+          "breakpoint": true
+        }
+      ]
     }
   ],
   "version": "7"
