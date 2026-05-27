@@ -1094,6 +1094,7 @@
 							<div
 								class="group relative cursor-move rounded-md border border-gray-200 bg-white p-3 shadow-sm"
 								class:editing={editingCardId === card.id}
+								style={card.labels && card.labels.length > 0 && card.labels[0]?.label?.color ? `border-left: 3px solid ${card.labels[0].label.color};` : ''}
 							>
 								{#if editingCardId === card.id}
 									<textarea
