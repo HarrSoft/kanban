@@ -4,7 +4,7 @@ import { boards, columns, cards, cardAssignees, cardComments, cardLabels, labels
 import { eq, asc, and, inArray } from "drizzle-orm";
 import type { PageServerLoad, Actions } from "./$types";
 import { BoardId, CardAssigneeId, CardCommentId, CardId, CardLabelId, ColumnId, LabelId, UserId } from "$types/ids";
-import type { BoardId as BoardIdType, LabelId as LabelIdType, CardId as CardIdType, UserId as UserIdType } from "$types";
+import type { BoardId as BoardIdType, CardCommentId as CardCommentIdType, LabelId as LabelIdType, CardId as CardIdType, UserId as UserIdType } from "$types";
 import { logCardActivity } from "$lib/server/actions/card-activity";
 import { unixNow } from "$db/schema/util";
 
@@ -660,5 +660,70 @@ export const actions: Actions = {
 		});
 
 		return { success: true, comment: newComment };
+	},
+
+	editComment: async ({ request }) => {
+		const data = await request.formData();
+		const commentId = data.get("commentId") as CardCommentId;
+		const content = data.get("content") as string;
+		const userId = (data.get("userId") as string | null) ?? null;
+
+		if (!commentId || !content?.trim()) {
+			return { error: "Comment ID and content are required" };
+		}
+
+		// Verify comment exists and check ownership
+		const comment = await db.query.cardComments.findFirst({
+			where: eq(cardComments.id, commentId as unknown as CardCommentIdType),
+		});
+
+		if (!comment) return { error: "Comment not found" };
+
+		if (userId && comment.authorId !== userId) {
+			return { error: "Only the comment author may edit this comment" };
+		}
+
+		const [updated] = await db
+			.update(cardComments)
+			.set({ content: content.trim() })
+			.where(eq(cardComments.id, commentId as unknown as CardCommentIdType))
+			.returning();
+
+		await logCardActivity(comment.cardId, "card_comment_edited", {
+			userId: userId as UserId | null,
+			metadata: { commentId: updated.id },
+		});
+
+		return { success: true, comment: updated };
+	},
+
+	deleteComment: async ({ request }) => {
+		const data = await request.formData();
+		const commentId = data.get("commentId") as CardCommentId;
+		const userId = (data.get("userId") as string | null) ?? null;
+
+		if (!commentId) {
+			return { error: "Comment ID is required" };
+		}
+
+		const comment = await db.query.cardComments.findFirst({
+			where: eq(cardComments.id, commentId as unknown as CardCommentIdType),
+		});
+
+		if (!comment) return { error: "Comment not found" };
+
+		if (userId && comment.authorId !== userId) {
+			return { error: "Only the comment author may delete this comment" };
+		}
+
+		await db
+			.delete(cardComments)
+			.where(eq(cardComments.id, commentId as unknown as CardCommentIdType));
+
+		await logCardActivity(comment.cardId, "card_comment_deleted", {
+			userId: userId as UserId | null,
+		});
+
+		return { success: true };
 	},
 };

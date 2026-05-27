@@ -113,6 +113,8 @@
 		author: { id: string; name: string; avatar: string | null } | null;
 	}>> = {};
 	let commentCounts: Record<string, number> = {};
+	let editingCommentId: Record<string, string | null> = {};
+	let editingCommentText: Record<string, string> = {};
 
 	async function loadComments(cardId: CardId) {
 		try {
@@ -137,6 +139,42 @@
 			await loadComments(cardId);
 		}
 		viewingComments = { ...viewingComments, [cardId]: true };
+	}
+
+	function startEditComment(commentId: string, content: string) {
+		editingCommentId = { ...editingCommentId, [commentId]: commentId };
+		editingCommentText = { ...editingCommentText, [commentId]: content };
+	}
+
+	function cancelEditComment(commentId: string) {
+		const updated = { ...editingCommentId };
+		delete updated[commentId];
+		editingCommentId = updated;
+	}
+
+	async function submitEditComment(cardId: CardId, commentId: string) {
+		const content = editingCommentText[commentId]?.trim();
+		if (!content) return;
+		const formData = new FormData();
+		formData.append("commentId", commentId);
+		formData.append("content", content);
+		formData.append("userId", data.user?.id ?? "");
+		const response = await fetch("?/editComment", { method: "POST", body: formData });
+		if (response.ok) {
+			cancelEditComment(commentId);
+			loadComments(cardId);
+		}
+	}
+
+	async function deleteCommentAction(cardId: CardId, commentId: string) {
+		if (!confirm("Delete this comment?")) return;
+		const formData = new FormData();
+		formData.append("commentId", commentId);
+		formData.append("userId", data.user?.id ?? "");
+		const response = await fetch("?/deleteComment", { method: "POST", body: formData });
+		if (response.ok) {
+			loadComments(cardId);
+		}
 	}
 
 	// Label state
@@ -1355,8 +1393,46 @@
 															<div class="flex items-center gap-1 text-gray-500">
 																<span class="font-medium text-gray-700">{comment.author?.name ?? "Unknown"}</span>
 																<span>{formatRelativeTime(comment.createdAt)}</span>
+																{#if comment.author?.id && comment.author.id === data.user?.id}
+																	<span class="ml-auto flex gap-1">
+																		<button
+																			onclick={() => startEditComment(comment.id, comment.content)}
+																			class="text-gray-400 hover:text-indigo-600"
+																			type="button"
+																			title="Edit comment"
+																		>✏️</button>
+																		<button
+																			onclick={() => deleteCommentAction(card.id, comment.id)}
+																			class="text-gray-400 hover:text-red-500"
+																			type="button"
+																			title="Delete comment"
+																		>🗑️</button>
+																	</span>
+																{/if}
 															</div>
-															<div class="mt-0.5 text-gray-600">{comment.content}</div>
+															{#if editingCommentId[comment.id]}
+																<div class="mt-1 flex flex-col gap-1">
+																	<textarea
+																		bind:value={editingCommentText[comment.id]}
+																		class="min-h-[48px] w-full resize-none rounded border border-gray-300 px-2 py-1 text-xs focus:border-indigo-500 focus:outline-none"
+																		rows="2"
+																	></textarea>
+																	<div class="flex gap-1">
+																		<button
+																			onclick={() => submitEditComment(card.id, comment.id)}
+																			class="rounded bg-indigo-600 px-2 py-0.5 text-xs text-white hover:bg-indigo-700"
+																			type="button"
+																		>Save</button>
+																		<button
+																			onclick={() => cancelEditComment(comment.id)}
+																			class="rounded bg-gray-300 px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-400"
+																			type="button"
+																		>Cancel</button>
+																	</div>
+																</div>
+															{:else}
+																<div class="mt-0.5 text-gray-600">{comment.content}</div>
+															{/if}
 														</div>
 													{/each}
 												{:else}
