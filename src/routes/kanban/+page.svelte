@@ -143,19 +143,33 @@
 							<p class="mt-2 text-xs text-gray-400">Updated {timeAgo(board.lastActivity)}</p>
 						{/if}
 					</a>
-					<form
-						method="POST"
-						action="?/archiveBoard"
-						use:enhance
-						class="absolute top-3 right-3 opacity-0 transition-opacity group-hover:opacity-100"
-					>
-						<input type="hidden" name="boardId" value={board.id} />
-						<button
-							type="submit"
-							class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500 hover:bg-gray-200"
-							title="Archive board"
-						>📦</button>
-					</form>
+					<div class="absolute top-3 right-3 opacity-0 transition-opacity group-hover:opacity-100 flex gap-1">
+						<form
+							method="POST"
+							action="?/duplicateBoard"
+							use:enhance
+						>
+							<input type="hidden" name="boardId" value={board.id} />
+							<input type="hidden" name="includeCards" value="false" />
+							<button
+								type="submit"
+								class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500 hover:bg-gray-200"
+								title="Duplicate board structure (columns only)"
+							>📋</button>
+						</form>
+						<form
+							method="POST"
+							action="?/archiveBoard"
+							use:enhance
+						>
+							<input type="hidden" name="boardId" value={board.id} />
+							<button
+								type="submit"
+								class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500 hover:bg-gray-200"
+								title="Archive board"
+							>📦</button>
+						</form>
+					</div>
 				</div>
 			{/each}
 		</div>

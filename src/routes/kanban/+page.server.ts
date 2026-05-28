@@ -1,8 +1,9 @@
 import db from "$db";
-import { boards, projects, columns, cards } from "$db/schema";
+import { boards, projects, columns, cards, cardAssignees, cardLabels, labels } from "$db/schema";
 import { eq, sql, and, inArray } from "drizzle-orm";
-import { BoardId, ProjectId } from "$types/ids";
+import { BoardId, ColumnId, ProjectId, CardId } from "$types/ids";
 import type { PageServerLoad, Actions } from "./$types";
+import { cuid2 } from "$server/crypto";
 
 export const load: PageServerLoad = async () => {
 	// Fetch active boards with column & card counts, plus last activity time
@@ -99,6 +100,92 @@ export const actions: Actions = {
 			.where(eq(boards.id, boardId));
 
 		return { success: true };
+	},
+
+	duplicateBoard: async ({ request }) => {
+		const data = await request.formData();
+		const boardId = data.get("boardId") as BoardId;
+		const includeCards = data.get("includeCards") === "true";
+
+		if (!boardId) return { error: "Board ID is required" };
+
+		// Fetch the source board
+		const [sourceBoard] = await db
+			.select()
+			.from(boards)
+			.where(eq(boards.id, boardId))
+			.limit(1);
+
+		if (!sourceBoard) return { error: "Board not found" };
+
+		// Create the new board
+		const newBoardId = cuid2() as BoardId;
+		const now = Math.floor(Date.now() / 1000);
+
+		await db.insert(boards).values({
+			id: newBoardId,
+			name: `${sourceBoard.name} (copy)`,
+			description: sourceBoard.description,
+			projectId: sourceBoard.projectId,
+			archived: false,
+			createdAt: now,
+			updatedAt: now,
+		});
+
+		// Fetch source columns
+		const sourceColumns = await db
+			.select()
+			.from(columns)
+			.where(eq(columns.boardId, boardId))
+			.orderBy(columns.order);
+
+		// Map of old column ID -> new column ID for card reassignment
+		const columnIdMap = new Map<string, string>();
+
+		// Create new columns
+		for (const col of sourceColumns) {
+			const newColumnId = cuid2() as ColumnId;
+			columnIdMap.set(col.id, newColumnId);
+
+			await db.insert(columns).values({
+				id: newColumnId,
+				boardId: newBoardId,
+				name: col.name,
+				order: col.order,
+				color: col.color,
+				createdAt: now,
+				updatedAt: now,
+			});
+		}
+
+		// Optionally copy cards
+		if (includeCards && columnIdMap.size > 0) {
+			const sourceCards = await db
+				.select()
+				.from(cards)
+				.where(inArray(cards.columnId, sourceColumns.map(c => c.id)))
+				.orderBy(cards.order);
+
+			for (const card of sourceCards) {
+				const newColumnId = columnIdMap.get(card.columnId);
+				if (!newColumnId) continue;
+
+				const newCardId = cuid2() as CardId;
+
+				await db.insert(cards).values({
+					id: newCardId,
+					columnId: newColumnId,
+					content: card.content,
+					description: card.description,
+					order: card.order,
+					archived: card.archived,
+					createdAt: now,
+					updatedAt: now,
+				});
+			}
+		}
+
+		return { success: true, newBoardId };
 	},
 
 	deleteBoard: async ({ request }) => {
