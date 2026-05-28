@@ -1,12 +1,18 @@
 import { json } from "@sveltejs/kit";
 import db from "$db";
 import { boards, columns as columnsSchema, projects, cards } from "$db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import * as v from "valibot";
-import { ProjectId, BoardId } from "$types/ids";
+import { ProjectId, BoardId, ColumnId } from "$types/ids";
 import type { RequestHandler } from "./$types";
 
 const DEFAULT_COLUMNS = ["To Do", "In Progress", "Done"];
+
+const CardItemSchema = v.object({
+	title: v.pipe(v.string(), v.minLength(1, "card title cannot be empty")),
+	description: v.optional(v.string(), ""),
+	column: v.optional(v.string(), ""), // column name to place card in; empty = first column
+});
 
 const CreateBoardSchema = v.object({
 	projectId: v.optional(v.string(), ""),
@@ -15,6 +21,8 @@ const CreateBoardSchema = v.object({
 	columns: v.optional(v.array(v.string()), DEFAULT_COLUMNS),
 	/** Array of card titles to create in the first column */
 	cardTitles: v.optional(v.array(v.string()), []),
+	/** Rich card payloads with title, description, and optional column placement */
+	cards: v.optional(v.array(CardItemSchema), []),
 });
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -26,7 +34,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: issues }, { status: 400 });
 	}
 
-	const { name, description, columns: columnNames, cardTitles, projectId } = parsed.output;
+	const { name, description, columns: columnNames, cardTitles, cards: rawCards, projectId } = parsed.output;
 
 	// Determine project: use provided one, or fall back to first project
 	let resolvedProjectId = projectId;
@@ -70,8 +78,13 @@ export const POST: RequestHandler = async ({ request }) => {
 		createdColumns.push(col);
 	}
 
-	// Create cards in first column if provided
+	// Build column name → column lookup
+	const columnByName = new Map(createdColumns.map((c) => [c.name, c]));
+
+	// Create cards from both cardTitles (legacy) and cards (rich payload)
 	const createdCards = [];
+
+	// Handle legacy cardTitles — put in first column
 	if (cardTitles.length > 0 && createdColumns.length > 0) {
 		const firstColumn = createdColumns[0];
 		for (let i = 0; i < cardTitles.length; i++) {
@@ -84,6 +97,47 @@ export const POST: RequestHandler = async ({ request }) => {
 				})
 				.returning();
 			createdCards.push(card);
+		}
+	}
+
+	// Handle rich card payloads — place in specified column or fall back to first
+	if (rawCards.length > 0) {
+		// Group cards by column name
+		const cardsByColumn = new Map<string, typeof rawCards>();
+		for (const card of rawCards) {
+			const colName = card.column || columnNames[0];
+			if (!cardsByColumn.has(colName)) cardsByColumn.set(colName, []);
+			cardsByColumn.get(colName)!.push(card);
+		}
+
+		for (const [colName, colCards] of cardsByColumn) {
+			const targetColumn = columnByName.get(colName);
+			if (!targetColumn) {
+				// Column not found — skip these cards
+				continue;
+			}
+			// Get current max order in this column
+			const maxOrderResult = await db
+				.select({ maxOrder: sql<number>`coalesce(max(${cards.order}), -1)` })
+				.from(cards)
+				.where(eq(cards.columnId, targetColumn.id as ColumnId));
+			let order = (maxOrderResult[0]?.maxOrder ?? -1) + 1;
+
+			for (const card of colCards) {
+				const content = card.description
+					? `${card.title}\n\n${card.description}`
+					: card.title;
+				const [dbCard] = await db
+					.insert(cards)
+					.values({
+						columnId: targetColumn.id as ColumnId,
+						content,
+						order,
+					})
+					.returning();
+				createdCards.push(dbCard);
+				order++;
+			}
 		}
 	}
 

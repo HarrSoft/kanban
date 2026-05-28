@@ -334,7 +334,11 @@ async function main() {
 					name: p.name,
 					description: p.description,
 					columns: p.columns,
-					cardTitles: p.cards.map((c) => c.title),
+					cards: p.cards.map((c) => ({
+						title: c.title,
+						description: c.description,
+						column: c.column,
+					})),
 				}),
 			});
 			if (!res.ok) {
