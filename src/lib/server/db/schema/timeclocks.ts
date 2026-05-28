@@ -19,5 +19,6 @@ export const timeclocks = t.pgTable("timeclocks", {
 	start: unix().notNull(),
 	duration: seconds().notNull().default(0),
 	locked: t.boolean().notNull().default(false),
+	notes: t.text("notes"),
 	...timestamps,
 });

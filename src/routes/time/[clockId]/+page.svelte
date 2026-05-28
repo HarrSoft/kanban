@@ -24,6 +24,7 @@
 	// Editable fields (strings for display, converted to numbers on submit)
 	let startInput = $state(df.format(df.fromUnixTime(clock.start), "yyyy-MM-dd'T'HH:mm"));
 	let durInput = $state(fmtDuration(clock.duration));
+	let notesInput = $state(clock.notes ?? "");
 	let startError = $state("");
 	let durError = $state("");
 
@@ -43,7 +44,8 @@
 
 	let isChanged = $derived(
 		startInput !== df.format(df.fromUnixTime(clock.start), "yyyy-MM-dd'T'HH:mm") ||
-		durInput !== fmtDuration(clock.duration)
+		durInput !== fmtDuration(clock.duration) ||
+		notesInput !== (clock.notes ?? "")
 	);
 </script>
 
@@ -103,6 +105,19 @@
 		{#if durError}
 			<p class="text-red-500 text-xs">{durError}</p>
 		{/if}
+
+		<!-- Notes -->
+		<label class="block">
+			<span class="text-sm font-medium">Notes</span>
+			<textarea
+				bind:value={notesInput}
+				rows={2}
+				class="input mt-1 w-full"
+				placeholder="What were you working on?"
+				disabled={clock.locked}
+			></textarea>
+			<input type="hidden" name="notes" value={notesInput} />
+		</label>
 
 		<!-- Status display -->
 		<div class="bg-shadow rounded-lg p-4 space-y-2 text-sm">

@@ -142,13 +142,14 @@ export const updateTimeclock = form(
 		timeclockId: TimeclockId,
 		start: v.optional(Unix),
 		duration: v.optional(Seconds),
+		notes: v.optional(v.string()),
 		admin: v.optional(
 			v.object({
 				locked: v.optional(v.boolean()),
 			}),
 		),
 	}),
-	async ({ timeclockId, start, duration, admin }) => {
+	async ({ timeclockId, start, duration, notes, admin }) => {
 		// authenticate
 		const event = getRequestEvent();
 		const session = event.locals.session;
@@ -179,6 +180,7 @@ export const updateTimeclock = form(
 				.set({
 					start: start ?? undefined,
 					duration: duration ?? undefined,
+					notes: notes ?? undefined,
 					locked: admin?.locked ?? undefined,
 				})
 				.where(eq(timeclocks.id, timeclockId))
