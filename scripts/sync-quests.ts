@@ -28,6 +28,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
 const WORKSPACE_ROOT = resolve(REPO_ROOT, "..");
 const DEFAULT_QUESTS_PATH = resolve(WORKSPACE_ROOT, "harrsoft-shared", "Quests.md");
+const CREDENTIAL_PATH = resolve(process.env.HOME || "/home/alpha", ".openclaw", "credentials", "kanban-agent.sh");
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -232,10 +233,37 @@ function boardColumnForStatus(status: QuestCard["status"]): string {
 
 // ─── Main ──────────────────────────────────────────────────────────────────
 
+// ─── Credentials ───────────────────────────────────────────────────────────
+
+function loadCredentials(): void {
+	// Only attempt auto-load if env vars are not already set
+	if (process.env.KANBAN_API_KEY) return;
+
+	try {
+		if (existsSync(CREDENTIAL_PATH)) {
+			const content = readFileSync(CREDENTIAL_PATH, "utf-8");
+			// Parse KEY=VALUE lines from shell source file
+			for (const line of content.split("\n")) {
+				const match = line.trim().match(/^([A-Z_]+)="(.*)"$/);
+				if (match) {
+					process.env[match[1]] = match[2];
+				}
+			}
+		}
+	} catch {
+		// Silent — will be caught by resolveApiKey() below
+	}
+}
+
+// ─── Main ──────────────────────────────────────────────────────────────────
+
 async function main() {
+	loadCredentials();
+
 	const args = process.argv.slice(2);
 	const apply = args.includes("--apply");
 	const dryRun = args.includes("--dry-run");
+	const force = args.includes("--force");
 
 	const questsPath = existsSync(DEFAULT_QUESTS_PATH)
 		? DEFAULT_QUESTS_PATH
@@ -260,9 +288,37 @@ async function main() {
 
 	const payloads = questsToKanbanPayloads(data);
 
+	// Fetch existing board names to avoid duplicates
+	let existingBoardNames: Set<string> = new Set();
+	try {
+		const existingRes = await fetch("http://localhost:5173/api/agent/projects", {
+			headers: { "Authorization": `Bearer ${resolveApiKey()}` },
+		});
+		if (existingRes.ok) {
+			// Try boards endpoint; fallback: query DB via psql
+			try {
+				const boardsRes = await fetch("http://localhost:5173/api/kanban/boards", {
+					headers: { "Authorization": `Bearer ${resolveApiKey()}` },
+				});
+				if (boardsRes.ok) {
+					const boards = await boardsRes.json();
+					if (Array.isArray(boards)) {
+						for (const b of boards) existingBoardNames.add(b.name);
+					}
+				}
+			} catch { /* fallback: skip dedup */ }
+		}
+	} catch { /* skip dedup on connection error */ }
+
 	for (const p of payloads) {
+		// Skip if board already exists (unless --force)
+		if (!force && existingBoardNames.has(p.name)) {
+			console.error(`  ∼ Skipped: "${p.name}" already exists (use --force to re-create)`);
+			continue;
+		}
+
 		if (dryRun) {
-			console.log(`[DRY RUN] Would create board "${p.name}" in project ${projectId} with ${p.cards.length} cards`);
+			console.log(`[DRY RUN] Would ${existingBoardNames.has(p.name) ? "re-create" : "create"} board "${p.name}" in project ${projectId} with ${p.cards.length} cards`);
 			continue;
 		}
 		console.error(`Creating board: ${p.name}...`);
