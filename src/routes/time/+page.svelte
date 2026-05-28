@@ -180,6 +180,7 @@
 						<th class="text-left px-4 py-2 font-semibold text-sm">Date</th>
 						<th class="text-left px-4 py-2 font-semibold text-sm">Start Time</th>
 						<th class="text-left px-4 py-2 font-semibold text-sm">Duration</th>
+						<th class="text-left px-4 py-2 font-semibold text-sm hidden sm:table-cell">Notes</th>
 						<th class="text-right px-4 py-2 font-semibold text-sm">Actions</th>
 					</tr>
 				</thead>
@@ -199,6 +200,15 @@
 								{/if}
 								{#if clock.locked}
 									<LockIcon className="inline h-4 ml-1 text-muted-foreground" />
+								{/if}
+							</td>
+							<td class="px-4 py-2 hidden sm:table-cell max-w-[160px]">
+								{#if clock.notes}
+									<span class="text-xs text-muted-foreground truncate block" title={clock.notes}>
+										{clock.notes}
+									</span>
+								{:else}
+									<span class="text-xs text-muted-foreground/50 italic">—</span>
 								{/if}
 							</td>
 							<td class="text-right">
@@ -232,7 +242,7 @@
 						</tr>
 					{:else}
 						<tr>
-							<td colspan="4" class="text-center py-8 text-muted-foreground">
+							<td colspan="5" class="text-center py-8 text-muted-foreground">
 								No time entries yet. Click "+ New" to start tracking.
 							</td>
 						</tr>
