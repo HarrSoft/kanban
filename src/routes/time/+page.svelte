@@ -21,7 +21,40 @@
 	let { data }: { data: PageData } = $props();
 
 	let selectedProjectId = $state(data.selectedProjectId);
-	let timeclocks: Timeclock[] = $state(data.timeclocks as Timeclock[]);
+	let allTimeclocks: Timeclock[] = $state(data.timeclocks as Timeclock[]);
+
+	/////////////////////
+	// Date Range Filter //
+	/////////////////////
+
+	type DateRange = "today" | "week" | "month" | "all";
+	let dateRange: DateRange = $state("all");
+
+	const now = () => df.getUnixTime(new Date());
+	const startOfToday = () => Math.floor(now() / 86400) * 86400;
+
+	let timeclocks: Timeclock[] = $derived.by(() => {
+		const rangeStart: Record<DateRange, number> = {
+			today: startOfToday(),
+			week: startOfToday() - 6 * 86400,
+			month: startOfToday() - 29 * 86400,
+			all: 0,
+		};
+		const cutoff = rangeStart[dateRange];
+		return allTimeclocks.filter(t => t.start >= cutoff);
+	});
+
+	let filteredDuration = $derived(
+		timeclocks.reduce((sum, t) => sum + t.duration, 0),
+	);
+	let filteredCount = $derived(timeclocks.length);
+
+	const rangeOptions: { label: string; value: DateRange }[] = [
+		{ label: "Today", value: "today" },
+		{ label: "This Week", value: "week" },
+		{ label: "This Month", value: "month" },
+		{ label: "All", value: "all" },
+	];
 
 	function onProjectChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
@@ -159,7 +192,7 @@
 		</div>
 		<div class="card p-4 rounded-lg shadow-sm border border-border">
 			<div class="text-sm text-muted-foreground">Total Entries</div>
-			<div class="text-2xl font-bold">{data.timeclocks.length}</div>
+			<div class="text-2xl font-bold">{allTimeclocks.length}</div>
 		</div>
 	</div>
 
@@ -169,6 +202,29 @@
 			<p class="text-sm mt-1">Join or create a project to start tracking time.</p>
 		</div>
 	{:else}
+		<!-- Date Range Filter Tabs -->
+		<div class="flex items-center gap-1 border-b border-border pb-0">
+			{#each rangeOptions as option (option.value)}
+				<button
+					onclick={() => (dateRange = option.value)}
+					class={[
+						"px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors",
+						dateRange === option.value
+							? "bg-background text-text border border-border border-b-background -mb-px"
+							: "text-muted-foreground hover:text-text hover:bg-muted/30",
+					].join(" ")}
+				>
+					{option.label}
+					{#if option.value !== "all" && filteredCount < allTimeclocks.length}
+						<span class="ml-1 text-[10px] text-muted-foreground">({filteredCount})</span>
+					{/if}
+				</button>
+			{/each}
+			<span class="ml-auto text-xs text-muted-foreground">
+				{formatDurationLong(filteredDuration)} shown
+			</span>
+		</div>
+
 		<form id="create" {...createTimeclock}></form>
 		<form id="delete" {...deleteTimeclock}></form>
 
@@ -243,7 +299,7 @@
 					{:else}
 						<tr>
 							<td colspan="5" class="text-center py-8 text-muted-foreground">
-								No time entries yet. Click "+ New" to start tracking.
+								No time entries{dateRange !== "all" ? " in this range" : ""} yet.
 							</td>
 						</tr>
 					{/each}
