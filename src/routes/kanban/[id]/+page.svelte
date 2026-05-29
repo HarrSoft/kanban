@@ -78,6 +78,7 @@
 		card_label_added: "Label added",
 		card_label_removed: "Label removed",
 		card_comment_added: "Comment added",
+		card_priority_set: "Set priority",
 	};
 
 	async function toggleActivity(cardId: CardId) {
@@ -433,6 +434,39 @@
 	})));
 
 	const flipDurationMs = 200;
+
+	// Priority helpers
+	const priorityConfig: Record<string, { label: string; color: string; icon: string }> = {
+		low: { label: "Low", color: "bg-gray-100 text-gray-600", icon: "⬇️" },
+		medium: { label: "Medium", color: "bg-blue-100 text-blue-700", icon: "➡️" },
+		high: { label: "High", color: "bg-orange-100 text-orange-700", icon: "⬆️" },
+		urgent: { label: "Urgent", color: "bg-red-100 text-red-700", icon: "🔴" },
+	};
+
+	let editingPriority: CardId | null = null;
+
+	function startEditPriority(cardId: CardId) {
+		editingPriority = editingPriority === cardId ? null : cardId;
+	}
+
+	async function savePriority(cardId: CardId, priority: string) {
+		const formData = new FormData();
+		formData.append("cardId", cardId);
+		formData.append("priority", priority);
+		formData.append("userId", data.user?.id ?? "");
+
+		const response = await fetch("?/setCardPriority", {
+			method: "POST",
+			body: formData,
+		});
+
+		if (response.ok) {
+			editingPriority = null;
+			window.location.reload();
+		} else {
+			alert("Failed to set priority.");
+		}
+	}
 
 	// Column-level drag-and-drop
 	function handleColumnDndConsider(e: CustomEvent) {
@@ -1302,6 +1336,34 @@
 											{/each}
 										</div>
 									{/if}
+									<!-- Priority badge & selector -->
+									<div class="mt-1.5 flex items-center gap-1">
+										{#if editingPriority === card.id}
+											<div class="flex flex-wrap gap-1">
+												{#each ["low", "medium", "high", "urgent"] as p}
+													<button
+														onclick={() => savePriority(card.id, p)}
+														class="rounded px-2 py-0.5 text-xs font-medium {card.priority === p ? 'ring-2 ring-indigo-500' : ''} {priorityConfig[p].color}"
+														type="button"
+													>{priorityConfig[p].icon} {priorityConfig[p].label}</button>
+												{/each}
+												<button
+													onclick={() => (editingPriority = null)}
+													class="rounded px-1.5 py-0.5 text-xs text-gray-400 hover:text-gray-600"
+													type="button"
+												>✕</button>
+											</div>
+										{:else}
+											<button
+												onclick={() => startEditPriority(card.id)}
+												class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium cursor-pointer hover:opacity-80 {priorityConfig[card.priority]?.color ?? 'bg-gray-100 text-gray-500'}"
+												type="button"
+												title="Change priority"
+											>
+												{priorityConfig[card.priority]?.icon ?? '⬜'} {priorityConfig[card.priority]?.label ?? (card.priority || 'No priority')}
+											</button>
+										{/if}
+									</div>
 									{#if editingDueDate[card.id] !== undefined}
 										<div class="mt-2 flex items-center gap-1">
 											<input

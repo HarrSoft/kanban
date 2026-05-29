@@ -22,6 +22,13 @@
 
 	let selectedProjectId = $state(data.selectedProjectId);
 	let allTimeclocks: Timeclock[] = $state(data.timeclocks as Timeclock[]);
+	let projectNames: Record<string, string> = $state(data.projectNames as Record<string, string>);
+	let viewingAll = $derived(selectedProjectId === "all");
+
+	// Derive project name lookup for each timeclock
+	function getProjectName(clock: Timeclock): string {
+		return projectNames[clock.projectId] || "Unknown";
+	}
 
 	/////////////////////
 	// Date Range Filter //
@@ -168,6 +175,7 @@
 					onchange={onProjectChange}
 					class="rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent"
 				>
+					<option value="all">All Projects</option>
 					{#each data.userProjects as proj (proj.id)}
 						<option value={proj.id}>{proj.name}</option>
 					{/each}
@@ -234,6 +242,7 @@
 				<thead>
 					<tr class="bg-muted/50">
 						<th class="text-left px-4 py-2 font-semibold text-sm">Date</th>
+						{#if viewingAll}<th class="text-left px-4 py-2 font-semibold text-sm">Project</th>{/if}
 						<th class="text-left px-4 py-2 font-semibold text-sm">Start Time</th>
 						<th class="text-left px-4 py-2 font-semibold text-sm">Duration</th>
 						<th class="text-left px-4 py-2 font-semibold text-sm hidden sm:table-cell">Notes</th>
@@ -247,6 +256,9 @@
 						{@const iAmActive = active?.clock.id === clock.id}
 						<tr class={["*:px-4 *:py-2", iAmActive ? "border-2 border-accent bg-accent/5" : "border-t border-border"]}>
 							<td>{df.format(start, "d MMM, y")}</td>
+							{#if viewingAll}
+								<td class="text-sm text-muted-foreground max-w-[120px] truncate" title={getProjectName(clock)}>{getProjectName(clock)}</td>
+							{/if}
 							<td>{df.format(start, "h:mm b")}</td>
 							<td>
 								{#if iAmActive}
@@ -311,7 +323,7 @@
 		<div class="flex justify-end">
 			<button
 				form="create"
-				{...createTimeclock.fields.projectId.as("submit", selectedProjectId ?? '')}
+				{...createTimeclock.fields.projectId.as("submit", viewingAll ? (data.userProjects[0]?.id ?? '') : selectedProjectId)}
 				class="button solid"
 			>
 				+ New Entry

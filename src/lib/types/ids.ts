@@ -106,3 +106,10 @@ export const CardCommentId = v.pipe(
 	v.brand("CardCommentId"),
 );
 export type CardCommentId = v.InferOutput<typeof CardCommentId>;
+
+////////////////
+// Card Priority //
+////////////////
+
+export const CardPriority = v.picklist(["low", "medium", "high", "urgent"]);
+export type CardPriority = v.InferOutput<typeof CardPriority>;

@@ -352,6 +352,30 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
+	setCardPriority: async ({ request }) => {
+		const data = await request.formData();
+		const cardId = data.get("cardId") as CardId;
+		const priority = (data.get("priority") as string | null) ?? null;
+		const userId = (data.get("userId") as UserId | null) ?? null;
+
+		if (!cardId) {
+			return fail(400, { error: "Card ID is required" });
+		}
+
+		if (!priority || !["low", "medium", "high", "urgent"].includes(priority)) {
+			return fail(400, { error: "Invalid priority value" });
+		}
+
+		await db.update(cards).set({ priority }).where(eq(cards.id, cardId));
+
+		logCardActivity(cardId, "card_priority_set", {
+			userId: userId as UserId | null,
+			metadata: { priority },
+		});
+
+		return { success: true };
+	},
+
 	archiveCard: async ({ request }) => {
 		const data = await request.formData();
 		const cardId = data.get("cardId") as CardId;

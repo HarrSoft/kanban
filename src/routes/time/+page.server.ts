@@ -38,18 +38,33 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const projectParam = url.searchParams.get("project");
 	const selectedProjectId = (projectParam && userProjects.some(p => p.id === projectParam))
 		? (projectParam as ProjectId)
-		: (userProjects[0].id as ProjectId);
+		: "all";
 
-	const selectedProject = userProjects.find(p => p.id === selectedProjectId)!;
+	// Fetch timeclocks — all projects or single project
+	const projectIds = userProjects.map(p => p.id) as ProjectId[];
+	let userClocks: Timeclock[];
+	let projectNames: Record<string, string> = {};
+	userProjects.forEach(p => { projectNames[p.id] = p.name; });
 
-	// Fetch user's timeclocks for the selected project
-	const userClocks = (await db.query.timeclocks.findMany({
-		where: and(
-			eq(timeclocks.userId, userId),
-			eq(timeclocks.projectId, selectedProjectId),
-		),
-		orderBy: (clocks, { desc }) => [desc(clocks.start)],
-	})) as Timeclock[];
+	if (selectedProjectId === "all") {
+		// All projects: fetch all timeclocks for this user
+		userClocks = (await db.query.timeclocks.findMany({
+			where: and(
+				eq(timeclocks.userId, userId),
+				inArray(timeclocks.projectId, projectIds),
+			),
+			orderBy: (clocks, { desc }) => [desc(clocks.start)],
+		})) as Timeclock[];
+	} else {
+		// Single project
+		userClocks = (await db.query.timeclocks.findMany({
+			where: and(
+				eq(timeclocks.userId, userId),
+				eq(timeclocks.projectId, selectedProjectId as ProjectId),
+			),
+			orderBy: (clocks, { desc }) => [desc(clocks.start)],
+		})) as Timeclock[];
+	}
 
 	// Calculate today's total
 	const now = Math.floor(Date.now() / 1000);
@@ -68,5 +83,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		timeclocks: userClocks,
 		totalDurationToday,
 		totalDurationThisWeek,
+		projectNames,
 	};
 };
