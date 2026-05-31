@@ -24,6 +24,7 @@ export const GET: RequestHandler = async (event) => {
 			and(
 				eq(timeclocks.projectId, projectId),
 				eq(timeclocks.locked, false),
+				eq(timeclocks.duration, 0),
 			),
 		)
 		.orderBy(timeclocks.start)

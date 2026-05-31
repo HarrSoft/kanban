@@ -164,7 +164,7 @@ export const POST: RequestHandler = async (event) => {
 
 	const [updated] = await db
 		.update(timeclocks)
-		.set({ duration })
+		.set({ duration, locked: true })
 		.where(eq(timeclocks.id, activeClock.id))
 		.returning();
 
