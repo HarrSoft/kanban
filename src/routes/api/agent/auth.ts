@@ -26,6 +26,9 @@ export async function authenticateAgent(event: RequestEvent): Promise<AgentAuth>
 	if (scheme.toLowerCase() !== "bearer") {
 		throw error(400, "Authorization scheme must be Bearer");
 	}
+	if (!creds) {
+		throw error(400, "Missing credentials after Bearer scheme");
+	}
 
 	const [keyId, rawKey] = creds.split(":");
 	if (!keyId || !rawKey) {
