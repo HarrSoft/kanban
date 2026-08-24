@@ -1,11 +1,26 @@
+import { error, redirect } from "@sveltejs/kit";
 import db from "$db";
-import { boards, projects, columns, cards, cardAssignees, cardLabels, labels } from "$db/schema";
+import {
+	boards,
+	projects,
+	columns,
+	cards,
+	cardAssignees,
+	cardLabels,
+	labels,
+} from "$db/schema";
 import { eq, sql, and, inArray } from "drizzle-orm";
 import { BoardId, ColumnId, ProjectId, CardId } from "$types/ids";
 import type { PageServerLoad, Actions } from "./$types";
 import { cuid2 } from "$server/crypto";
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
+	const session = locals.session;
+
+	if (!session) {
+		redirect(302, "/login");
+	}
+
 	// Fetch active boards with column & card counts, plus last activity time
 	const activeBoards = await db
 		.select({
@@ -27,7 +42,15 @@ export const load: PageServerLoad = async () => {
 		.leftJoin(columns, eq(columns.boardId, boards.id))
 		.leftJoin(cards, eq(cards.columnId, columns.id))
 		.where(eq(boards.archived, false))
-		.groupBy(boards.id, boards.name, boards.description, boards.projectId, boards.archived, boards.createdAt, boards.updatedAt);
+		.groupBy(
+			boards.id,
+			boards.name,
+			boards.description,
+			boards.projectId,
+			boards.archived,
+			boards.createdAt,
+			boards.updatedAt,
+		);
 
 	// Fetch archived boards separately
 	const archivedBoards = await db
@@ -50,19 +73,35 @@ export const load: PageServerLoad = async () => {
 		.leftJoin(columns, eq(columns.boardId, boards.id))
 		.leftJoin(cards, eq(cards.columnId, columns.id))
 		.where(eq(boards.archived, true))
-		.groupBy(boards.id, boards.name, boards.description, boards.projectId, boards.archived, boards.createdAt, boards.updatedAt);
+		.groupBy(
+			boards.id,
+			boards.name,
+			boards.description,
+			boards.projectId,
+			boards.archived,
+			boards.createdAt,
+			boards.updatedAt,
+		);
 
 	const allProjects = await db.select().from(projects);
 
 	return { boards: activeBoards, archivedBoards, projects: allProjects };
 };
 
+function requireSession(locals: App.Locals) {
+	if (!locals.session) {
+		throw error(401);
+	}
+}
+
 export const actions: Actions = {
-	createBoard: async ({ request }) => {
+	createBoard: async ({ request, locals }) => {
+		requireSession(locals);
+
 		const data = await request.formData();
-		const name = (data.get("name") as string || "").trim();
+		const name = ((data.get("name") as string) || "").trim();
 		const projectId = data.get("projectId") as ProjectId;
-		const description = (data.get("description") as string || "").trim();
+		const description = ((data.get("description") as string) || "").trim();
 
 		if (!name) return { error: "Board name is required" };
 		if (!projectId) return { error: "Project is required" };
@@ -76,33 +115,41 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	archiveBoard: async ({ request }) => {
+	archiveBoard: async ({ request, locals }) => {
+		requireSession(locals);
+
 		const data = await request.formData();
 		const boardId = data.get("boardId") as BoardId;
 
 		if (!boardId) return { error: "Board ID is required" };
 
-		await db.update(boards)
+		await db
+			.update(boards)
 			.set({ archived: true })
 			.where(eq(boards.id, boardId));
 
 		return { success: true };
 	},
 
-	unarchiveBoard: async ({ request }) => {
+	unarchiveBoard: async ({ request, locals }) => {
+		requireSession(locals);
+
 		const data = await request.formData();
 		const boardId = data.get("boardId") as BoardId;
 
 		if (!boardId) return { error: "Board ID is required" };
 
-		await db.update(boards)
+		await db
+			.update(boards)
 			.set({ archived: false })
 			.where(eq(boards.id, boardId));
 
 		return { success: true };
 	},
 
-	duplicateBoard: async ({ request }) => {
+	duplicateBoard: async ({ request, locals }) => {
+		requireSession(locals);
+
 		const data = await request.formData();
 		const boardId = data.get("boardId") as BoardId;
 		const includeCards = data.get("includeCards") === "true";
@@ -163,7 +210,12 @@ export const actions: Actions = {
 			const sourceCards = await db
 				.select()
 				.from(cards)
-				.where(inArray(cards.columnId, sourceColumns.map(c => c.id)))
+				.where(
+					inArray(
+						cards.columnId,
+						sourceColumns.map(c => c.id),
+					),
+				)
 				.orderBy(cards.order);
 
 			for (const card of sourceCards) {
@@ -188,7 +240,9 @@ export const actions: Actions = {
 		return { success: true, newBoardId };
 	},
 
-	deleteBoard: async ({ request }) => {
+	deleteBoard: async ({ request, locals }) => {
+		requireSession(locals);
+
 		const data = await request.formData();
 		const boardId = data.get("boardId") as BoardId;
 

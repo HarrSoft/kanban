@@ -71,7 +71,15 @@ const mockEvent = {
 	params: {},
 	route: { id: "/kanban" },
 	request: new Request("http://localhost/kanban"),
-	locals: {},
+	locals: {
+		session: {
+			sessionId: "e8u0vgefq61c45dvfp4v7zgj",
+			userId: "g6pn2hthq2l5dz7sbs5ocqmm",
+			userEmail: "test@harrsoft.coop",
+			expiresAt: Math.floor(Date.now() / 1000) + 86400,
+			platformRole: "user",
+		},
+	},
 	cookies: {} as any,
 	isDataRequest: false,
 	platform: undefined,
@@ -84,6 +92,15 @@ const mockEvent = {
 describe("kanban list page server load", () => {
 	beforeEach(() => {
 		selectReturnIndex = 0;
+	});
+
+	it("redirects to /login when no session", async () => {
+		const anonymousEvent = { ...mockEvent, locals: {} };
+
+		await expect(load(anonymousEvent)).rejects.toMatchObject({
+			status: 302,
+			location: "/login",
+		});
 	});
 
 	it("returns an array of boards", async () => {
