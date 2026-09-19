@@ -14,6 +14,7 @@ RUN cd /temp/prod && bun install --frozen-lockfile --production
 
 # build app
 FROM base AS prerelease
+ARG DATABASE_URL
 COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
 ENV NODE_ENV=production
