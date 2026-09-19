@@ -276,9 +276,16 @@ export const actions: Actions = {
 
 		if (!cardId) return { error: "Card ID is required" };
 
+		// Same guard as updateCard: never report success for a write that matched
+		// no card, and never let the activity-log FK rejection crash the server.
+		const card = await db.query.cards.findFirst({
+			where: eq(cards.id, cardId),
+		});
+		if (!card) return { error: "Card not found" };
+
 		await db.update(cards).set({ description }).where(eq(cards.id, cardId));
 
-		logCardActivity(cardId, "card_description_updated", { userId: userId as UserId | null });
+		await logCardActivity(cardId, "card_description_updated", { userId: userId as UserId | null });
 
 		return { success: true };
 	},
@@ -301,9 +308,17 @@ export const actions: Actions = {
 		if (!cardId) return { error: "Card ID is required" };
 		if (!content) return { error: "Content cannot be empty" };
 
+		// Verify the card exists before writing. A write against a missing/typo'd
+		// id would otherwise affect 0 rows and still report success, while the
+		// activity log (FK to cards.id) rejects unhandled and kills the process.
+		const card = await db.query.cards.findFirst({
+			where: eq(cards.id, cardId),
+		});
+		if (!card) return { error: "Card not found" };
+
 		await db.update(cards).set({ content }).where(eq(cards.id, cardId));
 
-		logCardActivity(cardId, "card_content_updated", { userId: userId as UserId | null });
+		await logCardActivity(cardId, "card_content_updated", { userId: userId as UserId | null });
 
 		return { success: true };
 	},

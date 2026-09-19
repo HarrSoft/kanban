@@ -32,11 +32,23 @@ export async function logCardActivity(
 		actedAt?: number;
 	},
 ): Promise<void> {
-	await db.insert(cardActivity).values({
-		cardId,
-		userId: options?.userId ?? null,
-		activityType,
-		metadata: options?.metadata ?? {},
-		actedAt: options?.actedAt ?? unixNow(),
-	});
+	try {
+		await db.insert(cardActivity).values({
+			cardId,
+			userId: options?.userId ?? null,
+			activityType,
+			metadata: options?.metadata ?? {},
+			actedAt: options?.actedAt ?? unixNow(),
+		});
+	} catch (err) {
+		// Activity logging is best-effort. A missing card id (FK violation on
+		// card_activity.card_id) or any transient DB error must never reject into
+		// an unhandled promise and take down the process — most callers fire this
+		// without awaiting. Fail loudly in the log, but let the caller's real
+		// result stand.
+		console.error(
+			`[card-activity] failed to log "${activityType}" for card ${cardId}:`,
+			err,
+		);
+	}
 }
