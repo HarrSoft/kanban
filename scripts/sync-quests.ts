@@ -1,359 +1,68 @@
 #!/usr/bin/env bun
 /**
- * sync-quests.ts — Quests.md ↔ Kanban Sync Tool (MVP)
+ * sync-quests.ts — Quests.md → Kanban Sync Tool (MVP)
  *
- * Parses harrsoft-shared/Quests.md (Lavra's quest list) into structured
- * kanban-compatible JSON. Designed for future bidirectional sync.
+ * Reads agent-sharing/Quests.md (Lavra's quest list) via the pure parser in
+ * src/lib/server/quests/parse-quests.ts and pushes boards/cards to the
+ * kanban HTTP API.
  *
  * Usage:
  *   bun run scripts/sync-quests.ts                      # parse & print JSON
  *   bun run scripts/sync-quests.ts --apply               # create via kanban API
  *   bun run scripts/sync-quests.ts --apply --dry-run     # show what would be created
+ *   bun run scripts/sync-quests.ts --apply --force       # create even if dedup can't be established
  *
- * Parsing convention:
- *   #         = Top-level domain (e.g. "Cognitive enhancements")
- *   ##        = Quest group / board name
- *   ###-###### = Cards / sub-cards (recursive nesting)
+ * Fixes (2026-09-19):
+ *   - default source path was stale (`harrsoft-shared/Quests.md` → `agent-sharing/Quests.md`),
+ *     so the tool could never find its input;
+ *   - dedup read failures were silently swallowed (the old fallback catch simply
+ *     skipped dedup), so a transient API error silently created duplicate boards.
+ *     Now the read must
+ *     succeed or the run refuses unless `--force` is passed explicitly.
  *
- * Special patterns:
- *   - ✅ / 🔄 / 📅  = status markers on headings
- *   - Lines starting with "+" after heading = description
+ * NOT YET: a true upsert. This tool is create-only; a real upsert (update existing
+ * cards by title) needs a card-update endpoint on the API, which does not exist yet.
+ * Board-level dedup is the safeguard in the meantime. Open loop: quests-importer-upsert.
  */
 
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+	parseQuestsFile,
+	questsToKanbanPayloads,
+	type QuestData,
+} from "../src/lib/server/quests/parse-quests";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
 const WORKSPACE_ROOT = resolve(REPO_ROOT, "..");
-const DEFAULT_QUESTS_PATH = resolve(WORKSPACE_ROOT, "harrsoft-shared", "Quests.md");
+
+// Candidate source locations, in order. The canonical file moved to
+// agent-sharing/ on 2026-08-31; the old harrsoft-shared/ path is kept last
+// only as a fallback for anyone still on the pre-move layout.
+const QUESTS_PATH_CANDIDATES = [
+	resolve(WORKSPACE_ROOT, "agent-sharing", "Quests.md"),
+	resolve(WORKSPACE_ROOT, "harrsoft-shared", "Quests.md"),
+];
 const CREDENTIAL_PATH = resolve(process.env.HOME || "/home/alpha", ".openclaw", "credentials", "kanban-agent.sh");
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+const KANBAN_BASE = process.env.KANBAN_BASE || "http://localhost:5173";
 
-interface QuestCard {
-	id: string;
-	title: string;
-	description: string;
-	status: "done" | "in-progress" | "planned" | "info";
-	level: number; // heading depth (3+)
-	children: QuestCard[];
-}
-
-interface QuestBoard {
-	id: string;
-	title: string;
-	description: string;
-	status: "active" | "inactive";
-	cards: QuestCard[];
-}
-
-interface QuestDomain {
-	id: string;
-	title: string;
-	boards: QuestBoard[];
-}
-
-interface QuestData {
-	meta: { created: string; updated: string };
-	domains: QuestDomain[];
-}
-
-// ─── Parsing ────────────────────────────────────────────────────────────────
-
-function parseStatus(title: string): QuestCard["status"] {
-	if (title.includes("✅")) return "done";
-	if (title.includes("🔄")) return "in-progress";
-	if (title.includes("📅")) return "planned";
-	return "info";
-}
-
-function stripStatus(title: string): string {
-	return title.replace(/^[✅🔄📅]\s*/, "").trim();
-}
-
-function parseDescription(lines: string[], startIdx: number): { description: string; endIdx: number } {
-	const descLines: string[] = [];
-	let i = startIdx;
-	while (i < lines.length) {
-		const line = lines[i].trim();
-		if (line === "" || line.startsWith("#")) break;
-		if (line.startsWith("+")) {
-			descLines.push(line.slice(1).trim());
-		} else if (!line.startsWith("-") && !line.startsWith("|")) {
-			descLines.push(line);
-		}
-		i++;
-	}
-	return { description: descLines.join("\n"), endIdx: i };
-}
-
-function parseQuests(filePath: string): QuestData {
-	const content = readFileSync(filePath, "utf-8");
-	const lines = content.split("\n");
-
-	// Parse frontmatter (only at start of file)
-	let meta: QuestData["meta"] = { created: "", updated: "" };
-	if (lines[0]?.trim() === "---") {
-		const fmEnd = lines.findIndex((l, i) => i > 0 && l.trim() === "---");
-		if (fmEnd > 0) {
-			const fmLines = lines.slice(1, fmEnd);
-			for (const l of fmLines) {
-				const [k, ...rest] = l.split(":");
-				const v = rest.join(":").trim();
-				if (k.trim() === "created") meta.created = v;
-				if (k.trim() === "updated") meta.updated = v;
-			}
-			lines.splice(0, fmEnd + 1); // remove frontmatter
-		}
-	}
-
-	// Remove any remaining horizontal rule markers (---, ***) that could be mistaken for headings
-	const cleanedLines = lines.filter((l) => !/^---$/.test(l.trim()) && !/^\*\*\*$/.test(l.trim()));
-
-	const domains: QuestDomain[] = [];
-	let currentDomain: QuestDomain | null = null;
-	let currentBoard: QuestBoard | null = null;
-
-	for (let i = 0; i < cleanedLines.length; i++) {
-		const line = cleanedLines[i];
-		const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
-		if (!headingMatch) continue;
-
-		const [_, hashes, rawTitle] = headingMatch;
-		const level = hashes.length;
-		const title = rawTitle.trim();
-		const status = level >= 3 ? parseStatus(title) : "info";
-		const cleanTitle = level >= 3 ? stripStatus(title) : title;
-
-		const { description, endIdx } = parseDescription(cleanedLines, i + 1);
-		i = endIdx - 1; // skip description lines
-
-		if (level === 1) {
-			// Top-level domain
-			if (currentDomain) domains.push(currentDomain);
-			currentDomain = {
-				id: slugify(cleanTitle),
-				title: cleanTitle,
-				boards: [],
-			};
-			currentBoard = null;
-		} else if (level === 2) {
-			// Board / quest group
-			if (currentBoard && currentDomain) {
-				currentDomain.boards.push(currentBoard);
-			}
-			currentBoard = {
-				id: slugify(cleanTitle),
-				title: cleanTitle,
-				description,
-				status: status === "done" ? "inactive" : "active",
-				cards: [],
-			};
-		} else if (level >= 3 && currentBoard) {
-			// Card or sub-card
-			const card: QuestCard = {
-				id: slugify(cleanTitle),
-				title: cleanTitle,
-				description,
-				status,
-				level,
-				children: [],
-			};
-			// Simple nesting: put level 4+ cards under most recent level 3
-			if (level === 3) {
-				currentBoard.cards.push(card);
-			} else if (currentBoard.cards.length > 0) {
-				const parent = currentBoard.cards[currentBoard.cards.length - 1];
-				parent.children.push(card);
-			} else {
-				currentBoard.cards.push(card);
-			}
-		}
-	}
-
-	// Flush remaining
-	if (currentBoard && currentDomain) currentDomain.boards.push(currentBoard);
-	if (currentDomain) domains.push(currentDomain);
-
-	return { meta, domains };
-}
-
-function slugify(text: string): string {
-	return text
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, "-")
-		.replace(/^-+|-+$/g, "")
-		.slice(0, 64);
-}
-
-// ─── Kanban API integration ────────────────────────────────────────────────
-
-interface KanbanPayload {
-	name: string;
-	description: string;
-	columns: string[];
-	cards: { title: string; description: string; column: string }[];
-}
-
-function questsToKanbanPayloads(data: QuestData): KanbanPayload[] {
-	const payloads: KanbanPayload[] = [];
-
-	for (const domain of data.domains) {
-		for (const board of domain.boards) {
-			const cards = board.cards.map((c) => ({
-				title: c.title,
-				description: c.description + (c.children.length > 0
-					? "\n\n**Sub-items:**\n" + c.children.map((ch) => `- ${ch.title}: ${ch.description.slice(0, 80)}`).join("\n")
-					: ""),
-				column: boardColumnForStatus(c.status),
-			}));
-
-			payloads.push({
-				name: `Quests: ${board.title}`,
-				description: `From Quests.md (${domain.title}) — ${board.description || board.title}`,
-				columns: ["To Do", "In Progress", "Done", "Info"],
-				cards,
-			});
-		}
-	}
-
-	return payloads;
-}
-
-function boardColumnForStatus(status: QuestCard["status"]): string {
-	switch (status) {
-		case "done": return "Done";
-		case "in-progress": return "In Progress";
-		case "planned": return "To Do";
-		case "info": return "Info";
-	}
-}
-
-// ─── Main ──────────────────────────────────────────────────────────────────
-
-// ─── Credentials ───────────────────────────────────────────────────────────
+// ─── Credentials ─────────────────────────────────────────────────────────────
 
 function loadCredentials(): void {
-	// Only attempt auto-load if env vars are not already set
 	if (process.env.KANBAN_API_KEY) return;
-
 	try {
 		if (existsSync(CREDENTIAL_PATH)) {
 			const content = readFileSync(CREDENTIAL_PATH, "utf-8");
-			// Parse KEY=VALUE lines from shell source file
 			for (const line of content.split("\n")) {
 				const match = line.trim().match(/^([A-Z_]+)="(.*)"$/);
-				if (match) {
-					process.env[match[1]] = match[2];
-				}
+				if (match) process.env[match[1]] = match[2];
 			}
 		}
 	} catch {
-		// Silent — will be caught by resolveApiKey() below
-	}
-}
-
-// ─── Main ──────────────────────────────────────────────────────────────────
-
-async function main() {
-	loadCredentials();
-
-	const args = process.argv.slice(2);
-	const apply = args.includes("--apply");
-	const dryRun = args.includes("--dry-run");
-	const force = args.includes("--force");
-
-	const questsPath = existsSync(DEFAULT_QUESTS_PATH)
-		? DEFAULT_QUESTS_PATH
-		: resolve(REPO_ROOT, "..", "harrsoft-shared", "Quests.md");
-
-	if (!existsSync(questsPath)) {
-		console.error("✗ Quests.md not found at:", questsPath);
-		process.exit(1);
-	}
-
-	console.error("📖 Parsing:", questsPath);
-	const data = parseQuests(questsPath);
-	console.error(`  → ${data.domains.length} domains, ${data.domains.reduce((s, d) => s + d.boards.length, 0)} boards`);
-
-	const projectId = resolveProjectId();
-
-	if (!apply) {
-		console.log(JSON.stringify(data, null, 2));
-		console.error("\nTip: Use --apply to create boards in kanban, or --dry-run to preview API calls.");
-		return;
-	}
-
-	const payloads = questsToKanbanPayloads(data);
-
-	// Fetch existing board names to avoid duplicates
-	let existingBoardNames: Set<string> = new Set();
-	try {
-		const existingRes = await fetch("http://localhost:5173/api/agent/projects", {
-			headers: { "Authorization": `Bearer ${resolveApiKey()}` },
-		});
-		if (existingRes.ok) {
-			// Try boards endpoint; fallback: query DB via psql
-			try {
-				const boardsRes = await fetch("http://localhost:5173/api/kanban/boards", {
-					headers: { "Authorization": `Bearer ${resolveApiKey()}` },
-				});
-				if (boardsRes.ok) {
-					const boards = await boardsRes.json();
-					if (Array.isArray(boards)) {
-						for (const b of boards) existingBoardNames.add(b.name);
-					}
-				}
-			} catch { /* fallback: skip dedup */ }
-		}
-	} catch { /* skip dedup on connection error */ }
-
-	for (const p of payloads) {
-		// Skip if board already exists (unless --force)
-		if (!force && existingBoardNames.has(p.name)) {
-			console.error(`  ∼ Skipped: "${p.name}" already exists (use --force to re-create)`);
-			continue;
-		}
-
-		if (dryRun) {
-			console.log(`[DRY RUN] Would ${existingBoardNames.has(p.name) ? "re-create" : "create"} board "${p.name}" in project ${projectId} with ${p.cards.length} cards`);
-			continue;
-		}
-		console.error(`Creating board: ${p.name}...`);
-		try {
-			const res = await fetch("http://localhost:5173/api/kanban/boards", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"Authorization": `Bearer ${resolveApiKey()}`,
-				},
-				body: JSON.stringify({
-					projectId,
-					name: p.name,
-					description: p.description,
-					columns: p.columns,
-					cards: p.cards.map((c) => ({
-						title: c.title,
-						description: c.description,
-						column: c.column,
-					})),
-				}),
-			});
-			if (!res.ok) {
-				const text = await res.text();
-				console.error(`  ✗ ${res.status}: ${text}`);
-			} else {
-				const result = await res.json();
-				const name = result.board?.name ?? "unknown";
-				const id = result.board?.id ?? "unknown";
-				console.error(`  ✓ Board created: ${name} (id: ${id})`);
-			}
-		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : String(err);
-			console.error(`  ✗ Failed: ${msg}`);
-		}
+		// Silent — resolveApiKey() below names the missing credential.
 	}
 }
 
@@ -368,6 +77,123 @@ function resolveApiKey(): string {
 	if (process.env.API_KEY) return process.env.API_KEY;
 	console.error("⚠ KANBAN_API_KEY not set. Source: source ~/.openclaw/credentials/kanban-agent.sh");
 	return "";
+}
+
+function resolveQuestsPath(): string {
+	for (const p of QUESTS_PATH_CANDIDATES) {
+		if (existsSync(p)) return p;
+	}
+	console.error("✗ Quests.md not found. Looked in:");
+	for (const p of QUESTS_PATH_CANDIDATES) console.error(`    ${p}`);
+	process.exit(1);
+}
+
+// ─── Dedup (fail-loud) ───────────────────────────────────────────────────────
+
+interface ExistingBoardsResult {
+	ok: boolean;
+	names: Set<string>;
+	reason?: string;
+}
+
+async function fetchExistingBoardNames(): Promise<ExistingBoardsResult> {
+	const names = new Set<string>();
+	try {
+		const res = await fetch(`${KANBAN_BASE}/api/kanban/boards`, {
+			headers: { Authorization: `Bearer ${resolveApiKey()}` },
+		});
+		if (!res.ok) {
+			return { ok: false, names, reason: `boards endpoint returned HTTP ${res.status}` };
+		}
+		const body = await res.json();
+		// The endpoint may wrap the list (e.g. { boards: [...] }) or return the array.
+		const list = Array.isArray(body) ? body : Array.isArray(body?.boards) ? body.boards : null;
+		if (!list) {
+			return { ok: false, names, reason: "boards endpoint returned an unrecognized shape" };
+		}
+		for (const b of list) if (b?.name) names.add(b.name);
+		return { ok: true, names };
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		return { ok: false, names, reason: msg };
+	}
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────
+
+async function main() {
+	loadCredentials();
+
+	const args = process.argv.slice(2);
+	const apply = args.includes("--apply");
+	const dryRun = args.includes("--dry-run");
+	const force = args.includes("--force");
+
+	const questsPath = resolveQuestsPath();
+	console.error("📖 Parsing:", questsPath);
+	const data: QuestData = parseQuestsFile(questsPath);
+	console.error(`  → ${data.domains.length} domains, ${data.domains.reduce((s, d) => s + d.boards.length, 0)} boards`);
+
+	if (!apply) {
+		console.log(JSON.stringify(data, null, 2));
+		console.error("\nTip: Use --apply to create boards in kanban, or --dry-run to preview API calls.");
+		return;
+	}
+
+	const projectId = resolveProjectId();
+	const payloads = questsToKanbanPayloads(data);
+
+	// Establish existing board names. If we cannot, refuse rather than risk duplicates.
+	const existing = await fetchExistingBoardNames();
+	if (!existing.ok && !force) {
+		console.error(
+			`✗ Could not establish existing boards (${existing.reason}); refusing to create to avoid duplicates.\n  Re-run with --force to create anyway.`
+		);
+		process.exit(1);
+	}
+	if (!existing.ok && force) {
+		console.error(`⚠ Dedup unavailable (${existing.reason}); proceeding because --force was passed.`);
+	}
+
+	for (const p of payloads) {
+		if (!force && existing.names.has(p.name)) {
+			console.error(`  ∼ Skipped: "${p.name}" already exists (use --force to re-create)`);
+			continue;
+		}
+
+		if (dryRun) {
+			console.log(`[DRY RUN] Would create board "${p.name}" in project ${projectId} with ${p.cards.length} cards`);
+			continue;
+		}
+
+		console.error(`Creating board: ${p.name}...`);
+		try {
+			const res = await fetch(`${KANBAN_BASE}/api/kanban/boards`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${resolveApiKey()}`,
+				},
+				body: JSON.stringify({
+					projectId,
+					name: p.name,
+					description: p.description,
+					columns: p.columns,
+					cards: p.cards.map((c) => ({ title: c.title, description: c.description, column: c.column })),
+				}),
+			});
+			if (!res.ok) {
+				const text = await res.text();
+				console.error(`  ✗ ${res.status}: ${text}`);
+			} else {
+				const result = await res.json();
+				console.error(`  ✓ Board created: ${result.board?.name ?? "unknown"} (id: ${result.board?.id ?? "unknown"})`);
+			}
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : String(err);
+			console.error(`  ✗ Failed: ${msg}`);
+		}
+	}
 }
 
 main().catch((err: unknown) => {
